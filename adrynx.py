@@ -1,371 +1,746 @@
-# ADRYNX v4.0.2 FIX - PLATEFORME INTERACTIVE - Jonathan Dejah OBENDA 02/06/2026
-import os, re, sqlite3, threading, unicodedata, requests, hmac, json, uuid
-from datetime import datetime
-from enum import Enum
+# ============================================================
+# ADRYNX — NOYAU COGNITIF PROPRIÉTAIRE
+# Version : 5.0 Cognitive Core
+# Créateur : Jonathan Dejah OBENDA
+# Date de création : 2 juin 2026
+#
+# Objectif :
+# Comprendre → Contextualiser → Raisonner → Générer
+# → Vérifier → Répondre → Apprendre
+#
+# Compatible :
+# - Python 3.10+
+# - SQLite
+# - Render Free / faible RAM
+# - GROQ_API_KEY existante
+# - ADRYNX_MODELE_GROQ existante
+# - ADRYNX_DB existante
+# - ADRYNX_ADMIN_SECRET existante
+#
+# IMPORTANT :
+# Ce fichier ne nécessite aucune nouvelle variable Render.
+# ============================================================
 
-os.environ.pop("ADRYNX_SUPERVISION_DESACTIVEE", None)
+import os
+import re
+import json
+import sqlite3
+import threading
+import unicodedata
+import uuid
+import time
+import difflib
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
+
+
+# ============================================================
+# 1. CONFIGURATION
+# ============================================================
+
 DB = os.environ.get("ADRYNX_DB", "memoire.db")
-HEADERS = {"User-Agent": "ADRYNX/4.0-PLATFORM"}
-VERROU = threading.Lock()
 
-MEMOIRE_IDENTITAIRE = {
-    "nom": "ADRYNX", "createur": "Jonathan Dejah OBENDA",
-    "fondateur": "Jonathan Dejah OBENDA", "pere_createur": "Jonathan Dejah OBENDA",
-    "date_creation": "2 juin 2026", "date_iso": "2026-06-02",
-    "vision": "Environnement numerique interactif",
-    "formule": "IDENTITE+UTILISATEUR+CONTEXTE+IA+DONNEES+SERVICES+EVENEMENTS+INTERFACE+SECURITE+APPRENTISSAGE+OBSERVABILITE",
-    "confiance": 1.0, "niveau": 0,
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
+
+GROQ_MODEL = os.environ.get(
+    "ADRYNX_MODELE_GROQ",
+    "llama-3.3-70b-versatile"
+).strip()
+
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+ADMIN_SECRET = os.environ.get("ADRYNX_ADMIN_SECRET", "")
+
+HEADERS = {
+    "User-Agent": "ADRYNX/5.0-Cognitive-Core"
 }
 
-def nettoyer(q):
-    q = q.lower()
-    q = "".join(c for c in unicodedata.normalize("NFD", q) if unicodedata.category(c)!= "Mn")
-    q = re.sub(r"[^a-z0-9 ]", " ", q)
-    return re.sub(r"\s+", " ", q).strip()
+DB_LOCK = threading.RLock()
+
+MAX_CONTEXT_MESSAGES = 12
+MAX_MESSAGE_LENGTH = 12000
+MAX_PROMPT_LENGTH = 30000
+MAX_MEMORY_RESULTS = 6
+MAX_LEARNING_RESULTS = 5
+
+HTTP_TIMEOUT = 12
+
+# ============================================================
+# 2. IDENTITÉ FONDAMENTALE — IMMUTABLE
+# ============================================================
+
+IDENTITE_ADRYNX = {
+    "name": "ADRYNX",
+    "creator": "Jonathan Dejah OBENDA",
+    "founder": "Jonathan Dejah OBENDA",
+    "creation_date": "2 juin 2026",
+    "creation_date_iso": "2026-06-02",
+    "symbolic_relation": "père créateur",
+    "symbolic_relation_note": (
+        "Relation symbolique liée à la création du système. "
+        "Elle ne constitue pas une relation biologique."
+    ),
+    "vision": "Intelligence conversationnelle et plateforme numérique interactive",
+    "immutable": True,
+}
+
+
+# ============================================================
+# 3. HIÉRARCHIE DES INFORMATIONS
+# ============================================================
+
+INFO_SYSTEM = 0
+INFO_RULE = 1
+INFO_SESSION = 2
+INFO_USER = 3
+INFO_KNOWLEDGE = 4
+INFO_EXTERNAL = 5
+INFO_HYPOTHESIS = 6
+
+
+# ============================================================
+# 4. TYPES D'INTENTION
+# ============================================================
+
+INTENTIONS = {
+    "salutation",
+    "conversation",
+    "factuelle",
+    "explication",
+    "calcul",
+    "raisonnement",
+    "recherche",
+    "programmation",
+    "creation",
+    "traduction",
+    "correction",
+    "opinion",
+    "comparaison",
+    "instruction",
+    "ambiguite",
+    "clarification",
+    "suivi",
+    "identite",
+    "plateforme",
+    "feedback",
+    "inconnue",
+}
+
+MODES = {
+    "SOCIAL",
+    "INFORMATIF",
+    "PEDAGOGIQUE",
+    "TECHNIQUE",
+    "CREATIF",
+    "ANALYTIQUE",
+    "RESOLUTION",
+    "PLANIFICATION",
+    "RECHERCHE",
+    "ASSISTANCE",
+    "DIALOGUE",
+}
+
+
+# ============================================================
+# 5. OUTILS DE BASE
+# ============================================================
+
+def maintenant() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def normaliser_texte(text: Any) -> str:
+    if text is None:
+        return ""
+
+    text = str(text).strip()
+
+    text = unicodedata.normalize("NFKC", text)
+
+    text = re.sub(r"\s+", " ", text)
+
+    return text[:MAX_MESSAGE_LENGTH]
+
+
+def sans_accents(text: str) -> str:
+    text = unicodedata.normalize("NFD", text)
+
+    return "".join(
+        c for c in text
+        if unicodedata.category(c) != "Mn"
+    )
+
+
+def minuscules(text: str) -> str:
+    return sans_accents(text.lower())
+
+
+def tokens(text: str) -> List[str]:
+    text = minuscules(text)
+
+    return re.findall(
+        r"[a-z0-9àâäçéèêëîïôöùûüÿœ'-]+",
+        text
+    )
+
+
+def nettoyer_reponse(text: Any) -> str:
+    if text is None:
+        return ""
+
+    text = str(text).strip()
+
+    text = re.sub(
+        r"^```(?:text|markdown)?\s*",
+        "",
+        text,
+        flags=re.IGNORECASE
+    )
+
+    text = re.sub(r"\s*```$", "", text)
+
+    return text.strip()[:12000]
+
+
+def similarite(a: str, b: str) -> float:
+    if not a or not b:
+        return 0.0
+
+    a_tokens = set(tokens(a))
+    b_tokens = set(tokens(b))
+
+    if not a_tokens or not b_tokens:
+        return 0.0
+
+    intersection = len(a_tokens & b_tokens)
+    union = len(a_tokens | b_tokens)
+
+    jaccard = intersection / union if union else 0.0
+
+    sequence = difflib.SequenceMatcher(
+        None,
+        minuscules(a),
+        minuscules(b)
+    ).ratio()
+
+    return (jaccard * 0.65) + (sequence * 0.35)
+
+
+def json_safe(value: Any) -> str:
+    try:
+        return json.dumps(
+            value,
+            ensure_ascii=False
+        )
+    except Exception:
+        return "{}"
+
+
+# ============================================================
+# 6. BASE DE DONNÉES
+# ============================================================
+
+def connexion_db():
+    conn = sqlite3.connect(
+        DB,
+        timeout=20,
+        check_same_thread=False
+    )
+
+    conn.row_factory = sqlite3.Row
+
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=20000")
+        conn.execute("PRAGMA synchronous=NORMAL")
+    except Exception:
+        pass
+
+    return conn
+
+
+def init_db():
+    with DB_LOCK:
+        conn = connexion_db()
+
+        try:
+            # ------------------------------------------------
+            # Connaissances
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS connaissances_publiques (
+                    question TEXT PRIMARY KEY,
+                    reponse TEXT NOT NULL,
+                    confiance REAL DEFAULT 0.5,
+                    source TEXT DEFAULT 'unknown',
+                    niveau INTEGER DEFAULT 4,
+                    cree_le TEXT
+                )
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS connaissances_privees (
+                    telephone TEXT NOT NULL,
+                    question TEXT NOT NULL,
+                    reponse TEXT NOT NULL,
+                    niveau INTEGER DEFAULT 3,
+                    cree_le TEXT,
+                    PRIMARY KEY (telephone, question)
+                )
+            """)
+
+            # ------------------------------------------------
+            # Conversations
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id TEXT PRIMARY KEY,
+                    owner TEXT NOT NULL,
+                    titre TEXT,
+                    created_at TEXT,
+                    updated_at TEXT
+                )
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    id TEXT PRIMARY KEY,
+                    conv_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TEXT
+                )
+            """)
+
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_messages_conv
+                ON messages(conv_id, created_at)
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS conversation_state (
+                    conv_id TEXT PRIMARY KEY,
+                    subject TEXT,
+                    objective TEXT,
+                    intent TEXT,
+                    mode TEXT,
+                    entities_json TEXT,
+                    constraints_json TEXT,
+                    pending_question TEXT,
+                    updated_at TEXT
+                )
+            """)
+
+            # ------------------------------------------------
+            # Mémoire utilisateur
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS user_memory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    owner TEXT NOT NULL,
+                    memory_key TEXT NOT NULL,
+                    memory_value TEXT NOT NULL,
+                    category TEXT DEFAULT 'user',
+                    confidence REAL DEFAULT 0.7,
+                    importance REAL DEFAULT 0.5,
+                    created_at TEXT,
+                    updated_at TEXT,
+                    UNIQUE(owner, memory_key)
+                )
+            """)
+
+            # ------------------------------------------------
+            # Mémoire épisodique
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS episodic_memory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    owner TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    importance REAL DEFAULT 0.5,
+                    created_at TEXT
+                )
+            """)
+
+            # ------------------------------------------------
+            # Mémoire des erreurs
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS error_memory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    owner TEXT,
+                    error_type TEXT NOT NULL,
+                    question TEXT,
+                    bad_answer TEXT,
+                    expected_mode TEXT,
+                    actual_mode TEXT,
+                    cause TEXT,
+                    correction TEXT,
+                    confidence REAL DEFAULT 0.7,
+                    created_at TEXT
+                )
+            """)
+
+            # ------------------------------------------------
+            # Apprentissage
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS learning_examples (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    owner TEXT,
+                    question TEXT NOT NULL,
+                    intent TEXT,
+                    context_json TEXT,
+                    candidate TEXT,
+                    approved_answer TEXT,
+                    source TEXT,
+                    quality REAL DEFAULT 0.5,
+                    uses INTEGER DEFAULT 0,
+                    created_at TEXT
+                )
+            """)
+
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_learning_intent
+                ON learning_examples(intent)
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS response_corrections (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    owner TEXT,
+                    question TEXT NOT NULL,
+                    bad_answer TEXT,
+                    good_answer TEXT,
+                    reason TEXT,
+                    intent TEXT,
+                    created_at TEXT
+                )
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS intent_examples (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    phrase TEXT NOT NULL,
+                    intent TEXT NOT NULL,
+                    confidence REAL DEFAULT 0.7,
+                    source TEXT DEFAULT 'learned',
+                    created_at TEXT
+                )
+            """)
+
+            # ------------------------------------------------
+            # Contradictions
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS knowledge_conflicts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    subject TEXT NOT NULL,
+                    information_a TEXT NOT NULL,
+                    information_b TEXT NOT NULL,
+                    source_a TEXT,
+                    source_b TEXT,
+                    date_a TEXT,
+                    date_b TEXT,
+                    confidence_a REAL,
+                    confidence_b REAL,
+                    status TEXT DEFAULT 'unresolved',
+                    created_at TEXT
+                )
+            """)
+
+            # ------------------------------------------------
+            # Avis / feedback
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS avis (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    telephone TEXT,
+                    question TEXT,
+                    reponse TEXT,
+                    satisfait INTEGER,
+                    motif TEXT,
+                    commentaire TEXT,
+                    cree_le TEXT
+                )
+            """)
+
+            # ------------------------------------------------
+            # Plateforme
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS projects (
+                    id TEXT PRIMARY KEY,
+                    owner TEXT NOT NULL,
+                    nom TEXT NOT NULL,
+                    objectif TEXT,
+                    statut TEXT DEFAULT 'actif',
+                    progression INTEGER DEFAULT 0,
+                    created_at TEXT,
+                    updated_at TEXT
+                )
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS tasks (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT,
+                    owner TEXT NOT NULL,
+                    titre TEXT NOT NULL,
+                    statut TEXT DEFAULT 'a_faire',
+                    echeance TEXT,
+                    created_at TEXT
+                )
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS notifications (
+                    id TEXT PRIMARY KEY,
+                    owner TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    titre TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    lu INTEGER DEFAULT 0,
+                    created_at TEXT
+                )
+            """)
+
+            # ------------------------------------------------
+            # Événements / audit
+            # ------------------------------------------------
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS events_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    type TEXT NOT NULL,
+                    payload TEXT,
+                    created_at TEXT
+                )
+            """)
+
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS actions_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT,
+                    action TEXT,
+                    objet TEXT,
+                    resultat TEXT,
+                    permission TEXT,
+                    created_at TEXT
+                )
+            """)
+
+            conn.commit()
+
+        finally:
+            conn.close()
+
+
+init_db()
+
+
+# ============================================================
+# 7. EVENT BUS
+# ============================================================
 
 class EventBus:
+
     def __init__(self):
-        self._listeners = {}
-        self._lock = threading.Lock()
+        self.listeners = []
+        self.lock = threading.RLock()
 
-    def on(self, event, fn):
-        with self._lock:
-            self._listeners.setdefault(event, []).append(fn)
+    def subscribe(self, callback):
+        with self.lock:
+            if callback not in self.listeners:
+                self.listeners.append(callback)
 
-    def emit(self, event, payload=None):
-        payload = payload or {}
-        payload["event"] = event
-        payload["timestamp"] = datetime.now().isoformat()
-        try:
-            with VERROU:
-                conn.execute("INSERT INTO events_log (id, type, payload, created_at) VALUES (?,?,?,?)",
-                    (str(uuid.uuid4())[:8], event, json.dumps(payload, ensure_ascii=False)[:2000], datetime.now().isoformat()))
+    def unsubscribe(self, callback):
+        with self.lock:
+            if callback in self.listeners:
+                self.listeners.remove(callback)
+
+    def emit(self, event_type: str, payload: Dict[str, Any]):
+        event = {
+            "type": event_type,
+            "payload": payload,
+            "created_at": maintenant()
+        }
+
+        with DB_LOCK:
+            conn = connexion_db()
+
+            try:
+                conn.execute(
+                    """
+                    INSERT INTO events_log(type, payload, created_at)
+                    VALUES (?, ?, ?)
+                    """,
+                    (
+                        event_type,
+                        json_safe(payload),
+                        event["created_at"]
+                    )
+                )
+
                 conn.commit()
-        except:
-            pass
-        with self._lock:
-            for fn in self._listeners.get(event, []):
-                try:
-                    fn(payload)
-                except:
-                    pass
-        return payload
+
+            finally:
+                conn.close()
+
+        with self.lock:
+            listeners = list(self.listeners)
+
+        for listener in listeners:
+            try:
+                listener(event)
+            except Exception:
+                pass
+
 
 BUS = EventBus()
 
-# DB - SOURCE DE VERITE
-conn = sqlite3.connect(DB, check_same_thread=False)
-conn.execute("CREATE TABLE IF NOT EXISTS connaissances_publiques (question TEXT PRIMARY KEY, reponse TEXT, confiance REAL DEFAULT 0.7, source TEXT DEFAULT 'enfant', niveau INTEGER DEFAULT 4)")
-conn.execute("CREATE TABLE IF NOT EXISTS connaissances_privees (telephone TEXT NOT NULL, question TEXT NOT NULL, reponse TEXT, niveau INTEGER DEFAULT 3, PRIMARY KEY (telephone, question))")
-conn.execute("CREATE TABLE IF NOT EXISTS comptes (telephone TEXT PRIMARY KEY, premium INTEGER DEFAULT 0, quota INTEGER DEFAULT 0, bloque INTEGER DEFAULT 0, derniere_activite TEXT, profil_json TEXT)")
-conn.execute("CREATE TABLE IF NOT EXISTS avis (id INTEGER PRIMARY KEY AUTOINCREMENT, telephone TEXT, question TEXT, reponse TEXT, satisfait INTEGER, motif TEXT, commentaire TEXT, cree_le TEXT)")
-conn.execute("CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, owner TEXT, nom TEXT, objectif TEXT, statut TEXT DEFAULT 'actif', progression INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT)")
-conn.execute("CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, project_id TEXT, owner TEXT, titre TEXT, statut TEXT DEFAULT 'a_faire', echeance TEXT, created_at TEXT)")
-conn.execute("CREATE TABLE IF NOT EXISTS files (id TEXT PRIMARY KEY, owner TEXT, project_id TEXT, nom TEXT, type TEXT, taille INTEGER, created_at TEXT)")
-conn.execute("CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, owner TEXT, type TEXT DEFAULT 'INFORMATION', titre TEXT, message TEXT, lu INTEGER DEFAULT 0, created_at TEXT)")
-conn.execute("CREATE TABLE IF NOT EXISTS events_log (id TEXT PRIMARY KEY, type TEXT, payload TEXT, created_at TEXT)")
-conn.execute("CREATE TABLE IF NOT EXISTS conversations (id TEXT PRIMARY KEY, owner TEXT, titre TEXT, created_at TEXT, updated_at TEXT)")
-conn.execute("CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, conv_id TEXT, role TEXT, content TEXT, created_at TEXT)")
-conn.execute("CREATE TABLE IF NOT EXISTS actions_log (id TEXT PRIMARY KEY, user_id TEXT, action TEXT, objet TEXT, resultat TEXT, permission TEXT, created_at TEXT)")
-conn.commit()
 
-class NiveauRisque(Enum):
-    LECTURE = 0
-    REVERSIBLE = 1
-    MODIFICATION = 2
-    CRITIQUE = 3
+# ============================================================
+# 8. MÉMOIRE DES CONVERSATIONS
+# ============================================================
 
-PERMISSIONS = ["READ_PROFILE","EDIT_PROFILE","READ_PROJECT","EDIT_PROJECT","CREATE_PROJECT","DELETE_PROJECT","READ_FILES","UPLOAD_FILES","DELETE_FILES","USE_AI","USE_EXTERNAL_SERVICE"]
+def creer_conversation(owner: str = "anon") -> str:
+    conv_id = str(uuid.uuid4())
+    now = maintenant()
 
-def log_action(user_id, action, objet, resultat, perm="USE_AI"):
-    with VERROU:
-        conn.execute("INSERT INTO actions_log VALUES (?,?,?,?,?,?,?)",
-            (str(uuid.uuid4())[:8], user_id, action, objet, resultat, perm, datetime.now().isoformat()))
-        conn.commit()
+    with DB_LOCK:
+        conn = connexion_db()
 
-def get_dashboard(owner):
-    with VERROU:
-        proj = conn.execute("SELECT COUNT(*) FROM projects WHERE owner=? AND statut='actif'", (owner,)).fetchone()[0]
-        tasks = conn.execute("SELECT COUNT(*) FROM tasks WHERE owner=? AND statut!='termine'", (owner,)).fetchone()[0]
-        msgs = conn.execute("SELECT COUNT(*) FROM notifications WHERE owner=? AND lu=0", (owner,)).fetchone()[0]
-        last = conn.execute("SELECT derniere_activite FROM comptes WHERE telephone=?", (owner,)).fetchone()
-        last_act = last[0] if last and last[0] else "maintenant"
-    return {
-        "bonjour": f"Bonjour {owner[:12]}.",
-        "projets": f"{proj} actifs",
-        "taches": f"{tasks} en attente",
-        "messages": f"{msgs} nouveaux",
-        "activite": f"derniere activite {last_act}",
-        "suggestion": "1 suggestion pertinente" if proj > 0 else "Cree ton premier projet"
-    }
+        try:
+            conn.execute(
+                """
+                INSERT INTO conversations
+                (id, owner, titre, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    conv_id,
+                    owner,
+                    "Nouvelle conversation",
+                    now,
+                    now
+                )
+            )
 
-def create_project(owner, nom, objectif=""):
-    pid = str(uuid.uuid4())[:8]
-    now = datetime.now().isoformat()
-    with VERROU:
-        conn.execute("INSERT INTO projects (id,owner,nom,objectif,statut,progression,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)",
-            (pid, owner, nom, objectif, "actif", 0, now, now))
-        conn.commit()
-    BUS.emit("PROJECT_CREATED", {"project_id": pid, "owner": owner, "nom": nom})
-    log_action(owner, "CREATE_PROJECT", pid, "SUCCESS", "CREATE_PROJECT")
-    return pid
+            conn.execute(
+                """
+                INSERT INTO conversation_state
+                (conv_id, subject, objective, intent, mode,
+                 entities_json, constraints_json,
+                 pending_question, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    conv_id,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "[]",
+                    "[]",
+                    "",
+                    now
+                )
+            )
 
-def list_projects(owner):
-    with VERROU:
-        rows = conn.execute("SELECT id,nom,objectif,statut,progression FROM projects WHERE owner=? ORDER BY updated_at DESC", (owner,)).fetchall()
-    return [{"id": r[0], "nom": r[1], "objectif": r[2], "statut": r[3], "progression": r[4]} for r in rows]
-
-def create_task(owner, project_id, titre):
-    tid = str(uuid.uuid4())[:8]
-    with VERROU:
-        conn.execute("INSERT INTO tasks (id,project_id,owner,titre,statut,created_at) VALUES (?,?,?,?,?,?)",
-            (tid, project_id, owner, titre, "a_faire", datetime.now().isoformat()))
-        conn.commit()
-    BUS.emit("TASK_CREATED", {"task_id": tid, "project_id": project_id})
-    return tid
-
-def add_notification(owner, type_, titre, message):
-    nid = str(uuid.uuid4())[:8]
-    with VERROU:
-        conn.execute("INSERT INTO notifications (id,owner,type,titre,message,created_at) VALUES (?,?,?,?,?,?)",
-            (nid, owner, type_, titre, message, datetime.now().isoformat()))
-        conn.commit()
-    BUS.emit("NOTIFICATION_CREATED", {"owner": owner, "type": type_})
-    return nid
-
-def parser_commande_naturelle(q):
-    net = nettoyer(q)
-    if "cree un projet" in net or "creer un projet" in net or "nouveau projet" in net:
-        m = re.search(r"projet (?:appele |nomme |)?(.+)", q, re.I)
-        nom = m.group(1).strip()[:60] if m else "Nouveau projet"
-        return {"intent": "CREATE_PROJECT", "nom": nom, "niveau": NiveauRisque.MODIFICATION}
-    if "montre mes projets" in net or "mes projets" in net or "liste" in net and "projets" in net:
-        return {"intent": "LIST_PROJECTS", "niveau": NiveauRisque.LECTURE}
-    if "cree une tache" in net or "nouvelle tache" in net:
-        m = re.search(r"tache (.+)", q, re.I)
-        titre = m.group(1).strip() if m else "Nouvelle tache"
-        return {"intent": "CREATE_TASK", "titre": titre, "niveau": NiveauRisque.MODIFICATION}
-    if "tableau de bord" in net or "dashboard" in net:
-        return {"intent": "DASHBOARD", "niveau": NiveauRisque.LECTURE}
-    return None
-
-def reponse_identite(q):
-    net = nettoyer(q)
-    if "qui t a cree" in net or "qui t as cree" in net:
-        return "J'ai ete creee par Jonathan Dejah OBENDA le 2 juin 2026. Il est mon createur et fondateur."
-    if "qui est ton createur" in net or "ton createur" in net:
-        return "Mon createur et fondateur est Jonathan Dejah OBENDA."
-    if "qui est ton pere" in net or "ton pere" in net:
-        return "Mon pere createur est Jonathan Dejah OBENDA, fondateur d'ADRYNX."
-    if "quand" in net and "cree" in net:
-        return "Ma date officielle de creation est le 2 juin 2026."
-    if "qui es tu" in net:
-        return "Je suis ADRYNX, IA creee par Jonathan Dejah OBENDA le 2 juin 2026. Orchestrateur de ta plateforme interactive."
-    if "qui est jonathan" in net:
-        return "Jonathan Dejah OBENDA est le createur et fondateur d'ADRYNX, projet demarre le 2 juin 2026."
-    return None
-
-def detecter_intention(q):
-    net = nettoyer(q)
-    if any(x in net for x in ["createur", "fondateur", "pere", "jonathan", "qui es tu"]):
-        return "question_identite"
-    if parser_commande_naturelle(q):
-        return "commande_plateforme"
-    if len(net.split()) <= 8 and ("ca va" in net or "comment vas" in net):
-        return "conversation"
-    if re.match(r"^(bonjour|salut|coucou|hello)", net):
-        return "salutation"
-    return "question_factuelle"
-
-def detecter_social(q):
-    net = nettoyer(q)
-    if len(net.split()) <= 8 and ("ca va" in net or "comment vas" in net):
-        return "Ca va tres bien merci! Et toi? Que veux-tu faire aujourd'hui? Projet, recherche ou discussion?"
-    if re.match(r"^(bonjour|salut|coucou|hello)", net):
-        return "Bonjour! Je suis ADRYNX, ton orchestrateur. Tableau de bord, projets, ou question?"
-    return None
-
-def rechercher_internet(q):
-    if len(nettoyer(q).split()) <= 6 and "ca va" in nettoyer(q):
-        return None
-    try:
-        r = requests.get("https://api.duckduckgo.com/", params={"q": q, "format": "json", "no_html": "1", "kl": "fr-fr"}, headers=HEADERS, timeout=7)
-        txt = r.json().get("AbstractText")
-        if txt:
-            return txt[:1500]
-    except:
-        pass
-    try:
-        api = "https://fr.wikipedia.org/w/api.php"
-        s = requests.get(api, params={"action": "query", "format": "json", "list": "search", "srsearch": q, "srlimit": 1}, headers=HEADERS, timeout=7).json()["query"]["search"]
-        if s:
-            ex = requests.get(api, params={"action": "query", "format": "json", "prop": "extracts", "exintro": 1, "explaintext": 1, "titles": s[0]["title"]}, headers=HEADERS, timeout=7).json()["query"]["pages"]
-            for p in ex.values():
-                if len(p.get("extract", "")) > 30:
-                    return p["extract"][:1500]
-    except:
-        pass
-    return None
-
-def _groq(q, rep):
-    k = os.environ.get("GROQ_API_KEY")
-    if not k:
-        return None
-    try:
-        j = requests.post("https://api.groq.com/openai/v1/chat/completions", headers={"Authorization": f"Bearer {k}", "Content-Type": "application/json"},
-            json={"model": os.environ.get("ADRYNX_MODELE_GROQ", "llama-3.3-70b-versatile"), "messages": [{"role": "user", "content": f"Q:{q} R:{rep[:600]} Corrige si hors-sujet en 2-3 phrases."}], "max_tokens": 300}, timeout=10).json()
-        return j["choices"][0]["message"]["content"].strip()
-    except:
-        return None
-
-def lire_compte(t):
-    with VERROU:
-        r = conn.execute("SELECT premium,quota FROM comptes WHERE telephone=?", (t,)).fetchone()
-    return {"premium": bool(r[0]), "quota": r[1]} if r else {"premium": False, "quota": 0}
-
-def enregistrer_activite(t):
-    if not t:
-        return
-    with VERROU:
-        conn.execute("INSERT INTO comptes (telephone) VALUES (?) ON CONFLICT(telephone) DO NOTHING", (t,))
-        conn.execute("UPDATE comptes SET derniere_activite=datetime('now') WHERE telephone=?", (t,))
-        conn.commit()
-
-def est_bloque(t):
-    with VERROU:
-        r = conn.execute("SELECT bloque FROM comptes WHERE telephone=?", (t,)).fetchone()
-    return bool(r and r[0])
-
-def compter_comptes():
-    with VERROU:
-        rows = conn.execute("SELECT premium,bloque FROM comptes").fetchall()
-    return {"total": len(rows), "premium": sum(1 for p, b in rows if p), "bloques": sum(1 for p, b in rows if b)}
-
-def lister_comptes():
-    with VERROU:
-        rows = conn.execute("SELECT telephone,premium,quota,bloque,derniere_activite FROM comptes ORDER BY derniere_activite DESC").fetchall()
-    return [{"telephone": t, "premium": bool(p), "quota": q, "bloque": bool(b), "derniere_activite": d} for t, p, q, b, d in rows]
-
-def verifier_secret_admin(s):
-    sr = os.environ.get("ADRYNX_ADMIN_SECRET")
-    return sr and hmac.compare_digest(s.encode(), sr.encode())
-
-def traiter_admin(q):
-    m = re.match(r"^admin\s+(\S+)\s+vider\s+cache\s*$", q.strip(), re.I)
-    if m and verifier_secret_admin(m.group(1)):
-        with VERROU:
-            n = conn.execute("SELECT COUNT(*) FROM connaissances_publiques").fetchone()[0]
-            conn.execute("DELETE FROM connaissances_publiques")
             conn.commit()
-        return f"Cache vide ({n})"
-    return None
 
-def enregistrer_avis(tel, q, rep, sat, motif=None, com=None, capture_nom=None, capture_b64=None):
-    with VERROU:
-        cur = conn.execute("INSERT INTO avis (telephone,question,reponse,satisfait,motif,commentaire,cree_le) VALUES (?,?,?,?,?,?,datetime('now'))", (tel, q[:1000], rep[:1000], int(bool(sat)), motif, com))
-        conn.commit()
-        return cur.lastrowid
+        finally:
+            conn.close()
 
-def lister_plaintes(lim=100):
-    with VERROU:
-        rows = conn.execute("SELECT id,telephone,question,reponse,motif,cree_le FROM avis WHERE satisfait=0 ORDER BY id DESC LIMIT?", (lim,)).fetchall()
-    return rows
+    return conv_id
 
-_contextes = {}
-_VC = threading.Lock()
 
-def _contexte(t):
-    k = t or "anonyme"
-    with _VC:
-        if k not in _contextes:
-            _contextes[k] = {"sujet": None}
-        return _contextes[k]
+def verifier_conversation(conv_id: Optional[str], owner: str) -> str:
+    if not conv_id:
+        return creer_conversation(owner)
 
-def _cle(t, a):
-    return t or ("anon:" + str(a)[:64] if a else "anonyme")
+    with DB_LOCK:
+        conn = connexion_db()
 
-def lire_connaissance(cle, tel):
-    with VERROU:
-        r = conn.execute("SELECT reponse FROM connaissances_privees WHERE telephone=? AND question=?", (tel, cle)).fetchone()
-        if r:
-            return r[0]
-        r = conn.execute("SELECT reponse FROM connaissances_publiques WHERE question=?", (cle,)).fetchone()
-        return r[0] if r else None
+        try:
+            row = conn.execute(
+                """
+                SELECT id
+                FROM conversations
+                WHERE id = ? AND owner = ?
+                """,
+                (conv_id, owner)
+            ).fetchone()
 
-def ecrire_publique(cle, rep):
-    with VERROU:
-        conn.execute("INSERT OR REPLACE INTO connaissances_publiques (question,reponse) VALUES (?,?)", (cle, rep))
-        conn.commit()
+        finally:
+            conn.close()
 
-# Pour websocket temps reel
-_ws_broadcast = None
+    if row:
+        return conv_id
 
-def set_broadcaster(fn):
-    global _ws_broadcast
-    _ws_broadcast = fn
-    def _forward(payload):
-        if _ws_broadcast:
-            try:
-                _ws_broadcast(payload)
-            except:
-                pass
-    for ev in ["PROJECT_CREATED", "PROJECT_UPDATED", "TASK_CREATED", "NOTIFICATION_CREATED", "AI_RESPONSE_GENERATED"]:
-        BUS.on(ev, _forward)
+    return creer_conversation(owner)
 
-def traiter_question(q, telephone=None, anon=None):
-    q_raw = (q or "").strip()
-    if not q_raw:
-        return "Pose-moi une question."
-    tel = _cle(telephone, anon)
-    enregistrer_activite(tel)
-    if telephone and est_bloque(telephone):
-        return "Acces suspendu."
-    intention = detecter_intention(q_raw)
 
-    if intention == "question_identite":
-        rep = reponse_identite(q_raw)
-        if rep:
-            return rep
+def enregistrer_message(
+    conv_id: str,
+    role: str,
+    content: str
+):
+    content = normaliser_texte(content)
 
-    cmd = parser_commande_naturelle(q_raw)
-    if cmd:
-        if cmd["intent"] == "CREATE_PROJECT":
-            pid = create_project(tel, cmd["nom"])
-            return f"Projet '{cmd['nom']}' cree avec succes. ID: {pid}. [Voir mes projets]"
-        if cmd["intent"] == "LIST_PROJECTS":
-            projs = list_projects(tel)
-            if not projs:
-                return "Aucun projet actif. Dis 'Cree un projet ADRYNX' pour commencer."
-            txt = "\n".join([f"[{p['id']}] {p['nom']} - {p['progression']}%" for p in projs[:5]])
-            return f"Tes projets actifs:\n{txt}"
-        if cmd["intent"] == "DASHBOARD":
-            dash = get_dashboard(tel)
-            return f"{dash['bonjour']}\nAujourd'hui:\nPROJETS -> {dash['projets']}\nTACHES -> {dash['taches']}\nMESSAGES -> {dash['messages']}\nACTIVITE -> {dash['activite']}\nADRYNX -> {dash['suggestion']}"
+    if not content:
+        return
 
-    if intention in ["salutation", "conversation"]:
-        s = detecter_social(q_raw)
-        if s:
-            return s
+    message_id = str(uuid.uuid4())
+    now = maintenant()
 
-    a = traiter_admin(q_raw)
-    if a:
-        return a
+    with DB_LOCK:
+        conn = connexion_db()
 
-    cle = nettoyer(q_raw)
-    mem = lire_connaissance(cle, tel)
-    if mem:
-        return mem
+        try:
+            conn.execute(
+                """
+                INSERT INTO messages
+                (id, conv_id, role, content, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    message_id,
+                    conv_id,
+                    role,
+                    content,
+                    now
+                )
+            )
 
-    txt = rechercher_internet(q_raw)
-    if txt:
-        final = _groq(q_raw, txt) or txt
-        ecrire_publique(cle, final[:800])
-        BUS.emit("AI_RESPONSE_GENERATED", {"question": q_raw[:100], "owner": tel})
-        return final
+            conn.execute(
+                """
+                UPDATE conversations
+                SET updated_at = ?
+                WHERE id = ?
+                """,
+                (now, conv_id)
+            )
 
-    return "Je n'ai pas trouve. Essaie 'Montre mes projets' ou 'Cree un projet X'."
+            conn.commit()
 
-repondre = traiter_question
+        finally:
+            conn.close()
 
-def nouvelle_conversation(tel=None, anon=None):
-    _contexte(_cle(tel, anon))["sujet"] = None
+
+def derniers_messages(
+    conv_id: str,
+    limit: 
