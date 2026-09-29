@@ -1,83 +1,67 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-
-app = FastAPI()
-
-HTML = """
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ADRYNX PHOENIX VIDEO - Futur</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;600&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#050507;color:#EDEEF0;font-family:'Inter',sans-serif;height:100vh;display:flex;overflow:hidden}
-#particles{position:fixed;inset:0;z-index:0}
-.sidebar{width:280px;background:rgba(18,18,20,0.88);backdrop-filter:blur(24px);border-right:1px solid rgba(139,92,246,0.28);z-index:2;display:flex;flex-direction:column}
-.logo-box{padding:22px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)}
-.phoenix-wrap{width:122px;height:122px;margin:0 auto;position:relative;border-radius:50%;overflow:hidden;box-shadow:0 0 28px #8B5CF6, 0 0 60px #00D9FF;animation:float 3s ease-in-out infinite;cursor:pointer;border:2px solid rgba(139,92,246,0.4)}
-.phoenix-wrap video{width:100%;height:100%;object-fit:cover}
-.phoenix-wrap:hover{transform:scale(1.14);box-shadow:0 0 40px #8B5CF6, 0 0 80px #00D9FF}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.logo-text{font-family:'Space Grotesk';font-size:26px;letter-spacing:5px;font-weight:700;margin-top:14px;background:linear-gradient(90deg,#8B5CF6,#00D9FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.slogan{font-size:11px;color:#8B5CF6;letter-spacing:2.5px;margin-top:4px;opacity:0.9}
-.menu{padding:16px;flex:1;overflow:auto}
-.menu h4{font-size:10px;color:#6E6E77;letter-spacing:1.5px;margin:18px 0 8px;text-transform:uppercase}
-.menu a{display:flex;gap:10px;padding:10px 12px;border-radius:10px;color:#A1A1AA;text-decoration:none;font-size:13.5px;transition:0.2s;border:1px solid transparent}
-.menu a:hover,.menu a.active{background:rgba(139,92,246,0.15);border-color:rgba(139,92,246,0.35);color:white;box-shadow:0 0 20px rgba(139,92,246,0.25)}
-.main{flex:1;z-index:2;display:flex;flex-direction:column;background:radial-gradient(600px at 20% 0%, rgba(139,92,246,0.18), transparent), radial-gradient(600px at 80% 100%, rgba(0,217,255,0.12), transparent)}
-.top{height:64px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;padding:0 28px;backdrop-filter:blur(12px)}
-.card{background:rgba(23,23,26,0.88);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px;transition:0.3s}
-.card:hover{border-color:rgba(139,92,246,0.45);transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,0,0,0.6), 0 0 25px rgba(139,92,246,0.18)}
-.btn{padding:10px 18px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
-.btn-p{background:linear-gradient(90deg,#8B5CF6,#7C3AED);color:white;box-shadow:0 0 20px rgba(139,92,246,0.6)}
-.btn-momo{background:#00D395;color:black;font-weight:900;box-shadow:0 0 20px rgba(0,211,149,0.5);width:100%;margin-top:14px;padding:14px}
-.chat{width:380px;background:rgba(18,18,20,0.92);backdrop-filter:blur(24px);border-left:1px solid rgba(139,92,246,0.18);z-index:2;display:flex;flex-direction:column}
-.msg{padding:12px 14px;border-radius:14px;margin-bottom:10px;font-size:13.5px;line-height:1.5;border:1px solid rgba(255,255,255,0.06)}
-.msg.me{background:linear-gradient(90deg,#8B5CF6,#7C3AED);color:white;border:none;margin-left:20px}
-</style></head><body>
-<canvas id="particles"></canvas>
-<div class="sidebar">
-<div class="logo-box">
-<div class="phoenix-wrap" onclick="this.firstElementChild.play()">
-<video autoplay loop muted playsinline poster="">
-<source src="https://files.catbox.moe/y2nvi4.mp4" type="video/mp4">
-</video>
-</div>
-<div class="logo-text">ADRYNX</div>
-<div class="slogan">Plutôt que l'impossible</div>
-</div>
-<div class="menu">
-<h4>Workspace Futur</h4>
-<a class="active">⬣ Dashboard Phoenix Vidéo</a>
-<a>⚡ Orchestrateur IA</a>
-<a>📦 Projets Vivants</a>
-<h4>Afrique Pay</h4>
-<a>💳 Mobile Money LIVE <span style="margin-left:auto;background:#00D395;color:black;padding:2px 6px;border-radius:20px;font-size:10px;font-weight:800">ON</span></a>
-<a>🌍 Templates Congo</a>
-<h4>Energy</h4>
-<a>🔥 Phénix Vidéo : Actif</a>
-</div>
-<div style="padding:16px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:10px;align-items:center"><div style="width:36px;height:36px;background:linear-gradient(135deg,#8B5CF6,#00D9FF);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800">J</div><div><div style="font-size:13px;font-weight:700">Jonathan • Brazzaville</div><div style="font-size:11px;color:#00D395">● Phoenix Video Live</div></div></div>
-</div>
-<div class="main">
-<div class="top"><div><h2 style="font-family:'Space Grotesk'">Command Center Phoenix</h2><p style="color:#6E6E77;font-size:12px">Logo vidéo vivant • Particules • Brazzaville Node</p></div><div style="display:flex;gap:8px"><button class="btn" style="background:#232326;color:white">+ New Universe</button><button class="btn btn-p">✨ Deploy Phoenix</button></div></div>
-<div style="padding:24px;overflow:auto;flex:1;display:grid;grid-template-columns:1fr 1fr;gap:16px">
-<div class="card"><h4 style="color:#A1A1AA;font-size:11px">⚡ PHÉNIX VIDEO CORE</h4><b style="font-size:28px;background:linear-gradient(90deg,#8B5CF6,#00D9FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent">LIVE</b><p style="color:#6E6E77;font-size:12px;margin-top:8px">Vidéo autoplay • Loop infini • Catbox CDN</p></div>
-<div class="card"><h4 style="color:#A1A1AA;font-size:11px">💎 CRISTAL ENGINE</h4><b style="font-size:28px">98.2% Précision</b><p style="color:#6E6E77;font-size:12px;margin-top:8px">adrynx.py + phoenix.mp4 fusionnés</p></div>
-<div class="card" style="grid-column:span 2"><h3>Projets qui brisent l'impossible →</h3><div style="display:flex;gap:12px;margin-top:12px"><div style="flex:1;background:rgba(255,255,255,0.04);padding:12px;border-radius:10px"><b>🚀 Boutique Brazza Futur</b><p style="font-size:12px;color:#A1A1AA">Paiement Airtel + MTN + M-Pesa • Design futuriste</p><div style="height:4px;background:#2A2A2E;border-radius:4px;margin-top:8px"><div style="width:92%;height:100%;background:linear-gradient(90deg,#8B5CF6,#00D9FF)"></div></div></div><div style="flex:1;background:rgba(255,255,255,0.04);padding:12px;border-radius:10px"><b>🧬 ADRYNX v6 Phoenix</b><p style="font-size:12px;color:#A1A1AA">Le premier OS avec logo vivant d'Afrique</p></div></div><button class="btn btn-momo">💳 ACTIVER PAIEMENT 5000 FCFA - MOBILE MONEY FUTUR</button></div>
-</div>
-</div>
-<div class="chat"><div style="padding:16px;border-bottom:1px solid rgba(255,255,255,0.06)"><b>✨ Phoenix Chat Vidéo</b><span style="float:right;font-size:10px;color:#8B5CF6">GPT-5 • Mémoire Cristal</span></div><div style="flex:1;padding:16px;overflow:auto"><div class="msg me">Montre le phénix vidéo en live</div><div class="msg"><b style="color:#8B5CF6">ADRYNX Phoenix:</b> C'est fait Jonathan. Le phénix est vivant et respire. Au survol il pulse, au clic il explose. C'est ton branding qui respire. Prêt pour conquérir Brazzaville et le monde ?</div></div><div style="padding:12px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px"><input placeholder="Commande Phoenix... /payer /creer" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:10px;color:white"><button class="btn btn-p">➤</button></div></div>
-<script>
-const c=document.getElementById('particles'),x=c.getContext('2d');function r(){c.width=innerWidth;c.height=innerHeight}r();onresize=r;
-let p=[];for(let i=0;i<90;i++)p.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-0.5)*0.6,vy:(Math.random()-0.5)*0.6,s:Math.random()*2+0.5});
-(function a(){x.clearRect(0,0,c.width,c.height);p.forEach(o=>{o.x+=o.vx;o.y+=o.vy;if(o.x<0||o.x>c.width)o.vx*=-1;if(o.y<0||o.y>c.height)o.vy*=-1;x.beginPath();x.arc(o.x,o.y,o.s,0,6.28);x.fillStyle=o.s>1.6?'#8B5CF6':'#00D9FF';x.globalAlpha=0.5;x.fill();});requestAnimationFrame(a)})();
-</script></body></html>
-"""
-
-@app.get("/", response_class=HTMLResponse)
-async def home():
-    return HTML
-
-@app.get("/health")
-async def health():
-    return {"status":"PHOENIX VIDEO LIVE - https://files.catbox.moe/y2nvi4.mp4"}
+import os
+from typing import Optional
+from fastapi import FastAPI,HTTPException,Header,WebSocket,WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse,FileResponse
+from pydantic import BaseModel,Field
+import adrynx
+app=FastAPI(title='ADRYNX API',version='5.0')
+app.add_middleware(CORSMiddleware,allow_origins=['*'],allow_credentials=False,allow_methods=['*'],allow_headers=['*'])
+class Ask(BaseModel):
+ message:Optional[str]=None; q:Optional[str]=None; telephone:Optional[str]='anon'; anon:Optional[str]=None; conversation_id:Optional[str]=None
+class Feedback(BaseModel):
+ telephone:Optional[str]='anon'; question:str; reponse:str; satisfait:bool=False; motif:Optional[str]=''; commentaire:Optional[str]=''; correction:Optional[str]=''
+class Project(BaseModel): telephone:Optional[str]='anon'; nom:str=Field(min_length=1,max_length=200); objectif:Optional[str]=''
+class Task(BaseModel): telephone:Optional[str]='anon'; titre:str=Field(min_length=1,max_length=300); project_id:Optional[str]=None
+class Conversation(BaseModel): telephone:Optional[str]='anon'; titre:Optional[str]='Nouvelle conversation'
+def owner(x):return (x or 'anon').strip()[:120] or 'anon'
+@app.get('/',response_class=HTMLResponse)
+def root():
+ for p in ['index.html','frontend/index.html','static/index.html']:
+  if os.path.isfile(p):return FileResponse(p)
+ return '<h1>ADRYNX</h1><p>API cognitive en ligne. Utilise /api/health.</p>'
+@app.get('/health')
+@app.get('/api/health')
+def health():return {'ok':True,'service':'ADRYNX','version':'5.0','groq_configured':bool(adrynx.GROQ_API_KEY),'model':adrynx.GROQ_MODEL,'learning':'memory_examples_not_local_fine_tuning'}
+@app.post('/ask')
+@app.post('/api/ask')
+def ask(req:Ask):
+ msg=(req.message or req.q or '').strip()
+ if not msg:raise HTTPException(400,'message/q requis')
+ return adrynx.traiter_question(msg,owner(req.telephone or req.anon),req.conversation_id)
+@app.post('/api/conversations')
+def create_conv(req:Conversation):return {'ok':True,'conversation_id':adrynx.new_conversation(owner(req.telephone),req.titre or 'Nouvelle conversation')}
+@app.get('/api/conversations')
+def list_conv(telephone='anon'):
+ c=adrynx.db();r=c.execute('SELECT id,owner,titre,created_at,updated_at FROM conversations WHERE owner=? ORDER BY updated_at DESC LIMIT 50',(owner(telephone),)).fetchall();c.close();return {'ok':True,'conversations':[dict(x) for x in r]}
+@app.get('/api/conversations/{cid}')
+def get_conv(cid,telephone='anon'):
+ c=adrynx.db();r=c.execute('SELECT id,owner,titre,created_at,updated_at FROM conversations WHERE id=? AND owner=?',(cid,owner(telephone))).fetchone();c.close()
+ if not r:raise HTTPException(404,'Conversation introuvable')
+ return {'ok':True,'conversation':dict(r),'state':adrynx.state(cid),'messages':adrynx.messages(cid,100)}
+@app.get('/api/dashboard')
+def dash(telephone='anon'):return {'ok':True,'dashboard':adrynx.dashboard(owner(telephone))}
+@app.get('/api/projects')
+def get_projects(telephone='anon'):return {'ok':True,'projects':adrynx.projects(owner(telephone))}
+@app.post('/api/projects')
+def post_project(req:Project):return {'ok':True,'project':adrynx.project(owner(req.telephone),req.nom,req.objectif or '')}
+@app.post('/api/tasks')
+def post_task(req:Task):return {'ok':True,'task':adrynx.task(owner(req.telephone),req.titre,req.project_id)}
+@app.post('/api/feedback')
+def feedback(req:Feedback):return adrynx.enregistrer_feedback(owner(req.telephone),req.question,req.reponse,req.satisfait,req.motif or '',req.commentaire or '',req.correction or '')
+@app.get('/api/learning/stats')
+def learning_stats():return {'ok':True,'stats':adrynx.stats_apprentissage()}
+@app.get('/api/admin/learning/export')
+def export(x_adrynx_admin_secret:Optional[str]=Header(None)):
+ if not adrynx.verifier_admin(x_adrynx_admin_secret):raise HTTPException(403,'Accès administrateur refusé')
+ return {'ok':True,'format':'jsonl','data':adrynx.exporter_apprentissage()}
+@app.websocket('/ws/{owner_id}')
+async def ws(websocket:WebSocket,owner_id:str):
+ await websocket.accept()
+ try:
+  while True:
+   d=await websocket.receive_json();q=str(d.get('message') or d.get('q') or '').strip()
+   if q:await websocket.send_json({'type':'answer','data':adrynx.traiter_question(q,owner_id,d.get('conversation_id'))})
+ except WebSocketDisconnect:pass
+if __name__=='__main__':
+ import uvicorn;uvicorn.run('api:app',host='0.0.0.0',port=int(os.environ.get('PORT','8000')),reload=False)
