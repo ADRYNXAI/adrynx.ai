@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Optional
 
 from fastapi import (
@@ -33,6 +34,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ============================================================
+# CHEMINS DU PROJET
+# ============================================================
+
+BASE_DIR = Path(__file__).resolve().parent
+
+FRONTEND_PATHS = [
+    BASE_DIR / "index.html",
+    BASE_DIR / "frontend" / "index.html",
+    BASE_DIR / "static" / "index.html",
+]
 
 
 # ============================================================
@@ -102,14 +116,16 @@ def owner(value):
 
 
 def trouver_frontend():
-    chemins = [
-        "index.html",
-        "frontend/index.html",
-        "static/index.html",
-    ]
+    """
+    Recherche index.html à partir du dossier réel
+    contenant api.py.
 
-    for chemin in chemins:
-        if os.path.isfile(chemin):
+    Cela évite les problèmes de chemin relatif
+    sur Render ou lors du lancement avec Uvicorn.
+    """
+
+    for chemin in FRONTEND_PATHS:
+        if chemin.is_file():
             return chemin
 
     return None
@@ -129,29 +145,92 @@ def root():
 
     if frontend:
         return FileResponse(
-            frontend,
+            path=str(frontend),
             media_type="text/html",
         )
 
+    chemins_recherches = [
+        str(chemin)
+        for chemin in FRONTEND_PATHS
+    ]
+
     return HTMLResponse(
-        """
+        f"""
         <!DOCTYPE html>
         <html lang="fr">
         <head>
             <meta charset="UTF-8">
-            <title>ADRYNX</title>
+            <meta name="viewport"
+                  content="width=device-width, initial-scale=1.0">
+            <title>ADRYNX — Frontend introuvable</title>
+
+            <style>
+                body {{
+                    background: #080b12;
+                    color: #ffffff;
+                    font-family: Arial, sans-serif;
+                    padding: 40px;
+                }}
+
+                .box {{
+                    max-width: 800px;
+                    margin: auto;
+                    padding: 30px;
+                    border: 1px solid #333;
+                    border-radius: 16px;
+                    background: #111722;
+                }}
+
+                code {{
+                    color: #7dd3fc;
+                }}
+
+                a {{
+                    color: #60a5fa;
+                }}
+
+                li {{
+                    margin: 8px 0;
+                }}
+            </style>
         </head>
+
         <body>
-            <h1>ADRYNX</h1>
-            <p>
-                Le frontend index.html est introuvable.
-            </p>
-            <p>
-                API disponible sur
-                <a href="/api/health">
-                    /api/health
-                </a>
-            </p>
+
+            <div class="box">
+
+                <h1>ADRYNX</h1>
+
+                <h2>
+                    Le frontend index.html est introuvable.
+                </h2>
+
+                <p>
+                    L'API ADRYNX fonctionne, mais aucun
+                    fichier <code>index.html</code> n'a été
+                    trouvé dans les emplacements attendus.
+                </p>
+
+                <h3>Emplacements recherchés :</h3>
+
+                <ul>
+                    {
+                        "".join(
+                            f"<li><code>{chemin}</code></li>"
+                            for chemin in chemins_recherches
+                        )
+                    }
+                </ul>
+
+                <p>
+                    API disponible sur :
+                    <a href="/api/health">
+                        /api/health
+                    </a>
+                </p>
+
+            </div>
+
         </body>
         </html>
         """,
