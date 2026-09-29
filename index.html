@@ -1,420 +1,1830 @@
-<!DOCTYPE html>
-<html lang="fr">
-
-<head>
-
+<!DOCTYPE html><html lang="fr"><head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#05050A"><title>ADRYNX — Command Center Phoenix</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<style>
+    :root {
+        --bg: #05050A;
+        --panel: rgba(13, 14, 23, .78);
+        --panel-strong: rgba(10, 11, 18, .94);
+        --border: rgba(255,255,255,.09);
+        --border-hover: rgba(123,92,255,.42);
 
-    <meta
-        name="theme-color"
-        content="#ffffff"
-    >
+        --purple: #7B5CFF;
+        --blue: #00D4FF;
+        --green: #43F28C;
+        --red: #ff5577;
+        --text: #F4F5FA;
+        --muted: #85899C;
 
-    <title>ADRYNX</title>
+        --shadow:
+            0 20px 80px rgba(0,0,0,.45);
 
-    <style>
+        --radius: 22px;
+    }
 
-        * {
-            box-sizing: border-box;
+    * {
+        box-sizing: border-box;
+    }
+
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        overflow: hidden;
+        background:
+            radial-gradient(
+                circle at 50% 40%,
+                rgba(123,92,255,.08),
+                transparent 34%
+            ),
+            var(--bg);
+
+        color: var(--text);
+
+        font-family:
+            Inter,
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+    }
+
+    button,
+    textarea {
+        font: inherit;
+    }
+
+    button {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* =====================================================
+       GLOBAL ATMOSPHERE
+       ===================================================== */
+
+    .background-grid {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+
+        background-image:
+            linear-gradient(
+                rgba(255,255,255,.018) 1px,
+                transparent 1px
+            ),
+            linear-gradient(
+                90deg,
+                rgba(255,255,255,.018) 1px,
+                transparent 1px
+            );
+
+        background-size: 42px 42px;
+
+        mask-image:
+            linear-gradient(
+                to bottom,
+                transparent,
+                black 18%,
+                black 82%,
+                transparent
+            );
+    }
+
+    .ambient {
+        position: fixed;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: .12;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .ambient.one {
+        top: -180px;
+        left: 15%;
+        background: var(--purple);
+    }
+
+    .ambient.two {
+        right: -180px;
+        bottom: -150px;
+        background: var(--blue);
+    }
+
+    /* =====================================================
+       APP
+       ===================================================== */
+
+    .app {
+        position: relative;
+        z-index: 1;
+
+        display: grid;
+        grid-template-columns: 250px minmax(0, 1fr) 390px;
+
+        width: 100%;
+        height: 100vh;
+    }
+
+    /* =====================================================
+       SIDEBAR
+       ===================================================== */
+
+    .sidebar {
+        min-width: 0;
+
+        display: flex;
+        flex-direction: column;
+
+        padding: 22px 16px;
+
+        background:
+            linear-gradient(
+                180deg,
+                rgba(10,10,17,.92),
+                rgba(6,6,11,.82)
+            );
+
+        border-right: 1px solid var(--border);
+
+        backdrop-filter: blur(22px);
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        margin-bottom: 30px;
+    }
+
+    .brand-mark {
+        position: relative;
+
+        width: 44px;
+        height: 44px;
+
+        display: grid;
+        place-items: center;
+
+        border: 1px solid rgba(0,212,255,.3);
+        border-radius: 15px;
+
+        background:
+            radial-gradient(
+                circle,
+                rgba(0,212,255,.2),
+                rgba(123,92,255,.08) 55%,
+                transparent
+            );
+
+        box-shadow:
+            0 0 28px rgba(0,212,255,.12);
+
+        overflow: hidden;
+    }
+
+    .brand-mark span {
+        font-weight: 950;
+        font-size: 17px;
+        color: white;
+    }
+
+    .brand-text strong {
+        display: block;
+        font-size: 17px;
+        letter-spacing: .04em;
+    }
+
+    .brand-text small {
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+
+    .workspace {
+        padding: 13px;
+
+        border: 1px solid var(--border);
+        border-radius: 17px;
+
+        background: rgba(255,255,255,.025);
+
+        margin-bottom: 14px;
+    }
+
+    .workspace-title {
+        color: var(--muted);
+        font-size: 10px;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    .workspace-name {
+        font-weight: 750;
+        font-size: 14px;
+    }
+
+    .live-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        margin-top: 13px;
+
+        font-size: 11px;
+        color: var(--muted);
+    }
+
+    .live-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--muted);
+    }
+
+    .dot.online {
+        background: var(--green);
+        box-shadow: 0 0 12px rgba(67,242,140,.7);
+    }
+
+    .dot.error {
+        background: var(--red);
+        box-shadow: 0 0 12px rgba(255,85,119,.5);
+    }
+
+    .nav-title {
+        margin: 22px 8px 9px;
+
+        color: #65697A;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+    }
+
+    .nav-button {
+        width: 100%;
+
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        padding: 11px 12px;
+
+        border: 1px solid transparent;
+        border-radius: 13px;
+
+        background: transparent;
+        color: #AEB2C1;
+
+        text-align: left;
+        cursor: pointer;
+
+        transition:
+            background .2s,
+            border .2s,
+            color .2s,
+            transform .2s;
+    }
+
+    .nav-button:hover {
+        color: white;
+        background: rgba(255,255,255,.045);
+        border-color: var(--border);
+        transform: translateX(2px);
+    }
+
+    .nav-icon {
+        width: 25px;
+        text-align: center;
+        color: var(--blue);
+    }
+
+    .profile {
+        margin-top: auto;
+
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        padding: 12px;
+
+        border: 1px solid var(--border);
+        border-radius: 16px;
+
+        background: rgba(255,255,255,.025);
+    }
+
+    .avatar {
+        width: 34px;
+        height: 34px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 12px;
+
+        background:
+            linear-gradient(
+                135deg,
+                rgba(123,92,255,.35),
+                rgba(0,212,255,.2)
+            );
+
+        font-size: 12px;
+        font-weight: 900;
+    }
+
+    .profile strong {
+        display: block;
+        font-size: 12px;
+    }
+
+    .profile small {
+        color: var(--muted);
+        font-size: 10px;
+    }
+
+    /* =====================================================
+       CENTER
+       ===================================================== */
+
+    .center {
+        min-width: 0;
+        overflow-y: auto;
+
+        padding: 20px;
+
+        scrollbar-width: thin;
+        scrollbar-color: rgba(123,92,255,.35) transparent;
+    }
+
+    .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        margin-bottom: 18px;
+    }
+
+    .topbar h1 {
+        margin: 0;
+
+        font-size: clamp(20px, 2.2vw, 30px);
+        letter-spacing: -.04em;
+    }
+
+    .topbar p {
+        margin: 5px 0 0;
+
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .api-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+
+        padding: 8px 11px;
+
+        border: 1px solid var(--border);
+        border-radius: 999px;
+
+        background: rgba(255,255,255,.025);
+
+        color: var(--muted);
+        font-size: 10px;
+    }
+
+    /* =====================================================
+       CARDS
+       ===================================================== */
+
+    .glass-card {
+        position: relative;
+
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+
+        background:
+            linear-gradient(
+                145deg,
+                rgba(255,255,255,.055),
+                rgba(255,255,255,.018)
+            );
+
+        box-shadow: var(--shadow);
+
+        backdrop-filter: blur(22px);
+
+        overflow: hidden;
+    }
+
+    .glass-card::before {
+        content: "";
+
+        position: absolute;
+        inset: 0;
+
+        pointer-events: none;
+
+        background:
+            linear-gradient(
+                120deg,
+                rgba(255,255,255,.06),
+                transparent 35%
+            );
+    }
+
+    .core-grid {
+        display: grid;
+        grid-template-columns: 1.3fr .7fr;
+        gap: 15px;
+
+        margin-bottom: 15px;
+    }
+
+    .phoenix-card {
+        min-height: 275px;
+    }
+
+    .phoenix-video {
+        position: absolute;
+        inset: 0;
+
+        width: 100%;
+        height: 100%;
+
+        object-fit: cover;
+
+        opacity: .30;
+
+        filter:
+            saturate(1.2)
+            contrast(1.1)
+            brightness(.7);
+
+        pointer-events: none;
+    }
+
+    .phoenix-overlay {
+        position: absolute;
+        inset: 0;
+
+        background:
+            radial-gradient(
+                circle at 50% 45%,
+                transparent 0,
+                rgba(5,5,10,.08) 30%,
+                rgba(5,5,10,.9) 90%
+            );
+    }
+
+    .phoenix-content {
+        position: relative;
+        z-index: 2;
+
+        min-height: 275px;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+
+        padding: 22px;
+    }
+
+    .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        color: #BFC4D3;
+        font-size: 10px;
+        font-weight: 850;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+        content: "";
+
+        width: 7px;
+        height: 7px;
+
+        border-radius: 50%;
+
+        background: var(--blue);
+
+        box-shadow:
+            0 0 14px var(--blue);
+    }
+
+    .core-title {
+        margin-top: auto;
+    }
+
+    .core-title h2 {
+        margin: 0;
+
+        font-size: clamp(28px, 4vw, 48px);
+        line-height: .95;
+        letter-spacing: -.06em;
+    }
+
+    .core-title p {
+        max-width: 450px;
+
+        margin: 13px 0 0;
+
+        color: #9EA2B4;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .state-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+
+        width: fit-content;
+
+        margin-top: 18px;
+        padding: 8px 11px;
+
+        border-radius: 999px;
+
+        border: 1px solid var(--border);
+        background: rgba(0,0,0,.25);
+
+        color: #C7CBD8;
+        font-size: 10px;
+    }
+
+    .state-chip .state-light {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--blue);
+    }
+
+    .state-thinking .state-light {
+        background: var(--purple);
+        box-shadow: 0 0 14px var(--purple);
+        animation: pulseState 1s infinite;
+    }
+
+    .state-success .state-light {
+        background: var(--green);
+        box-shadow: 0 0 14px var(--green);
+    }
+
+    .state-error .state-light {
+        background: var(--red);
+    }
+
+    @keyframes pulseState {
+        50% {
+            opacity: .3;
+            transform: scale(.65);
+        }
+    }
+
+    /* =====================================================
+       REAL STATUS CARD
+       ===================================================== */
+
+    .engine-card {
+        min-height: 275px;
+        padding: 22px;
+    }
+
+    .engine-card h3 {
+        margin: 14px 0 6px;
+
+        font-size: 21px;
+        letter-spacing: -.04em;
+    }
+
+    .engine-card p {
+        margin: 0;
+
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.55;
+    }
+
+    .engine-status {
+        margin-top: 22px;
+
+        padding: 14px;
+
+        border: 1px solid var(--border);
+        border-radius: 16px;
+
+        background: rgba(0,0,0,.18);
+    }
+
+    .engine-line {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+
+        margin-bottom: 9px;
+
+        color: #A8ACBC;
+        font-size: 11px;
+    }
+
+    .engine-line:last-child {
+        margin-bottom: 0;
+    }
+
+    .engine-line strong {
+        color: white;
+        font-size: 11px;
+    }
+
+    /* =====================================================
+       PROJECTS
+       ===================================================== */
+
+    .section-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+
+        margin: 25px 2px 11px;
+    }
+
+    .section-head h2 {
+        margin: 0;
+
+        font-size: 18px;
+        letter-spacing: -.035em;
+    }
+
+    .section-head span {
+        color: var(--muted);
+        font-size: 10px;
+    }
+
+    .projects {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+        gap: 12px;
+    }
+
+    .project {
+        min-height: 135px;
+        padding: 17px;
+
+        cursor: default;
+
+        transition:
+            transform .25s,
+            border-color .25s;
+    }
+
+    .project:hover {
+        transform: translateY(-3px);
+        border-color: var(--border-hover);
+    }
+
+    .project-icon {
+        width: 33px;
+        height: 33px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 11px;
+
+        background: rgba(123,92,255,.12);
+        border: 1px solid rgba(123,92,255,.18);
+
+        margin-bottom: 12px;
+    }
+
+    .project h3 {
+        margin: 0 0 5px;
+
+        font-size: 14px;
+    }
+
+    .project p {
+        margin: 0;
+
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.5;
+    }
+
+    .empty-projects {
+        grid-column: 1 / -1;
+
+        padding: 25px;
+
+        color: var(--muted);
+        text-align: center;
+        font-size: 11px;
+    }
+
+    /* =====================================================
+       PAYMENT
+       ===================================================== */
+
+    .payment {
+        width: 100%;
+
+        margin-top: 15px;
+        padding: 18px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+
+        border: 1px solid rgba(67,242,140,.16);
+        border-radius: 19px;
+
+        background:
+            linear-gradient(
+                100deg,
+                rgba(67,242,140,.07),
+                rgba(0,212,255,.025)
+            );
+    }
+
+    .payment-copy strong {
+        display: block;
+
+        font-size: 13px;
+    }
+
+    .payment-copy span {
+        display: block;
+
+        margin-top: 4px;
+
+        color: var(--muted);
+        font-size: 10px;
+    }
+
+    .payment-button {
+        flex-shrink: 0;
+
+        padding: 11px 15px;
+
+        border: 1px solid rgba(67,242,140,.2);
+        border-radius: 12px;
+
+        background: rgba(67,242,140,.07);
+        color: #83F7B1;
+
+        font-size: 11px;
+        font-weight: 800;
+
+        cursor: not-allowed;
+        opacity: .55;
+    }
+
+    /* =====================================================
+       CHAT PANEL
+       ===================================================== */
+
+    .chat-panel {
+        min-width: 0;
+
+        display: flex;
+        flex-direction: column;
+
+        border-left: 1px solid var(--border);
+
+        background:
+            linear-gradient(
+                180deg,
+                rgba(10,10,17,.88),
+                rgba(5,5,10,.96)
+            );
+
+        backdrop-filter: blur(24px);
+    }
+
+    .chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        padding: 18px;
+
+        border-bottom: 1px solid var(--border);
+    }
+
+    .chat-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .chat-orb {
+        width: 37px;
+        height: 37px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 50%;
+
+        border: 1px solid rgba(0,212,255,.25);
+
+        background:
+            radial-gradient(
+                circle,
+                rgba(0,212,255,.2),
+                rgba(123,92,255,.08)
+            );
+
+        box-shadow:
+            0 0 22px rgba(0,212,255,.1);
+
+        animation: orbFloat 3.5s ease-in-out infinite;
+    }
+
+    @keyframes orbFloat {
+        50% {
+            transform: translateY(-2px);
+        }
+    }
+
+    .chat-header strong {
+        display: block;
+        font-size: 13px;
+    }
+
+    .chat-header small {
+        color: var(--muted);
+        font-size: 9px;
+    }
+
+    .chat-body {
+        flex: 1;
+
+        overflow-y: auto;
+
+        padding: 18px;
+
+        scrollbar-width: thin;
+        scrollbar-color: rgba(123,92,255,.3) transparent;
+    }
+
+    .chat-welcome {
+        margin: 35px 5px;
+
+        text-align: center;
+    }
+
+    .chat-welcome .mini-phoenix {
+        width: 58px;
+        height: 58px;
+
+        margin: 0 auto 16px;
+
+        border-radius: 19px;
+
+        display: grid;
+        place-items: center;
+
+        border: 1px solid rgba(123,92,255,.25);
+
+        background:
+            radial-gradient(
+                circle,
+                rgba(123,92,255,.18),
+                rgba(0,212,255,.04)
+            );
+
+        box-shadow:
+            0 0 35px rgba(123,92,255,.12);
+    }
+
+    .chat-welcome h2 {
+        margin: 0 0 7px;
+
+        font-size: 18px;
+        letter-spacing: -.04em;
+    }
+
+    .chat-welcome p {
+        margin: 0 auto;
+
+        max-width: 270px;
+
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .message {
+        display: flex;
+
+        margin: 12px 0;
+    }
+
+    .message.user {
+        justify-content: flex-end;
+    }
+
+    .message.ai {
+        justify-content: flex-start;
+    }
+
+    .bubble {
+        max-width: 88%;
+
+        padding: 11px 13px;
+
+        border-radius: 16px;
+
+        font-size: 12px;
+        line-height: 1.55;
+
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+
+        animation: messageIn .25s ease both;
+    }
+
+    @keyframes messageIn {
+        from {
+            opacity: 0;
+            transform: translateY(7px) scale(.98);
         }
 
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            font-family:
-                Inter,
-                system-ui,
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
-            background: #ffffff;
-            color: #111111;
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
+    }
+
+    .message.user .bubble {
+        background:
+            linear-gradient(
+                135deg,
+                rgba(123,92,255,.9),
+                rgba(0,212,255,.62)
+            );
+
+        color: white;
+
+        border-bottom-right-radius: 5px;
+    }
+
+    .message.ai .bubble {
+        background: rgba(255,255,255,.055);
+
+        border: 1px solid var(--border);
+
+        color: #D9DCE7;
+
+        border-bottom-left-radius: 5px;
+    }
+
+    .typing {
+        display: inline-flex;
+        gap: 4px;
+
+        padding: 11px 14px;
+
+        border-radius: 15px;
+
+        background: rgba(255,255,255,.045);
+        border: 1px solid var(--border);
+    }
+
+    .typing span {
+        width: 5px;
+        height: 5px;
+
+        border-radius: 50%;
+
+        background: var(--blue);
+
+        animation: typing 1s infinite;
+    }
+
+    .typing span:nth-child(2) {
+        animation-delay: .15s;
+    }
+
+    .typing span:nth-child(3) {
+        animation-delay: .3s;
+    }
+
+    @keyframes typing {
+        0%,100% {
+            opacity: .2;
+            transform: translateY(0);
+        }
+
+        50% {
+            opacity: 1;
+            transform: translateY(-3px);
+        }
+    }
+
+    /* =====================================================
+       COMPOSER
+       ===================================================== */
+
+    .composer-wrap {
+        padding: 12px;
+
+        border-top: 1px solid var(--border);
+
+        background: rgba(5,5,10,.82);
+    }
+
+    .composer {
+        display: flex;
+        align-items: flex-end;
+        gap: 7px;
+
+        padding: 7px;
+
+        border: 1px solid var(--border);
+        border-radius: 17px;
+
+        background: rgba(255,255,255,.035);
+
+        transition:
+            border-color .2s,
+            box-shadow .2s;
+    }
+
+    .composer:focus-within {
+        border-color: rgba(123,92,255,.45);
+
+        box-shadow:
+            0 0 30px rgba(123,92,255,.08);
+    }
+
+    textarea {
+        flex: 1;
+
+        min-width: 0;
+        min-height: 40px;
+        max-height: 125px;
+
+        resize: none;
+
+        padding: 10px;
+
+        border: 0;
+        outline: 0;
+
+        background: transparent;
+
+        color: white;
+
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    textarea::placeholder {
+        color: #646879;
+    }
+
+    .send {
+        width: 40px;
+        height: 40px;
+
+        flex-shrink: 0;
+
+        border: 0;
+        border-radius: 12px;
+
+        background:
+            linear-gradient(
+                135deg,
+                var(--purple),
+                var(--blue)
+            );
+
+        color: white;
+
+        cursor: pointer;
+
+        font-size: 17px;
+        font-weight: 900;
+
+        box-shadow:
+            0 7px 22px rgba(123,92,255,.2);
+
+        transition:
+            transform .18s,
+            opacity .18s;
+    }
+
+    .send:hover {
+        transform: translateY(-1px);
+    }
+
+    .send:active {
+        transform: scale(.94);
+    }
+
+    .send:disabled {
+        opacity: .4;
+        cursor: not-allowed;
+    }
+
+    .composer-note {
+        margin-top: 7px;
+
+        color: #555968;
+
+        text-align: center;
+        font-size: 8px;
+    }
+
+    /* =====================================================
+       MOBILE
+       ===================================================== */
+
+    .mobile-header {
+        display: none;
+    }
+
+    @media (max-width: 1100px) {
+
+        .app {
+            grid-template-columns: 210px minmax(0,1fr);
+        }
+
+        .chat-panel {
+            display: none;
+        }
+
+        .core-grid {
+            grid-template-columns: 1fr .65fr;
+        }
+    }
+
+    @media (max-width: 760px) {
 
         body {
             overflow: hidden;
         }
 
         .app {
-            width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
+            display: block;
         }
 
-        /* ==================================================
-           HEADER
-           ================================================== */
+        .sidebar {
+            display: none;
+        }
 
-        .header {
-            height: 64px;
+        .center {
+            height: 100vh;
+            padding: 12px;
+            padding-top: 62px;
+        }
+
+        .mobile-header {
+            position: fixed;
+            z-index: 50;
+
+            top: 0;
+            left: 0;
+            right: 0;
+
+            height: 52px;
+
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 18px;
-            border-bottom: 1px solid #eeeeee;
-            background: #ffffff;
-            flex-shrink: 0;
+
+            padding: 0 13px;
+
+            border-bottom: 1px solid var(--border);
+
+            background: rgba(5,5,10,.86);
+
+            backdrop-filter: blur(20px);
         }
 
-        .brand {
+        .mobile-brand {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-weight: 800;
-            font-size: 20px;
-            letter-spacing: -0.5px;
-        }
+            gap: 8px;
 
-        .logo {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            background: #111111;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            font-weight: 800;
-        }
-
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 12px;
-            color: #777777;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #22c55e;
-        }
-
-        /* ==================================================
-           CHAT
-           ================================================== */
-
-        .chat {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px 16px 120px;
-        }
-
-        .chat-inner {
-            width: 100%;
-            max-width: 850px;
-            margin: 0 auto;
-        }
-
-        .welcome {
-            min-height: 65vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .welcome-logo {
-            width: 68px;
-            height: 68px;
-            border-radius: 20px;
-            background: #111111;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
             font-weight: 900;
-            margin-bottom: 20px;
+            font-size: 14px;
         }
 
-        .welcome h1 {
-            margin: 0 0 10px;
-            font-size: 34px;
-            letter-spacing: -1.5px;
+        .mobile-orb {
+            width: 28px;
+            height: 28px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 9px;
+
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(0,212,255,.22),
+                    rgba(123,92,255,.12)
+                );
+
+            border: 1px solid rgba(0,212,255,.22);
         }
 
-        .welcome p {
-            margin: 0;
-            color: #777777;
-            font-size: 15px;
-            max-width: 500px;
-            line-height: 1.6;
+        .topbar {
+            margin-bottom: 13px;
         }
 
-        .message {
-            display: flex;
-            margin: 20px 0;
+        .topbar h1 {
+            font-size: 22px;
         }
 
-        .message.user {
-            justify-content: flex-end;
-        }
-
-        .message.ai {
-            justify-content: flex-start;
-        }
-
-        .bubble {
-            max-width: 82%;
-            padding: 13px 16px;
-            border-radius: 18px;
-            line-height: 1.55;
-            font-size: 15px;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-        }
-
-        .user .bubble {
-            background: #111111;
-            color: #ffffff;
-            border-bottom-right-radius: 5px;
-        }
-
-        .ai .bubble {
-            background: #f3f3f3;
-            color: #111111;
-            border-bottom-left-radius: 5px;
-        }
-
-        .loading {
-            display: inline-flex;
-            gap: 5px;
-            padding: 14px 17px;
-            background: #f3f3f3;
-            border-radius: 18px;
-        }
-
-        .loading span {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #888888;
-            animation: pulse 1s infinite;
-        }
-
-        .loading span:nth-child(2) {
-            animation-delay: .15s;
-        }
-
-        .loading span:nth-child(3) {
-            animation-delay: .30s;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: .25;
-            }
-
-            50% {
-                opacity: 1;
-            }
-        }
-
-        /* ==================================================
-           INPUT
-           ================================================== */
-
-        .composer-area {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            padding: 12px 14px 16px;
-            background: linear-gradient(
-                to top,
-                #ffffff 75%,
-                rgba(255,255,255,0)
-            );
-        }
-
-        .composer {
-            width: 100%;
-            max-width: 850px;
-            margin: 0 auto;
-            display: flex;
-            align-items: flex-end;
-            gap: 9px;
-            padding: 8px;
-            border: 1px solid #dddddd;
-            border-radius: 18px;
-            background: #ffffff;
-            box-shadow:
-                0 5px 25px rgba(0,0,0,.07);
-        }
-
-        textarea {
-            flex: 1;
-            resize: none;
-            border: 0;
-            outline: 0;
-            padding: 10px;
-            font: inherit;
-            font-size: 15px;
-            min-height: 42px;
-            max-height: 130px;
-            background: transparent;
-        }
-
-        .send {
-            width: 42px;
-            height: 42px;
-            border: 0;
-            border-radius: 13px;
-            background: #111111;
-            color: #ffffff;
-            cursor: pointer;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        .send:hover {
-            opacity: .85;
-        }
-
-        .send:disabled {
-            opacity: .35;
-            cursor: not-allowed;
-        }
-
-        .footer-text {
-            max-width: 850px;
-            margin: 7px auto 0;
-            text-align: center;
+        .topbar p {
             font-size: 10px;
-            color: #999999;
         }
 
-        /* ==================================================
-           MOBILE
-           ================================================== */
-
-        @media (max-width: 600px) {
-
-            .header {
-                height: 58px;
-                padding: 0 14px;
-            }
-
-            .brand {
-                font-size: 18px;
-            }
-
-            .logo {
-                width: 31px;
-                height: 31px;
-            }
-
-            .welcome h1 {
-                font-size: 30px;
-            }
-
-            .welcome p {
-                font-size: 14px;
-            }
-
-            .bubble {
-                max-width: 88%;
-                font-size: 14px;
-            }
-
-            .chat {
-                padding-top: 12px;
-            }
-
-            .composer-area {
-                padding-left: 9px;
-                padding-right: 9px;
-            }
+        .core-grid {
+            display: block;
         }
 
-    </style>
+        .phoenix-card,
+        .phoenix-content {
+            min-height: 260px;
+        }
 
-</head>
+        .engine-card {
+            min-height: auto;
+            margin-top: 12px;
+        }
+
+        .projects {
+            grid-template-columns: 1fr;
+        }
+
+        .payment {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .payment-button {
+            width: 100%;
+        }
+    }
+
+    /* =====================================================
+       REDUCED MOTION
+       ===================================================== */
+
+    @media (prefers-reduced-motion: reduce) {
+
+        *,
+        *::before,
+        *::after {
+            animation-duration: .001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: .001ms !important;
+        }
+    }
+</style>
+
+</head><body><div class="background-grid"></div>
+<div class="ambient one"></div>
+<div class="ambient two"></div><div class="app"><!-- =====================================================
+     MOBILE HEADER
+     ====================================================== -->
+
+<header class="mobile-header">
+
+    <div class="mobile-brand">
+        <div class="mobile-orb">🪽</div>
+        ADRYNX
+    </div>
+
+    <div class="api-badge">
+        <span
+            class="dot"
+            id="mobileStatusDot"
+        ></span>
+
+        <span id="mobileStatusText">
+            Vérification...
+        </span>
+    </div>
+
+</header>
 
 
-<body>
+<!-- =====================================================
+     SIDEBAR
+     ====================================================== -->
 
-<div class="app">
+<aside class="sidebar">
 
-    <header class="header">
+    <div class="brand">
 
-        <div class="brand">
+        <div class="brand-mark">
+            <span>🪽</span>
+        </div>
 
-            <div class="logo">
-                A
-            </div>
+        <div class="brand-text">
+
+            <strong>ADRYNX</strong>
+
+            <small>
+                Command Center
+            </small>
+
+        </div>
+
+    </div>
+
+
+    <div class="workspace">
+
+        <div class="workspace-title">
+            Workspace
+        </div>
+
+        <div class="workspace-name">
+            Futur / Afrique
+        </div>
+
+        <div class="live-row">
 
             <span>
-                ADRYNX
+                API ADRYNX
+            </span>
+
+            <span
+                class="live-state"
+                id="sidebarStatus"
+            >
+                <span
+                    class="dot"
+                    id="sidebarStatusDot"
+                ></span>
+
+                <span id="sidebarStatusText">
+                    Vérification
+                </span>
             </span>
 
         </div>
 
-        <div class="status">
+    </div>
 
-            <span class="status-dot"></span>
 
-            <span id="statusText">
-                En ligne
+    <div class="nav-title">
+        Navigation
+    </div>
+
+
+    <button
+        class="nav-button"
+        type="button"
+        onclick="focusChat()"
+    >
+
+        <span class="nav-icon">
+            ◈
+        </span>
+
+        <span>
+            Phoenix Chat
+        </span>
+
+    </button>
+
+
+    <button
+        class="nav-button"
+        type="button"
+        onclick="chargerProjets(true)"
+    >
+
+        <span class="nav-icon">
+            ◇
+        </span>
+
+        <span>
+            Projets
+        </span>
+
+    </button>
+
+
+    <button
+        class="nav-button"
+        type="button"
+        onclick="chargerDashboard()"
+    >
+
+        <span class="nav-icon">
+            ◌
+        </span>
+
+        <span>
+            Dashboard
+        </span>
+
+    </button>
+
+
+    <div class="nav-title">
+        Système
+    </div>
+
+
+    <div class="workspace">
+
+        <div class="workspace-title">
+            Mobile Money
+        </div>
+
+        <div class="workspace-name">
+            Non configuré
+        </div>
+
+        <div class="live-row">
+            <span>
+                Paiement réel
             </span>
 
+            <span style="color:#666;">
+                OFF
+            </span>
+        </div>
+
+    </div>
+
+
+    <div class="profile">
+
+        <div class="avatar">
+            JD
+        </div>
+
+        <div>
+
+            <strong>
+                Jonathan
+            </strong>
+
+            <small>
+                Brazzaville
+            </small>
+
+        </div>
+
+    </div>
+
+</aside>
+
+
+<!-- =====================================================
+     CENTER
+     ====================================================== -->
+
+<main class="center">
+
+    <div class="topbar">
+
+        <div>
+
+            <h1>
+                Command Center
+            </h1>
+
+            <p>
+                Interface interactive du cœur ADRYNX.
+            </p>
+
+        </div>
+
+        <div class="api-badge">
+
+            <span
+                class="dot"
+                id="mainStatusDot"
+            ></span>
+
+            <span id="mainStatusText">
+                Vérification API
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <section class="core-grid">
+
+        <!-- PHOENIX -->
+
+        <article
+            class="glass-card phoenix-card"
+            id="phoenixCard"
+        >
+
+            <video
+                class="phoenix-video"
+                id="phoenixVideo"
+                src="https://files.catbox.moe/y2nvi4.mp4"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="metadata"
+            ></video>
+
+            <div class="phoenix-overlay"></div>
+
+            <div class="phoenix-content">
+
+                <div class="eyebrow">
+                    Phoenix Core
+                </div>
+
+                <div class="core-title">
+
+                    <h2>
+                        ADRYNX
+                    </h2>
+
+                    <p>
+                        Le Phoenix visuel représente
+                        l'état réel de l'interaction
+                        avec ADRYNX. Il ne simule pas
+                        un traitement qui n'a pas lieu.
+                    </p>
+
+                    <div
+                        class="state-chip"
+                        id="phoenixState"
+                    >
+
+                        <span
+                            class="state-light"
+                        ></span>
+
+                        <span id="phoenixStateText">
+                            En attente
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </article>
+
+
+        <!-- ENGINE -->
+
+        <article class="glass-card engine-card">
+
+            <div class="eyebrow">
+                System Status
+            </div>
+
+            <h3>
+                Cristal Engine
+            </h3>
+
+            <p>
+                État technique provenant
+                de l'API ADRYNX.
+            </p>
+
+            <div class="engine-status">
+
+                <div class="engine-line">
+
+                    <span>
+                        Service
+                    </span>
+
+                    <strong id="engineService">
+                        —
+                    </strong>
+
+                </div>
+
+                <div class="engine-line">
+
+                    <span>
+                        Version
+                    </span>
+
+                    <strong id="engineVersion">
+                        —
+                    </strong>
+
+                </div>
+
+                <div class="engine-line">
+
+                    <span>
+                        Modèle
+                    </span>
+
+                    <strong id="engineModel">
+                        —
+                    </strong>
+
+                </div>
+
+                <div class="engine-line">
+
+                    <span>
+                        Groq
+                    </span>
+
+                    <strong id="engineGroq">
+                        —
+                    </strong>
+
+                </div>
+
+                <div class="engine-line">
+
+                    <span>
+                        Vérification
+                    </span>
+
+                    <strong id="engineVerification">
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+    <!-- PROJECTS -->
+
+    <div class="section-head">
+
+        <h2>
+            Projets qui brisent l'impossible
+        </h2>
+
+        <span id="projectCount">
+            Chargement...
+        </span>
+
+    </div>
+
+
+    <section
+        class="projects"
+        id="projects"
+    >
+
+        <div class="glass-card empty-projects">
+            Chargement des projets ADRYNX...
+        </div>
+
+    </section>
+
+
+    <!-- PAYMENT -->
+
+    <section class="payment">
+
+        <div class="payment-copy">
+
+            <strong>
+                Paiement 5000 FCFA
+            </strong>
+
+            <span>
+                Aucun fournisseur de paiement
+                n'est actuellement connecté à cette interface.
+            </span>
+
+        </div>
+
+        <button
+            class="payment-button"
+            type="button"
+            disabled
+            title="Paiement non configuré"
+        >
+            Paiement non configuré
+        </button>
+
+    </section>
+
+</main>
+
+
+<!-- =====================================================
+     CHAT
+     ====================================================== -->
+
+<aside
+    class="chat-panel"
+    id="chatPanel"
+>
+
+    <header class="chat-header">
+
+        <div class="chat-brand">
+
+            <div class="chat-orb">
+                🪽
+            </div>
+
+            <div>
+
+                <strong>
+                    Phoenix Chat
+                </strong>
+
+                <small>
+                    ADRYNX conversationnel
+                </small>
+
+            </div>
+
+        </div>
+
+        <div
+            class="api-badge"
+            id="chatStatus"
+        >
+            API
         </div>
 
     </header>
 
 
-    <main
-        class="chat"
-        id="chat"
+    <div
+        class="chat-body"
+        id="chatBody"
     >
 
-        <div class="chat-inner">
+        <div
+            class="chat-welcome"
+            id="chatWelcome"
+        >
 
-            <section
-                class="welcome"
-                id="welcome"
-            >
+            <div class="mini-phoenix">
+                🪽
+            </div>
 
-                <div class="welcome-logo">
-                    A
-                </div>
+            <h2>
+                Bonjour.
+            </h2>
 
-                <h1>
-                    ADRYNX
-                </h1>
-
-                <p>
-                    Ton environnement numérique
-                    interactif et assistant cognitif.
-                </p>
-
-            </section>
+            <p>
+                Tu peux parler directement
+                avec le véritable moteur ADRYNX.
+            </p>
 
         </div>
 
-    </main>
+    </div>
 
 
-    <div class="composer-area">
+    <div class="composer-wrap">
 
         <form
             class="composer"
@@ -423,9 +1833,9 @@
 
             <textarea
                 id="message"
-                placeholder="Écris à ADRYNX..."
                 rows="1"
                 autocomplete="off"
+                placeholder="Écris à ADRYNX..."
             ></textarea>
 
             <button
@@ -439,56 +1849,324 @@
 
         </form>
 
-        <div class="footer-text">
-            ADRYNX peut faire des erreurs.
+        <div class="composer-note">
+            Les réponses proviennent du backend ADRYNX.
         </div>
 
     </div>
 
-</div>
+</aside>
 
+</div><script>
 
-<script>
+    /* ========================================================
+       CONFIGURATION
+       ======================================================== */
 
-    const chat = document.getElementById("chat");
-    const composer = document.getElementById("composer");
-    const input = document.getElementById("message");
-    const send = document.getElementById("send");
-    const welcome = document.getElementById("welcome");
-    const statusText = document.getElementById("statusText");
+    const API = "";
+
+    const TELEPHONE = "anon";
 
     let conversationId = null;
+
+    let apiOnline = false;
+
+    let requestActive = false;
+
+
+    /* ========================================================
+       ELEMENTS
+       ======================================================== */
+
+    const input =
+        document.getElementById("message");
+
+    const send =
+        document.getElementById("send");
+
+    const composer =
+        document.getElementById("composer");
+
+    const chatBody =
+        document.getElementById("chatBody");
+
+    const chatWelcome =
+        document.getElementById("chatWelcome");
+
+    const phoenixState =
+        document.getElementById("phoenixState");
+
+    const phoenixStateText =
+        document.getElementById("phoenixStateText");
+
+    const phoenixVideo =
+        document.getElementById("phoenixVideo");
+
+
+    /* ========================================================
+       PHOENIX STATE
+       ======================================================== */
+
+    function setPhoenixState(
+        state,
+        text
+    ) {
+
+        phoenixState.classList.remove(
+            "state-thinking",
+            "state-success",
+            "state-error"
+        );
+
+        if (state === "thinking") {
+            phoenixState.classList.add(
+                "state-thinking"
+            );
+        }
+
+        if (state === "success") {
+            phoenixState.classList.add(
+                "state-success"
+            );
+        }
+
+        if (state === "error") {
+            phoenixState.classList.add(
+                "state-error"
+            );
+        }
+
+        phoenixStateText.textContent =
+            text;
+    }
+
+
+    /* ========================================================
+       API STATUS
+       ======================================================== */
+
+    function updateStatus(
+        online,
+        text
+    ) {
+
+        apiOnline = online;
+
+        const dots = [
+            document.getElementById(
+                "mainStatusDot"
+            ),
+            document.getElementById(
+                "sidebarStatusDot"
+            ),
+            document.getElementById(
+                "mobileStatusDot"
+            )
+        ];
+
+        const texts = [
+            document.getElementById(
+                "mainStatusText"
+            ),
+            document.getElementById(
+                "sidebarStatusText"
+            ),
+            document.getElementById(
+                "mobileStatusText"
+            )
+        ];
+
+        dots.forEach(dot => {
+
+            if (!dot) {
+                return;
+            }
+
+            dot.classList.toggle(
+                "online",
+                online
+            );
+
+            dot.classList.toggle(
+                "error",
+                !online
+            );
+
+        });
+
+        texts.forEach(element => {
+
+            if (element) {
+                element.textContent =
+                    text;
+            }
+
+        });
+
+        const chatStatus =
+            document.getElementById(
+                "chatStatus"
+            );
+
+        if (chatStatus) {
+            chatStatus.textContent =
+                online
+                    ? "API EN LIGNE"
+                    : "API HORS LIGNE";
+        }
+    }
+
+
+    async function verifierAPI() {
+
+        try {
+
+            const response =
+                await fetch(
+                    API + "/api/health",
+                    {
+                        method: "GET",
+                        cache: "no-store"
+                    }
+                );
+
+            if (!response.ok) {
+                throw new Error(
+                    "HTTP " +
+                    response.status
+                );
+            }
+
+            const data =
+                await response.json();
+
+            updateStatus(
+                true,
+                "API en ligne"
+            );
+
+            document.getElementById(
+                "engineService"
+            ).textContent =
+                data.service || "ADRYNX";
+
+            document.getElementById(
+                "engineVersion"
+            ).textContent =
+                data.version || "—";
+
+            document.getElementById(
+                "engineModel"
+            ).textContent =
+                data.model || "—";
+
+            document.getElementById(
+                "engineGroq"
+            ).textContent =
+                data.groq_configured
+                    ? "Configuré"
+                    : "Non configuré";
+
+            document.getElementById(
+                "engineVerification"
+            ).textContent =
+                data.verification
+                    ? "Active"
+                    : "Inactive";
+
+            return true;
+
+        } catch (error) {
+
+            updateStatus(
+                false,
+                "API indisponible"
+            );
+
+            document.getElementById(
+                "engineService"
+            ).textContent =
+                "Indisponible";
+
+            document.getElementById(
+                "engineVersion"
+            ).textContent =
+                "—";
+
+            document.getElementById(
+                "engineModel"
+            ).textContent =
+                "—";
+
+            document.getElementById(
+                "engineGroq"
+            ).textContent =
+                "—";
+
+            document.getElementById(
+                "engineVerification"
+            ).textContent =
+                "—";
+
+            return false;
+        }
+    }
+
+
+    /* ========================================================
+       CHAT UI
+       ======================================================== */
+
+    function removeWelcome() {
+
+        if (
+            document.getElementById(
+                "chatWelcome"
+            )
+        ) {
+            document.getElementById(
+                "chatWelcome"
+            ).remove();
+        }
+    }
+
 
     function ajouterMessage(
         texte,
         type
     ) {
 
-        if (welcome) {
-            welcome.remove();
-        }
+        removeWelcome();
 
         const wrapper =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         wrapper.className =
             "message " + type;
 
         const bubble =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
-        bubble.className = "bubble";
+        bubble.className =
+            "bubble";
 
-        bubble.textContent = texte;
+        bubble.textContent =
+            texte;
 
-        wrapper.appendChild(bubble);
+        wrapper.appendChild(
+            bubble
+        );
 
-        chat
-            .querySelector(".chat-inner")
-            .appendChild(wrapper);
+        chatBody.appendChild(
+            wrapper
+        );
 
-        chat.scrollTop =
-            chat.scrollHeight;
+        chatBody.scrollTop =
+            chatBody.scrollHeight;
 
         return wrapper;
     }
@@ -496,12 +2174,12 @@
 
     function ajouterChargement() {
 
-        if (welcome) {
-            welcome.remove();
-        }
+        removeWelcome();
 
         const wrapper =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         wrapper.className =
             "message ai";
@@ -509,20 +2187,30 @@
         wrapper.id =
             "loadingMessage";
 
-        wrapper.innerHTML = `
-            <div class="loading">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
+        const typing =
+            document.createElement(
+                "div"
+            );
+
+        typing.className =
+            "typing";
+
+        typing.innerHTML = `
+            <span></span>
+            <span></span>
+            <span></span>
         `;
 
-        chat
-            .querySelector(".chat-inner")
-            .appendChild(wrapper);
+        wrapper.appendChild(
+            typing
+        );
 
-        chat.scrollTop =
-            chat.scrollHeight;
+        chatBody.appendChild(
+            wrapper
+        );
+
+        chatBody.scrollTop =
+            chatBody.scrollHeight;
 
         return wrapper;
     }
@@ -564,9 +2252,7 @@
             return data.message;
         }
 
-        if (
-            data.data
-        ) {
+        if (data.data) {
             return extraireReponse(
                 data.data
             );
@@ -580,14 +2266,23 @@
     }
 
 
+    /* ========================================================
+       ENVOI RÉEL À ADRYNX
+       ======================================================== */
+
     async function envoyerMessage() {
 
         const message =
             input.value.trim();
 
-        if (!message) {
+        if (
+            !message ||
+            requestActive
+        ) {
             return;
         }
+
+        requestActive = true;
 
         ajouterMessage(
             message,
@@ -597,9 +2292,14 @@
         input.value = "";
 
         input.style.height =
-            "42px";
+            "40px";
 
         send.disabled = true;
+
+        setPhoenixState(
+            "thinking",
+            "ADRYNX traite la demande"
+        );
 
         const loading =
             ajouterChargement();
@@ -608,7 +2308,7 @@
 
             const response =
                 await fetch(
-                    "/api/ask",
+                    API + "/api/ask",
                     {
                         method: "POST",
 
@@ -617,12 +2317,14 @@
                                 "application/json"
                         },
 
-                        body: JSON.stringify({
-                            message: message,
-                            telephone: "anon",
-                            conversation_id:
-                                conversationId
-                        })
+                        body:
+                            JSON.stringify({
+                                message,
+                                telephone:
+                                    TELEPHONE,
+                                conversation_id:
+                                    conversationId
+                            })
                     }
                 );
 
@@ -635,21 +2337,29 @@
                 data = null;
             }
 
-            loading.remove();
+            if (
+                document.getElementById(
+                    "loadingMessage"
+                )
+            ) {
+                loading.remove();
+            }
 
             if (!response.ok) {
 
                 const erreur =
-                    data?.detail
-                    || "Une erreur est survenue.";
+                    data?.detail ||
+                    "Une erreur est survenue.";
 
                 ajouterMessage(
                     "Erreur : " + erreur,
                     "ai"
                 );
 
-                statusText.textContent =
-                    "Erreur";
+                setPhoenixState(
+                    "error",
+                    "Erreur de traitement"
+                );
 
                 return;
             }
@@ -663,27 +2373,65 @@
                     data.conversation_id;
             }
 
+            const reponse =
+                extraireReponse(
+                    data
+                );
+
             ajouterMessage(
-                extraireReponse(data),
+                reponse,
                 "ai"
             );
 
-            statusText.textContent =
-                "En ligne";
+            setPhoenixState(
+                "success",
+                "Réponse reçue"
+            );
+
+            setTimeout(
+                () => {
+
+                    if (!requestActive) {
+
+                        setPhoenixState(
+                            "",
+                            "En attente"
+                        );
+
+                    }
+
+                },
+                1800
+            );
 
         } catch (error) {
 
-            loading.remove();
+            if (
+                document.getElementById(
+                    "loadingMessage"
+                )
+            ) {
+                loading.remove();
+            }
 
             ajouterMessage(
                 "Impossible de contacter ADRYNX pour le moment.",
                 "ai"
             );
 
-            statusText.textContent =
-                "Connexion indisponible";
+            setPhoenixState(
+                "error",
+                "Connexion indisponible"
+            );
+
+            updateStatus(
+                false,
+                "Connexion indisponible"
+            );
 
         } finally {
+
+            requestActive = false;
 
             send.disabled = false;
 
@@ -692,40 +2440,45 @@
     }
 
 
+    /* ========================================================
+       FORMULAIRE
+       ======================================================== */
+
     composer.addEventListener(
         "submit",
-        function(event) {
+        event => {
 
             event.preventDefault();
 
             envoyerMessage();
+
         }
     );
 
 
     input.addEventListener(
         "input",
-        function() {
+        function () {
 
             this.style.height =
-                "42px";
+                "40px";
 
             this.style.height =
                 Math.min(
                     this.scrollHeight,
-                    130
+                    125
                 ) + "px";
+
         }
     );
 
 
     input.addEventListener(
         "keydown",
-        function(event) {
+        event => {
 
             if (
-                event.key === "Enter"
-                &&
+                event.key === "Enter" &&
                 !event.shiftKey
             ) {
 
@@ -733,44 +2486,315 @@
 
                 envoyerMessage();
             }
+
         }
     );
 
 
-    async function verifierAPI() {
+    /* ========================================================
+       FOCUS CHAT
+       ======================================================== */
+
+    function focusChat() {
+
+        input.focus();
+
+        if (
+            window.innerWidth <= 1100
+        ) {
+
+            document.getElementById(
+                "chatPanel"
+            )?.scrollIntoView({
+                behavior: "smooth"
+            });
+
+        }
+
+    }
+
+
+    /* ========================================================
+       PROJETS RÉELS
+       ======================================================== */
+
+    async function chargerProjets(
+        scroll = false
+    ) {
+
+        const container =
+            document.getElementById(
+                "projects"
+            );
 
         try {
 
             const response =
                 await fetch(
-                    "/api/health"
+                    API +
+                    "/api/projects?telephone=" +
+                    encodeURIComponent(
+                        TELEPHONE
+                    ),
+                    {
+                        cache: "no-store"
+                    }
                 );
 
-            if (response.ok) {
-
-                statusText.textContent =
-                    "En ligne";
-
-            } else {
-
-                statusText.textContent =
-                    "API indisponible";
+            if (!response.ok) {
+                throw new Error(
+                    "HTTP " +
+                    response.status
+                );
             }
 
-        } catch {
+            const data =
+                await response.json();
 
-            statusText.textContent =
-                "Connexion indisponible";
+            const projects =
+                Array.isArray(
+                    data.projects
+                )
+                    ? data.projects
+                    : [];
+
+            document.getElementById(
+                "projectCount"
+            ).textContent =
+                projects.length +
+                (
+                    projects.length > 1
+                        ? " projets"
+                        : " projet"
+                );
+
+            container.innerHTML = "";
+
+            if (!projects.length) {
+
+                const empty =
+                    document.createElement(
+                        "div"
+                    );
+
+                empty.className =
+                    "glass-card empty-projects";
+
+                empty.textContent =
+                    "Aucun projet enregistré dans ADRYNX pour cet utilisateur.";
+
+                container.appendChild(
+                    empty
+                );
+
+                return;
+            }
+
+            projects.forEach(
+                project => {
+
+                    const card =
+                        document.createElement(
+                            "article"
+                        );
+
+                    card.className =
+                        "glass-card project";
+
+                    const icon =
+                        document.createElement(
+                            "div"
+                        );
+
+                    icon.className =
+                        "project-icon";
+
+                    icon.textContent =
+                        "◇";
+
+                    const title =
+                        document.createElement(
+                            "h3"
+                        );
+
+                    title.textContent =
+                        project.nom ||
+                        "Projet ADRYNX";
+
+                    const description =
+                        document.createElement(
+                            "p"
+                        );
+
+                    description.textContent =
+                        project.objectif ||
+                        "Aucun objectif renseigné.";
+
+                    card.appendChild(
+                        icon
+                    );
+
+                    card.appendChild(
+                        title
+                    );
+
+                    card.appendChild(
+                        description
+                    );
+
+                    container.appendChild(
+                        card
+                    );
+
+                }
+            );
+
+            if (scroll) {
+
+                container.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+            }
+
+        } catch (error) {
+
+            container.innerHTML = "";
+
+            const errorBox =
+                document.createElement(
+                    "div"
+                );
+
+            errorBox.className =
+                "glass-card empty-projects";
+
+            errorBox.textContent =
+                "Impossible de charger les projets depuis l'API ADRYNX.";
+
+            container.appendChild(
+                errorBox
+            );
+
+            document.getElementById(
+                "projectCount"
+            ).textContent =
+                "Indisponible";
         }
     }
 
 
-    verifierAPI();
+    /* ========================================================
+       DASHBOARD RÉEL
+       ======================================================== */
 
-    input.focus();
+    async function chargerDashboard() {
 
-</script>
+        try {
 
-</body>
+            const response =
+                await fetch(
+                    API +
+                    "/api/dashboard?telephone=" +
+                    encodeURIComponent(
+                        TELEPHONE
+                    ),
+                    {
+                        cache: "no-store"
+                    }
+                );
 
+            if (!response.ok) {
+                throw new Error(
+                    "HTTP " +
+                    response.status
+                );
+            }
+
+            const data =
+                await response.json();
+
+            /*
+             * Le dashboard reste volontairement
+             * discret ici : aucune donnée n'est
+             * inventée pour créer des statistiques
+             * visuelles.
+             *
+             * Les données réelles sont récupérées
+             * et peuvent être intégrées à une vue
+             * dédiée lorsque leur structure est
+             * stabilisée.
+             */
+
+            console.info(
+                "ADRYNX dashboard:",
+                data.dashboard
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "Dashboard indisponible:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* ========================================================
+       PHOENIX VIDEO
+       ======================================================== */
+
+    phoenixVideo.addEventListener(
+        "error",
+        () => {
+
+            /*
+             * La vidéo est purement visuelle.
+             * Son absence ne doit jamais empêcher
+             * ADRYNX de fonctionner.
+             */
+
+            phoenixVideo.style.display =
+                "none";
+
+        }
+    );
+
+
+    /* ========================================================
+       INITIALISATION
+       ======================================================== */
+
+    async function initialiser() {
+
+        setPhoenixState(
+            "",
+            "Vérification du système"
+        );
+
+        await verifierAPI();
+
+        await chargerProjets();
+
+        chargerDashboard();
+
+        setPhoenixState(
+            "",
+            apiOnline
+                ? "En attente"
+                : "API indisponible"
+        );
+
+        input.focus();
+
+    }
+
+
+    initialiser();
+
+</script></body>
 </html>
