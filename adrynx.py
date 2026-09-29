@@ -1,15 +1,3 @@
-Conversation suivie. 
-
-Aller au contenu
-Utiliser Gmail avec un lecteur d'écran
-1 sur 42
-(aucun objet)
-Boîte de réception
-
-AI ADRYNX <adrynxai@gmail.com>
-06:17 (il y a 2 minutes)
-À moi
-
 # ADRYNX v4.0 - PLATEFORME INTERACTIVE NOUVELLE GENERATION
 # Fondateur: Jonathan Dejah OBENDA - 02/06/2026
 # Vision: UTILISATEUR -> INTERFACE -> CONTEXTE -> IA -> DONNEES -> SERVICES -> ACTION -> RETOUR -> APPRENTISSAGE
