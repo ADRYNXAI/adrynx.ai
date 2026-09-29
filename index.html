@@ -1,1724 +1,902 @@
-<!DOCTYPE html><html lang="fr"><head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#05050A"><title>ADRYNX — Command Center Phoenix</title>
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#05050A">
+<title>ADRYNX — Command Center</title>
 
 <style>
-    :root {
-        --bg: #05050A;
-        --panel: rgba(13, 14, 23, .78);
-        --panel-strong: rgba(10, 11, 18, .94);
-        --border: rgba(255,255,255,.09);
-        --border-hover: rgba(123,92,255,.42);
-
-        --purple: #7B5CFF;
-        --blue: #00D4FF;
-        --green: #43F28C;
-        --red: #ff5577;
-        --text: #F4F5FA;
-        --muted: #85899C;
-
-        --shadow:
-            0 20px 80px rgba(0,0,0,.45);
-
-        --radius: 22px;
-    }
-
-    * {
-        box-sizing: border-box;
-    }
-
-    html,
-    body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }
-
-    body {
-        overflow: hidden;
-        background:
-            radial-gradient(
-                circle at 50% 40%,
-                rgba(123,92,255,.08),
-                transparent 34%
-            ),
-            var(--bg);
-
-        color: var(--text);
-
-        font-family:
-            Inter,
-            system-ui,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            sans-serif;
-    }
-
-    button,
-    textarea {
-        font: inherit;
-    }
-
-    button {
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    /* =====================================================
-       GLOBAL ATMOSPHERE
-       ===================================================== */
-
-    .background-grid {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 0;
-
-        background-image:
-            linear-gradient(
-                rgba(255,255,255,.018) 1px,
-                transparent 1px
-            ),
-            linear-gradient(
-                90deg,
-                rgba(255,255,255,.018) 1px,
-                transparent 1px
-            );
-
-        background-size: 42px 42px;
-
-        mask-image:
-            linear-gradient(
-                to bottom,
-                transparent,
-                black 18%,
-                black 82%,
-                transparent
-            );
-    }
-
-    .ambient {
-        position: fixed;
-        width: 420px;
-        height: 420px;
-        border-radius: 50%;
-        filter: blur(90px);
-        opacity: .12;
-        pointer-events: none;
-        z-index: 0;
-    }
-
-    .ambient.one {
-        top: -180px;
-        left: 15%;
-        background: var(--purple);
-    }
-
-    .ambient.two {
-        right: -180px;
-        bottom: -150px;
-        background: var(--blue);
-    }
-
-    /* =====================================================
-       APP
-       ===================================================== */
-
-    .app {
-        position: relative;
-        z-index: 1;
-
-        display: grid;
-        grid-template-columns: 250px minmax(0, 1fr) 390px;
-
-        width: 100%;
-        height: 100vh;
-    }
-
-    /* =====================================================
-       SIDEBAR
-       ===================================================== */
-
-    .sidebar {
-        min-width: 0;
-
-        display: flex;
-        flex-direction: column;
-
-        padding: 22px 16px;
-
-        background:
-            linear-gradient(
-                180deg,
-                rgba(10,10,17,.92),
-                rgba(6,6,11,.82)
-            );
-
-        border-right: 1px solid var(--border);
-
-        backdrop-filter: blur(22px);
-    }
-
-    .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-
-        margin-bottom: 30px;
-    }
-
-    .brand-mark {
-        position: relative;
-
-        width: 44px;
-        height: 44px;
-
-        display: grid;
-        place-items: center;
-
-        border: 1px solid rgba(0,212,255,.3);
-        border-radius: 15px;
-
-        background:
-            radial-gradient(
-                circle,
-                rgba(0,212,255,.2),
-                rgba(123,92,255,.08) 55%,
-                transparent
-            );
-
-        box-shadow:
-            0 0 28px rgba(0,212,255,.12);
-
-        overflow: hidden;
-    }
-
-    .brand-mark span {
-        font-weight: 950;
-        font-size: 17px;
-        color: white;
-    }
-
-    .brand-text strong {
-        display: block;
-        font-size: 17px;
-        letter-spacing: .04em;
-    }
-
-    .brand-text small {
-        color: var(--muted);
-        font-size: 10px;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-    }
-
-    .workspace {
-        padding: 13px;
-
-        border: 1px solid var(--border);
-        border-radius: 17px;
-
-        background: rgba(255,255,255,.025);
-
-        margin-bottom: 14px;
-    }
-
-    .workspace-title {
-        color: var(--muted);
-        font-size: 10px;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-        margin-bottom: 6px;
-    }
-
-    .workspace-name {
-        font-weight: 750;
-        font-size: 14px;
-    }
-
-    .live-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-
-        margin-top: 13px;
-
-        font-size: 11px;
-        color: var(--muted);
-    }
-
-    .live-state {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--muted);
-    }
-
-    .dot.online {
-        background: var(--green);
-        box-shadow: 0 0 12px rgba(67,242,140,.7);
-    }
-
-    .dot.error {
-        background: var(--red);
-        box-shadow: 0 0 12px rgba(255,85,119,.5);
-    }
-
-    .nav-title {
-        margin: 22px 8px 9px;
-
-        color: #65697A;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: .14em;
-        text-transform: uppercase;
-    }
-
-    .nav-button {
-        width: 100%;
-
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        padding: 11px 12px;
-
-        border: 1px solid transparent;
-        border-radius: 13px;
-
-        background: transparent;
-        color: #AEB2C1;
-
-        text-align: left;
-        cursor: pointer;
-
-        transition:
-            background .2s,
-            border .2s,
-            color .2s,
-            transform .2s;
-    }
-
-    .nav-button:hover {
-        color: white;
-        background: rgba(255,255,255,.045);
-        border-color: var(--border);
-        transform: translateX(2px);
-    }
-
-    .nav-icon {
-        width: 25px;
-        text-align: center;
-        color: var(--blue);
-    }
-
-    .profile {
-        margin-top: auto;
-
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        padding: 12px;
-
-        border: 1px solid var(--border);
-        border-radius: 16px;
-
-        background: rgba(255,255,255,.025);
-    }
-
-    .avatar {
-        width: 34px;
-        height: 34px;
-
-        display: grid;
-        place-items: center;
-
-        border-radius: 12px;
-
-        background:
-            linear-gradient(
-                135deg,
-                rgba(123,92,255,.35),
-                rgba(0,212,255,.2)
-            );
-
-        font-size: 12px;
-        font-weight: 900;
-    }
-
-    .profile strong {
-        display: block;
-        font-size: 12px;
-    }
-
-    .profile small {
-        color: var(--muted);
-        font-size: 10px;
-    }
-
-    /* =====================================================
-       CENTER
-       ===================================================== */
-
-    .center {
-        min-width: 0;
-        overflow-y: auto;
-
-        padding: 20px;
-
-        scrollbar-width: thin;
-        scrollbar-color: rgba(123,92,255,.35) transparent;
-    }
-
-    .topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-
-        margin-bottom: 18px;
-    }
-
-    .topbar h1 {
-        margin: 0;
-
-        font-size: clamp(20px, 2.2vw, 30px);
-        letter-spacing: -.04em;
-    }
-
-    .topbar p {
-        margin: 5px 0 0;
-
-        color: var(--muted);
-        font-size: 12px;
-    }
-
-    .api-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-
-        padding: 8px 11px;
-
-        border: 1px solid var(--border);
-        border-radius: 999px;
-
-        background: rgba(255,255,255,.025);
-
-        color: var(--muted);
-        font-size: 10px;
-    }
-
-    /* =====================================================
-       CARDS
-       ===================================================== */
-
-    .glass-card {
-        position: relative;
-
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-
-        background:
-            linear-gradient(
-                145deg,
-                rgba(255,255,255,.055),
-                rgba(255,255,255,.018)
-            );
-
-        box-shadow: var(--shadow);
-
-        backdrop-filter: blur(22px);
-
-        overflow: hidden;
-    }
-
-    .glass-card::before {
-        content: "";
-
-        position: absolute;
-        inset: 0;
-
-        pointer-events: none;
-
-        background:
-            linear-gradient(
-                120deg,
-                rgba(255,255,255,.06),
-                transparent 35%
-            );
-    }
-
-    .core-grid {
-        display: grid;
-        grid-template-columns: 1.3fr .7fr;
-        gap: 15px;
-
-        margin-bottom: 15px;
-    }
-
-    .phoenix-card {
-        min-height: 275px;
-    }
-
-    .phoenix-video {
-        position: absolute;
-        inset: 0;
-
-        width: 100%;
-        height: 100%;
-
-        object-fit: cover;
-
-        opacity: .30;
-
-        filter:
-            saturate(1.2)
-            contrast(1.1)
-            brightness(.7);
-
-        pointer-events: none;
-    }
-
-    .phoenix-overlay {
-        position: absolute;
-        inset: 0;
-
-        background:
-            radial-gradient(
-                circle at 50% 45%,
-                transparent 0,
-                rgba(5,5,10,.08) 30%,
-                rgba(5,5,10,.9) 90%
-            );
-    }
-
-    .phoenix-content {
-        position: relative;
-        z-index: 2;
-
-        min-height: 275px;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-
-        padding: 22px;
-    }
-
-    .eyebrow {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        color: #BFC4D3;
-        font-size: 10px;
-        font-weight: 850;
-        letter-spacing: .14em;
-        text-transform: uppercase;
-    }
-
-    .eyebrow::before {
-        content: "";
-
-        width: 7px;
-        height: 7px;
-
-        border-radius: 50%;
-
-        background: var(--blue);
-
-        box-shadow:
-            0 0 14px var(--blue);
-    }
-
-    .core-title {
-        margin-top: auto;
-    }
-
-    .core-title h2 {
-        margin: 0;
-
-        font-size: clamp(28px, 4vw, 48px);
-        line-height: .95;
-        letter-spacing: -.06em;
-    }
-
-    .core-title p {
-        max-width: 450px;
-
-        margin: 13px 0 0;
-
-        color: #9EA2B4;
-        font-size: 12px;
-        line-height: 1.6;
-    }
-
-    .state-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-
-        width: fit-content;
-
-        margin-top: 18px;
-        padding: 8px 11px;
-
-        border-radius: 999px;
-
-        border: 1px solid var(--border);
-        background: rgba(0,0,0,.25);
-
-        color: #C7CBD8;
-        font-size: 10px;
-    }
-
-    .state-chip .state-light {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--blue);
-    }
-
-    .state-thinking .state-light {
-        background: var(--purple);
-        box-shadow: 0 0 14px var(--purple);
-        animation: pulseState 1s infinite;
-    }
-
-    .state-success .state-light {
-        background: var(--green);
-        box-shadow: 0 0 14px var(--green);
-    }
-
-    .state-error .state-light {
-        background: var(--red);
-    }
-
-    @keyframes pulseState {
-        50% {
-            opacity: .3;
-            transform: scale(.65);
-        }
-    }
-
-    /* =====================================================
-       REAL STATUS CARD
-       ===================================================== */
-
-    .engine-card {
-        min-height: 275px;
-        padding: 22px;
-    }
-
-    .engine-card h3 {
-        margin: 14px 0 6px;
-
-        font-size: 21px;
-        letter-spacing: -.04em;
-    }
-
-    .engine-card p {
-        margin: 0;
-
-        color: var(--muted);
-        font-size: 11px;
-        line-height: 1.55;
-    }
-
-    .engine-status {
-        margin-top: 22px;
-
-        padding: 14px;
-
-        border: 1px solid var(--border);
-        border-radius: 16px;
-
-        background: rgba(0,0,0,.18);
-    }
-
-    .engine-line {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-
-        margin-bottom: 9px;
-
-        color: #A8ACBC;
-        font-size: 11px;
-    }
-
-    .engine-line:last-child {
-        margin-bottom: 0;
-    }
-
-    .engine-line strong {
-        color: white;
-        font-size: 11px;
-    }
-
-    /* =====================================================
-       PROJECTS
-       ===================================================== */
-
-    .section-head {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-
-        margin: 25px 2px 11px;
-    }
-
-    .section-head h2 {
-        margin: 0;
-
-        font-size: 18px;
-        letter-spacing: -.035em;
-    }
-
-    .section-head span {
-        color: var(--muted);
-        font-size: 10px;
-    }
-
-    .projects {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0,1fr));
-        gap: 12px;
-    }
-
-    .project {
-        min-height: 135px;
-        padding: 17px;
-
-        cursor: default;
-
-        transition:
-            transform .25s,
-            border-color .25s;
-    }
-
-    .project:hover {
-        transform: translateY(-3px);
-        border-color: var(--border-hover);
-    }
-
-    .project-icon {
-        width: 33px;
-        height: 33px;
-
-        display: grid;
-        place-items: center;
-
-        border-radius: 11px;
-
-        background: rgba(123,92,255,.12);
-        border: 1px solid rgba(123,92,255,.18);
-
-        margin-bottom: 12px;
-    }
-
-    .project h3 {
-        margin: 0 0 5px;
-
-        font-size: 14px;
-    }
-
-    .project p {
-        margin: 0;
-
-        color: var(--muted);
-        font-size: 10px;
-        line-height: 1.5;
-    }
-
-    .empty-projects {
-        grid-column: 1 / -1;
-
-        padding: 25px;
-
-        color: var(--muted);
-        text-align: center;
-        font-size: 11px;
-    }
-
-    /* =====================================================
-       PAYMENT
-       ===================================================== */
-
-    .payment {
-        width: 100%;
-
-        margin-top: 15px;
-        padding: 18px;
-
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-
-        border: 1px solid rgba(67,242,140,.16);
-        border-radius: 19px;
-
-        background:
-            linear-gradient(
-                100deg,
-                rgba(67,242,140,.07),
-                rgba(0,212,255,.025)
-            );
-    }
-
-    .payment-copy strong {
-        display: block;
-
-        font-size: 13px;
-    }
-
-    .payment-copy span {
-        display: block;
-
-        margin-top: 4px;
-
-        color: var(--muted);
-        font-size: 10px;
-    }
-
-    .payment-button {
-        flex-shrink: 0;
-
-        padding: 11px 15px;
-
-        border: 1px solid rgba(67,242,140,.2);
-        border-radius: 12px;
-
-        background: rgba(67,242,140,.07);
-        color: #83F7B1;
-
-        font-size: 11px;
-        font-weight: 800;
-
-        cursor: not-allowed;
-        opacity: .55;
-    }
-
-    /* =====================================================
-       CHAT PANEL
-       ===================================================== */
-
-    .chat-panel {
-        min-width: 0;
-
-        display: flex;
-        flex-direction: column;
-
-        border-left: 1px solid var(--border);
-
-        background:
-            linear-gradient(
-                180deg,
-                rgba(10,10,17,.88),
-                rgba(5,5,10,.96)
-            );
-
-        backdrop-filter: blur(24px);
-    }
-
-    .chat-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-
-        padding: 18px;
-
-        border-bottom: 1px solid var(--border);
-    }
-
-    .chat-brand {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .chat-orb {
-        width: 37px;
-        height: 37px;
-
-        display: grid;
-        place-items: center;
-
-        border-radius: 50%;
-
-        border: 1px solid rgba(0,212,255,.25);
-
-        background:
-            radial-gradient(
-                circle,
-                rgba(0,212,255,.2),
-                rgba(123,92,255,.08)
-            );
-
-        box-shadow:
-            0 0 22px rgba(0,212,255,.1);
-
-        animation: orbFloat 3.5s ease-in-out infinite;
-    }
-
-    @keyframes orbFloat {
-        50% {
-            transform: translateY(-2px);
-        }
-    }
-
-    .chat-header strong {
-        display: block;
-        font-size: 13px;
-    }
-
-    .chat-header small {
-        color: var(--muted);
-        font-size: 9px;
-    }
-
-    .chat-body {
-        flex: 1;
-
-        overflow-y: auto;
-
-        padding: 18px;
-
-        scrollbar-width: thin;
-        scrollbar-color: rgba(123,92,255,.3) transparent;
-    }
-
-    .chat-welcome {
-        margin: 35px 5px;
-
-        text-align: center;
-    }
-
-    .chat-welcome .mini-phoenix {
-        width: 58px;
-        height: 58px;
-
-        margin: 0 auto 16px;
-
-        border-radius: 19px;
-
-        display: grid;
-        place-items: center;
-
-        border: 1px solid rgba(123,92,255,.25);
-
-        background:
-            radial-gradient(
-                circle,
-                rgba(123,92,255,.18),
-                rgba(0,212,255,.04)
-            );
-
-        box-shadow:
-            0 0 35px rgba(123,92,255,.12);
-    }
-
-    .chat-welcome h2 {
-        margin: 0 0 7px;
-
-        font-size: 18px;
-        letter-spacing: -.04em;
-    }
-
-    .chat-welcome p {
-        margin: 0 auto;
-
-        max-width: 270px;
-
-        color: var(--muted);
-        font-size: 11px;
-        line-height: 1.6;
-    }
-
-    .message {
-        display: flex;
-
-        margin: 12px 0;
-    }
-
-    .message.user {
-        justify-content: flex-end;
-    }
-
-    .message.ai {
-        justify-content: flex-start;
-    }
-
-    .bubble {
-        max-width: 88%;
-
-        padding: 11px 13px;
-
-        border-radius: 16px;
-
-        font-size: 12px;
-        line-height: 1.55;
-
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-
-        animation: messageIn .25s ease both;
-    }
-
-    @keyframes messageIn {
-        from {
-            opacity: 0;
-            transform: translateY(7px) scale(.98);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    .message.user .bubble {
-        background:
-            linear-gradient(
-                135deg,
-                rgba(123,92,255,.9),
-                rgba(0,212,255,.62)
-            );
-
-        color: white;
-
-        border-bottom-right-radius: 5px;
-    }
-
-    .message.ai .bubble {
-        background: rgba(255,255,255,.055);
-
-        border: 1px solid var(--border);
-
-        color: #D9DCE7;
-
-        border-bottom-left-radius: 5px;
-    }
-
-    .typing {
-        display: inline-flex;
-        gap: 4px;
-
-        padding: 11px 14px;
-
-        border-radius: 15px;
-
-        background: rgba(255,255,255,.045);
-        border: 1px solid var(--border);
-    }
-
-    .typing span {
-        width: 5px;
-        height: 5px;
-
-        border-radius: 50%;
-
-        background: var(--blue);
-
-        animation: typing 1s infinite;
-    }
-
-    .typing span:nth-child(2) {
-        animation-delay: .15s;
-    }
-
-    .typing span:nth-child(3) {
-        animation-delay: .3s;
-    }
-
-    @keyframes typing {
-        0%,100% {
-            opacity: .2;
-            transform: translateY(0);
-        }
-
-        50% {
-            opacity: 1;
-            transform: translateY(-3px);
-        }
-    }
-
-    /* =====================================================
-       COMPOSER
-       ===================================================== */
-
-    .composer-wrap {
-        padding: 12px;
-
-        border-top: 1px solid var(--border);
-
-        background: rgba(5,5,10,.82);
-    }
-
-    .composer {
-        display: flex;
-        align-items: flex-end;
-        gap: 7px;
-
-        padding: 7px;
-
-        border: 1px solid var(--border);
-        border-radius: 17px;
-
-        background: rgba(255,255,255,.035);
-
-        transition:
-            border-color .2s,
-            box-shadow .2s;
-    }
-
-    .composer:focus-within {
-        border-color: rgba(123,92,255,.45);
-
-        box-shadow:
-            0 0 30px rgba(123,92,255,.08);
-    }
-
-    textarea {
-        flex: 1;
-
-        min-width: 0;
-        min-height: 40px;
-        max-height: 125px;
-
-        resize: none;
-
-        padding: 10px;
-
-        border: 0;
-        outline: 0;
-
-        background: transparent;
-
-        color: white;
-
-        font-size: 12px;
-        line-height: 1.4;
-    }
-
-    textarea::placeholder {
-        color: #646879;
-    }
-
-    .send {
-        width: 40px;
-        height: 40px;
-
-        flex-shrink: 0;
-
-        border: 0;
-        border-radius: 12px;
-
-        background:
-            linear-gradient(
-                135deg,
-                var(--purple),
-                var(--blue)
-            );
-
-        color: white;
-
-        cursor: pointer;
-
-        font-size: 17px;
-        font-weight: 900;
-
-        box-shadow:
-            0 7px 22px rgba(123,92,255,.2);
-
-        transition:
-            transform .18s,
-            opacity .18s;
-    }
-
-    .send:hover {
-        transform: translateY(-1px);
-    }
-
-    .send:active {
-        transform: scale(.94);
-    }
-
-    .send:disabled {
-        opacity: .4;
-        cursor: not-allowed;
-    }
-
-    .composer-note {
-        margin-top: 7px;
-
-        color: #555968;
-
-        text-align: center;
-        font-size: 8px;
-    }
-
-    /* =====================================================
-       MOBILE
-       ===================================================== */
-
-    .mobile-header {
-        display: none;
-    }
-
-    @media (max-width: 1100px) {
-
-        .app {
-            grid-template-columns: 210px minmax(0,1fr);
-        }
-
-        .chat-panel {
-            display: none;
-        }
-
-        .core-grid {
-            grid-template-columns: 1fr .65fr;
-        }
-    }
-
-    @media (max-width: 760px) {
-
-        body {
-            overflow: hidden;
-        }
-
-        .app {
-            display: block;
-        }
-
-        .sidebar {
-            display: none;
-        }
-
-        .center {
-            height: 100vh;
-            padding: 12px;
-            padding-top: 62px;
-        }
-
-        .mobile-header {
-            position: fixed;
-            z-index: 50;
-
-            top: 0;
-            left: 0;
-            right: 0;
-
-            height: 52px;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            padding: 0 13px;
-
-            border-bottom: 1px solid var(--border);
-
-            background: rgba(5,5,10,.86);
-
-            backdrop-filter: blur(20px);
-        }
-
-        .mobile-brand {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-
-            font-weight: 900;
-            font-size: 14px;
-        }
-
-        .mobile-orb {
-            width: 28px;
-            height: 28px;
-
-            display: grid;
-            place-items: center;
-
-            border-radius: 9px;
-
-            background:
-                radial-gradient(
-                    circle,
-                    rgba(0,212,255,.22),
-                    rgba(123,92,255,.12)
-                );
-
-            border: 1px solid rgba(0,212,255,.22);
-        }
-
-        .topbar {
-            margin-bottom: 13px;
-        }
-
-        .topbar h1 {
-            font-size: 22px;
-        }
-
-        .topbar p {
-            font-size: 10px;
-        }
-
-        .core-grid {
-            display: block;
-        }
-
-        .phoenix-card,
-        .phoenix-content {
-            min-height: 260px;
-        }
-
-        .engine-card {
-            min-height: auto;
-            margin-top: 12px;
-        }
-
-        .projects {
-            grid-template-columns: 1fr;
-        }
-
-        .payment {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-
-        .payment-button {
-            width: 100%;
-        }
-    }
-
-    /* =====================================================
-       REDUCED MOTION
-       ===================================================== */
-
-    @media (prefers-reduced-motion: reduce) {
-
-        *,
-        *::before,
-        *::after {
-            animation-duration: .001ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: .001ms !important;
-        }
-    }
+:root{
+    --bg:#05050A;
+    --panel:#0A0A12;
+    --panel2:#0D0D18;
+    --line:rgba(255,255,255,.09);
+    --text:#F4F4FA;
+    --muted:#8D8D9D;
+    --purple:#7B5CFF;
+    --blue:#00D4FF;
+    --green:#58F5A0;
+    --red:#FF5C7A;
+    --shadow:0 0 35px rgba(123,92,255,.14);
+}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    min-height:100vh;
+    background:
+        radial-gradient(circle at 50% 0%,rgba(123,92,255,.11),transparent 32%),
+        radial-gradient(circle at 90% 70%,rgba(0,212,255,.06),transparent 30%),
+        var(--bg);
+    color:var(--text);
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    overflow-x:hidden;
+}
+
+button,
+textarea{
+    font:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+.app{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns:250px minmax(0,1fr) 390px;
+    gap:14px;
+    padding:14px;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar{
+    border:1px solid var(--line);
+    background:rgba(10,10,18,.82);
+    backdrop-filter:blur(22px);
+    border-radius:22px;
+    padding:20px 16px;
+    display:flex;
+    flex-direction:column;
+    min-height:calc(100vh - 28px);
+    box-shadow:var(--shadow);
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:24px;
+}
+
+.logo{
+    width:45px;
+    height:45px;
+    border-radius:50%;
+    overflow:hidden;
+    border:1px solid rgba(0,212,255,.4);
+    box-shadow:
+        0 0 18px rgba(0,212,255,.3),
+        0 0 35px rgba(123,92,255,.2);
+    background:#05050A;
+}
+
+.logo video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.brand strong{
+    font-size:18px;
+    letter-spacing:2px;
+}
+
+.brand small{
+    display:block;
+    color:var(--muted);
+    font-size:10px;
+    margin-top:3px;
+}
+
+.status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:25px;
+}
+
+.status-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 12px var(--green);
+}
+
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.nav button{
+    border:1px solid transparent;
+    background:transparent;
+    color:#A8A8B8;
+    text-align:left;
+    padding:12px;
+    border-radius:12px;
+    transition:.2s;
+}
+
+.nav button:hover,
+.nav button.active{
+    background:rgba(123,92,255,.1);
+    border-color:rgba(123,92,255,.25);
+    color:white;
+}
+
+.sidebar-bottom{
+    margin-top:auto;
+}
+
+.profile{
+    border-top:1px solid var(--line);
+    padding-top:16px;
+}
+
+.profile-name{
+    font-weight:600;
+    font-size:13px;
+}
+
+.profile-location{
+    color:var(--muted);
+    font-size:11px;
+    margin-top:4px;
+}
+
+/* =========================
+   CENTER
+========================= */
+
+.center{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+}
+
+.topbar{
+    min-height:65px;
+    border:1px solid var(--line);
+    background:rgba(10,10,18,.72);
+    backdrop-filter:blur(20px);
+    border-radius:20px;
+    padding:12px 17px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.top-title{
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+}
+
+.api-state{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+}
+
+.api-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--muted);
+}
+
+.api-dot.online{
+    background:var(--green);
+    box-shadow:0 0 12px var(--green);
+}
+
+.api-dot.offline{
+    background:var(--red);
+    box-shadow:0 0 12px var(--red);
+}
+
+/* Phoenix */
+
+.phoenix-card{
+    position:relative;
+    min-height:330px;
+    border:1px solid var(--line);
+    border-radius:24px;
+    overflow:hidden;
+    background:#030308;
+    box-shadow:0 0 50px rgba(123,92,255,.1);
+}
+
+.phoenix-video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    opacity:.78;
+}
+
+.phoenix-overlay{
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(180deg,rgba(5,5,10,.08),rgba(5,5,10,.72)),
+        radial-gradient(circle at center,transparent 15%,rgba(5,5,10,.55) 100%);
+}
+
+.phoenix-info{
+    position:absolute;
+    left:22px;
+    bottom:20px;
+    z-index:2;
+}
+
+.phoenix-label{
+    color:var(--blue);
+    font-size:10px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin-bottom:8px;
+}
+
+.phoenix-state{
+    font-size:22px;
+    font-weight:700;
+}
+
+.phoenix-sub{
+    color:#A7A7B7;
+    font-size:12px;
+    margin-top:6px;
+}
+
+.activity{
+    position:absolute;
+    right:20px;
+    top:20px;
+    z-index:2;
+    padding:8px 11px;
+    border:1px solid rgba(0,212,255,.2);
+    background:rgba(0,0,0,.3);
+    border-radius:12px;
+    color:var(--blue);
+    font-size:10px;
+    letter-spacing:1px;
+}
+
+/* Engine */
+
+.engine{
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:18px;
+    background:rgba(10,10,18,.78);
+    box-shadow:var(--shadow);
+}
+
+.engine-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:17px;
+}
+
+.engine-title{
+    font-weight:700;
+}
+
+.engine-badge{
+    font-size:10px;
+    color:var(--green);
+    border:1px solid rgba(88,245,160,.2);
+    background:rgba(88,245,160,.06);
+    border-radius:20px;
+    padding:6px 9px;
+}
+
+.engine-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+}
+
+.metric{
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:13px;
+    background:rgba(255,255,255,.015);
+}
+
+.metric span{
+    display:block;
+    color:var(--muted);
+    font-size:10px;
+    margin-bottom:6px;
+}
+
+.metric strong{
+    font-size:13px;
+    word-break:break-word;
+}
+
+/* Projects */
+
+.projects{
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:18px;
+    background:rgba(10,10,18,.78);
+}
+
+.section-title{
+    font-size:15px;
+    font-weight:700;
+    margin-bottom:13px;
+}
+
+.projects-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+
+.project{
+    border:1px solid var(--line);
+    border-radius:15px;
+    padding:15px;
+    background:linear-gradient(135deg,rgba(123,92,255,.06),rgba(0,212,255,.02));
+    transition:.2s;
+}
+
+.project:hover{
+    border-color:rgba(123,92,255,.4);
+    transform:translateY(-2px);
+}
+
+.project-name{
+    font-size:13px;
+    font-weight:700;
+}
+
+.project-desc{
+    color:var(--muted);
+    font-size:11px;
+    line-height:1.5;
+    margin-top:7px;
+}
+
+.project-status{
+    display:inline-block;
+    margin-top:11px;
+    font-size:9px;
+    padding:5px 8px;
+    border-radius:20px;
+    background:rgba(88,245,160,.07);
+    color:var(--green);
+}
+
+/* Dashboard */
+
+.dashboard{
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:18px;
+    background:rgba(10,10,18,.78);
+}
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+}
+
+.dash-item{
+    border:1px solid var(--line);
+    padding:14px;
+    border-radius:14px;
+}
+
+.dash-item span{
+    color:var(--muted);
+    font-size:10px;
+}
+
+.dash-item strong{
+    display:block;
+    margin-top:6px;
+    font-size:18px;
+}
+
+/* Payment */
+
+.payment{
+    border:1px solid rgba(88,245,160,.14);
+    background:linear-gradient(100deg,rgba(88,245,160,.045),rgba(123,92,255,.045));
+    border-radius:22px;
+    padding:17px;
+}
+
+.payment button{
+    width:100%;
+    border:0;
+    border-radius:13px;
+    padding:14px;
+    background:#15151D;
+    color:#70707C;
+    cursor:not-allowed;
+}
+
+.payment-info{
+    text-align:center;
+    color:var(--muted);
+    font-size:10px;
+    margin-top:8px;
+}
+
+/* =========================
+   CHAT
+========================= */
+
+.chat{
+    min-width:0;
+    min-height:calc(100vh - 28px);
+    border:1px solid var(--line);
+    background:rgba(8,8,15,.86);
+    backdrop-filter:blur(22px);
+    border-radius:22px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    box-shadow:var(--shadow);
+}
+
+.chat-header{
+    padding:17px;
+    border-bottom:1px solid var(--line);
+}
+
+.chat-title{
+    font-weight:700;
+}
+
+.chat-subtitle{
+    color:var(--muted);
+    font-size:10px;
+    margin-top:4px;
+}
+
+.messages{
+    flex:1;
+    overflow-y:auto;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+}
+
+.message{
+    max-width:88%;
+    padding:11px 13px;
+    border-radius:15px;
+    font-size:13px;
+    line-height:1.55;
+    white-space:pre-wrap;
+    animation:appear .2s ease;
+}
+
+@keyframes appear{
+    from{
+        opacity:0;
+        transform:translateY(5px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.message.ai{
+    align-self:flex-start;
+    background:rgba(255,255,255,.045);
+    border:1px solid var(--line);
+}
+
+.message.user{
+    align-self:flex-end;
+    background:linear-gradient(135deg,rgba(123,92,255,.25),rgba(0,212,255,.1));
+    border:1px solid rgba(123,92,255,.22);
+}
+
+.message-meta{
+    font-size:9px;
+    color:var(--muted);
+    margin-top:6px;
+}
+
+.typing{
+    display:none;
+    color:var(--muted);
+    font-size:11px;
+    padding:0 16px 8px;
+}
+
+.typing.active{
+    display:block;
+}
+
+.composer{
+    border-top:1px solid var(--line);
+    padding:12px;
+}
+
+.composer-box{
+    display:flex;
+    gap:8px;
+    align-items:flex-end;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:8px;
+    background:rgba(0,0,0,.2);
+}
+
+textarea{
+    width:100%;
+    min-height:40px;
+    max-height:130px;
+    resize:none;
+    border:0;
+    outline:none;
+    background:transparent;
+    color:white;
+    padding:9px;
+    font-size:13px;
+}
+
+.send{
+    width:42px;
+    height:42px;
+    flex:none;
+    border:1px solid rgba(123,92,255,.3);
+    border-radius:12px;
+    background:rgba(123,92,255,.12);
+    color:white;
+    transition:.2s;
+}
+
+.send:hover{
+    background:rgba(123,92,255,.25);
+}
+
+.send:disabled{
+    opacity:.4;
+}
+
+.new-chat{
+    width:100%;
+    margin-top:9px;
+    padding:9px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:#9999A8;
+    border-radius:11px;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:1100px){
+    .app{
+        grid-template-columns:210px minmax(0,1fr);
+    }
+
+    .chat{
+        grid-column:1/-1;
+        min-height:600px;
+    }
+}
+
+@media(max-width:760px){
+    .app{
+        display:flex;
+        flex-direction:column;
+        padding:8px;
+    }
+
+    .sidebar{
+        min-height:auto;
+        padding:12px;
+        border-radius:17px;
+    }
+
+    .nav{
+        flex-direction:row;
+        overflow-x:auto;
+    }
+
+    .nav button{
+        white-space:nowrap;
+    }
+
+    .sidebar-bottom{
+        display:none;
+    }
+
+    .phoenix-card{
+        min-height:270px;
+    }
+
+    .engine-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .projects-grid{
+        grid-template-columns:1fr;
+    }
+
+    .dashboard-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .chat{
+        min-height:650px;
+    }
+}
+
+@media(prefers-reduced-motion:reduce){
+    *,
+    *::before,
+    *::after{
+        animation-duration:.01ms!important;
+        transition-duration:.01ms!important;
+    }
+}
 </style>
 
-</head><body><div class="background-grid"></div>
-<div class="ambient one"></div>
-<div class="ambient two"></div><div class="app"><!-- =====================================================
-     MOBILE HEADER
-     ====================================================== -->
+</head>
 
-<header class="mobile-header">
+<body>
 
-    <div class="mobile-brand">
-        <div class="mobile-orb">🪽</div>
-        ADRYNX
-    </div>
+<div class="app">
 
-    <div class="api-badge">
-        <span
-            class="dot"
-            id="mobileStatusDot"
-        ></span>
-
-        <span id="mobileStatusText">
-            Vérification...
-        </span>
-    </div>
-
-</header>
-
-
-<!-- =====================================================
-     SIDEBAR
-     ====================================================== -->
+```
+<!-- ================= SIDEBAR ================= -->
 
 <aside class="sidebar">
 
     <div class="brand">
-
-        <div class="brand-mark">
-            <span>🪽</span>
-        </div>
-
-        <div class="brand-text">
-
-            <strong>ADRYNX</strong>
-
-            <small>
-                Command Center
-            </small>
-
-        </div>
-
-    </div>
-
-
-    <div class="workspace">
-
-        <div class="workspace-title">
-            Workspace
-        </div>
-
-        <div class="workspace-name">
-            Futur / Afrique
-        </div>
-
-        <div class="live-row">
-
-            <span>
-                API ADRYNX
-            </span>
-
-            <span
-                class="live-state"
-                id="sidebarStatus"
-            >
-                <span
-                    class="dot"
-                    id="sidebarStatusDot"
-                ></span>
-
-                <span id="sidebarStatusText">
-                    Vérification
-                </span>
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <div class="nav-title">
-        Navigation
-    </div>
-
-
-    <button
-        class="nav-button"
-        type="button"
-        onclick="focusChat()"
-    >
-
-        <span class="nav-icon">
-            ◈
-        </span>
-
-        <span>
-            Phoenix Chat
-        </span>
-
-    </button>
-
-
-    <button
-        class="nav-button"
-        type="button"
-        onclick="chargerProjets(true)"
-    >
-
-        <span class="nav-icon">
-            ◇
-        </span>
-
-        <span>
-            Projets
-        </span>
-
-    </button>
-
-
-    <button
-        class="nav-button"
-        type="button"
-        onclick="chargerDashboard()"
-    >
-
-        <span class="nav-icon">
-            ◌
-        </span>
-
-        <span>
-            Dashboard
-        </span>
-
-    </button>
-
-
-    <div class="nav-title">
-        Système
-    </div>
-
-
-    <div class="workspace">
-
-        <div class="workspace-title">
-            Mobile Money
-        </div>
-
-        <div class="workspace-name">
-            Non configuré
-        </div>
-
-        <div class="live-row">
-            <span>
-                Paiement réel
-            </span>
-
-            <span style="color:#666;">
-                OFF
-            </span>
-        </div>
-
-    </div>
-
-
-    <div class="profile">
-
-        <div class="avatar">
-            JD
+        <div class="logo">
+            <video autoplay muted loop playsinline>
+                <source src="https://files.catbox.moe/y2nvi4.mp4" type="video/mp4">
+            </video>
         </div>
 
         <div>
-
-            <strong>
-                Jonathan
-            </strong>
-
-            <small>
-                Brazzaville
-            </small>
-
+            <strong>ADRYNX</strong>
+            <small>COMMAND CENTER</small>
         </div>
+    </div>
 
+    <div class="status">
+        <span class="status-dot" id="systemDot"></span>
+        <span id="systemStatus">Vérification du système</span>
+    </div>
+
+    <nav class="nav">
+        <button class="active" data-section="center">⌂ Command Center</button>
+        <button data-section="chat">◉ Phoenix Chat</button>
+        <button data-section="projects">◇ Projets</button>
+        <button data-section="dashboard">▣ Dashboard</button>
+    </nav>
+
+    <div class="sidebar-bottom">
+        <div class="profile">
+            <div class="profile-name">Jonathan</div>
+            <div class="profile-location">Brazzaville · ADRYNX</div>
+        </div>
     </div>
 
 </aside>
 
 
-<!-- =====================================================
-     CENTER
-     ====================================================== -->
+<!-- ================= CENTER ================= -->
 
-<main class="center">
+<main class="center" id="centerArea">
 
     <div class="topbar">
-
         <div>
-
-            <h1>
-                Command Center
-            </h1>
-
-            <p>
-                Interface interactive du cœur ADRYNX.
-            </p>
-
+            <div class="top-title">Interface interactive du cœur ADRYNX</div>
         </div>
 
-        <div class="api-badge">
-
-            <span
-                class="dot"
-                id="mainStatusDot"
-            ></span>
-
-            <span id="mainStatusText">
-                Vérification API
-            </span>
-
+        <div class="api-state">
+            <span class="api-dot" id="apiDot"></span>
+            <span id="apiText">API hors vérification</span>
         </div>
-
     </div>
 
 
-    <section class="core-grid">
+    <!-- PHOENIX -->
 
-        <!-- PHOENIX -->
+    <section class="phoenix-card">
 
-        <article
-            class="glass-card phoenix-card"
-            id="phoenixCard"
+        <video
+            class="phoenix-video"
+            id="phoenixVideo"
+            autoplay
+            muted
+            loop
+            playsinline
         >
+            <source src="https://files.catbox.moe/y2nvi4.mp4" type="video/mp4">
+        </video>
 
-            <video
-                class="phoenix-video"
-                id="phoenixVideo"
-                src="https://files.catbox.moe/y2nvi4.mp4"
-                autoplay
-                muted
-                loop
-                playsinline
-                preload="metadata"
-            ></video>
+        <div class="phoenix-overlay"></div>
 
-            <div class="phoenix-overlay"></div>
+        <div class="activity" id="activityLabel">
+            PHOENIX CORE
+        </div>
 
-            <div class="phoenix-content">
+        <div class="phoenix-info">
+            <div class="phoenix-label">Phoenix Core</div>
+            <div class="phoenix-state" id="phoenixState">
+                En attente
+            </div>
+            <div class="phoenix-sub" id="phoenixSub">
+                Le Phoenix reflète l'état réel d'ADRYNX.
+            </div>
+        </div>
 
-                <div class="eyebrow">
-                    Phoenix Core
-                </div>
+    </section>
 
-                <div class="core-title">
 
-                    <h2>
-                        ADRYNX
-                    </h2>
+    <!-- ENGINE -->
 
-                    <p>
-                        Le Phoenix visuel représente
-                        l'état réel de l'interaction
-                        avec ADRYNX. Il ne simule pas
-                        un traitement qui n'a pas lieu.
-                    </p>
+    <section class="engine">
 
-                    <div
-                        class="state-chip"
-                        id="phoenixState"
-                    >
+        <div class="engine-head">
+            <div class="engine-title">Cristal Engine</div>
+            <div class="engine-badge" id="engineBadge">
+                API
+            </div>
+        </div>
 
-                        <span
-                            class="state-light"
-                        ></span>
+        <div class="engine-grid">
 
-                        <span id="phoenixStateText">
-                            En attente
-                        </span>
-
-                    </div>
-
-                </div>
-
+            <div class="metric">
+                <span>Service</span>
+                <strong id="metricService">—</strong>
             </div>
 
-        </article>
-
-
-        <!-- ENGINE -->
-
-        <article class="glass-card engine-card">
-
-            <div class="eyebrow">
-                System Status
+            <div class="metric">
+                <span>Version</span>
+                <strong id="metricVersion">—</strong>
             </div>
 
-            <h3>
-                Cristal Engine
-            </h3>
-
-            <p>
-                État technique provenant
-                de l'API ADRYNX.
-            </p>
-
-            <div class="engine-status">
-
-                <div class="engine-line">
-
-                    <span>
-                        Service
-                    </span>
-
-                    <strong id="engineService">
-                        —
-                    </strong>
-
-                </div>
-
-                <div class="engine-line">
-
-                    <span>
-                        Version
-                    </span>
-
-                    <strong id="engineVersion">
-                        —
-                    </strong>
-
-                </div>
-
-                <div class="engine-line">
-
-                    <span>
-                        Modèle
-                    </span>
-
-                    <strong id="engineModel">
-                        —
-                    </strong>
-
-                </div>
-
-                <div class="engine-line">
-
-                    <span>
-                        Groq
-                    </span>
-
-                    <strong id="engineGroq">
-                        —
-                    </strong>
-
-                </div>
-
-                <div class="engine-line">
-
-                    <span>
-                        Vérification
-                    </span>
-
-                    <strong id="engineVerification">
-                        —
-                    </strong>
-
-                </div>
-
+            <div class="metric">
+                <span>Modèle</span>
+                <strong id="metricModel">—</strong>
             </div>
 
-        </article>
+            <div class="metric">
+                <span>Groq</span>
+                <strong id="metricGroq">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Vérification</span>
+                <strong id="metricVerification">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Conversation</span>
+                <strong id="metricConversation">Nouvelle</strong>
+            </div>
+
+            <div class="metric">
+                <span>Intention</span>
+                <strong id="metricIntent">—</strong>
+            </div>
+
+            <div class="metric">
+                <span>Mode</span>
+                <strong id="metricMode">—</strong>
+            </div>
+
+        </div>
 
     </section>
 
 
     <!-- PROJECTS -->
 
-    <div class="section-head">
+    <section class="projects" id="projectsSection">
 
-        <h2>
+        <div class="section-title">
             Projets qui brisent l'impossible
-        </h2>
+        </div>
 
-        <span id="projectCount">
-            Chargement...
-        </span>
+        <div class="projects-grid" id="projectsGrid">
 
-    </div>
+            <div class="project">
+                <div class="project-name">Chargement...</div>
+                <div class="project-desc">
+                    Chargement des projets ADRYNX...
+                </div>
+            </div>
+
+        </div>
+
+    </section>
 
 
-    <section
-        class="projects"
-        id="projects"
-    >
+    <!-- DASHBOARD -->
 
-        <div class="glass-card empty-projects">
-            Chargement des projets ADRYNX...
+    <section class="dashboard" id="dashboardSection">
+
+        <div class="section-title">
+            État réel de la plateforme
+        </div>
+
+        <div class="dashboard-grid">
+
+            <div class="dash-item">
+                <span>Conversations</span>
+                <strong id="dashConversations">—</strong>
+            </div>
+
+            <div class="dash-item">
+                <span>Messages</span>
+                <strong id="dashMessages">—</strong>
+            </div>
+
+            <div class="dash-item">
+                <span>Projets</span>
+                <strong id="dashProjects">—</strong>
+            </div>
+
+            <div class="dash-item">
+                <span>Tâches</span>
+                <strong id="dashTasks">—</strong>
+            </div>
+
+            <div class="dash-item">
+                <span>Apprentissage</span>
+                <strong id="dashLearning">—</strong>
+            </div>
+
+            <div class="dash-item">
+                <span>Événements</span>
+                <strong id="dashEvents">—</strong>
+            </div>
+
         </div>
 
     </section>
@@ -1728,1073 +906,759 @@
 
     <section class="payment">
 
-        <div class="payment-copy">
-
-            <strong>
-                Paiement 5000 FCFA
-            </strong>
-
-            <span>
-                Aucun fournisseur de paiement
-                n'est actuellement connecté à cette interface.
-            </span>
-
-        </div>
-
-        <button
-            class="payment-button"
-            type="button"
-            disabled
-            title="Paiement non configuré"
-        >
-            Paiement non configuré
+        <button disabled>
+            Paiement 5000 FCFA
         </button>
+
+        <div class="payment-info">
+            Aucun fournisseur de paiement n'est actuellement connecté à cette interface.
+        </div>
 
     </section>
 
 </main>
 
 
-<!-- =====================================================
-     CHAT
-     ====================================================== -->
+<!-- ================= CHAT ================= -->
 
-<aside
-    class="chat-panel"
-    id="chatPanel"
->
+<aside class="chat" id="chatPanel">
 
-    <header class="chat-header">
+    <div class="chat-header">
 
-        <div class="chat-brand">
-
-            <div class="chat-orb">
-                🪽
-            </div>
-
-            <div>
-
-                <strong>
-                    Phoenix Chat
-                </strong>
-
-                <small>
-                    ADRYNX conversationnel
-                </small>
-
-            </div>
-
+        <div class="chat-title">
+            Phoenix Chat
         </div>
 
-        <div
-            class="api-badge"
-            id="chatStatus"
-        >
-            API
-        </div>
-
-    </header>
-
-
-    <div
-        class="chat-body"
-        id="chatBody"
-    >
-
-        <div
-            class="chat-welcome"
-            id="chatWelcome"
-        >
-
-            <div class="mini-phoenix">
-                🪽
-            </div>
-
-            <h2>
-                Bonjour.
-            </h2>
-
-            <p>
-                Tu peux parler directement
-                avec le véritable moteur ADRYNX.
-            </p>
-
+        <div class="chat-subtitle" id="chatSubtitle">
+            ADRYNX · conversation réelle
         </div>
 
     </div>
 
 
-    <div class="composer-wrap">
+    <div class="messages" id="messages">
 
-        <form
-            class="composer"
-            id="composer"
-        >
+        <div class="message ai">
+            Bonjour ! 👋 Je suis ADRYNX.
+            <div class="message-meta">ADRYNX · système</div>
+        </div>
+
+    </div>
+
+
+    <div class="typing" id="typing">
+        ADRYNX traite la demande…
+    </div>
+
+
+    <div class="composer">
+
+        <div class="composer-box">
 
             <textarea
-                id="message"
+                id="input"
+                placeholder="Écris à ADRYNX…"
                 rows="1"
-                autocomplete="off"
-                placeholder="Écris à ADRYNX..."
             ></textarea>
 
-            <button
-                class="send"
-                id="send"
-                type="submit"
-                aria-label="Envoyer"
-            >
-                ↑
+            <button class="send" id="sendButton">
+                ➤
             </button>
 
-        </form>
-
-        <div class="composer-note">
-            Les réponses proviennent du backend ADRYNX.
         </div>
+
+        <button class="new-chat" id="newChat">
+            + Nouvelle conversation
+        </button>
 
     </div>
 
 </aside>
+```
 
-</div><script>
+</div>
 
-    /* ========================================================
-       CONFIGURATION
-       ======================================================== */
+<script>
+"use strict";
 
-    const API = "";
+/* =========================================================
+   ADRYNX COMMAND CENTER
+   Frontend connecté aux vraies API.
+========================================================= */
 
-    const TELEPHONE = "anon";
+const state = {
+    conversationId: null,
+    apiOnline: false,
+    busy: false
+};
 
-    let conversationId = null;
-
-    let apiOnline = false;
-
-    let requestActive = false;
-
-
-    /* ========================================================
-       ELEMENTS
-       ======================================================== */
-
-    const input =
-        document.getElementById("message");
-
-    const send =
-        document.getElementById("send");
-
-    const composer =
-        document.getElementById("composer");
-
-    const chatBody =
-        document.getElementById("chatBody");
-
-    const chatWelcome =
-        document.getElementById("chatWelcome");
-
-    const phoenixState =
-        document.getElementById("phoenixState");
-
-    const phoenixStateText =
-        document.getElementById("phoenixStateText");
-
-    const phoenixVideo =
-        document.getElementById("phoenixVideo");
+const $ = id => document.getElementById(id);
 
 
-    /* ========================================================
-       PHOENIX STATE
-       ======================================================== */
+/* =========================================================
+   PHOENIX STATE
+========================================================= */
 
-    function setPhoenixState(
-        state,
-        text
-    ) {
+function setPhoenix(status, subtitle, activity = "PHOENIX CORE") {
 
-        phoenixState.classList.remove(
-            "state-thinking",
-            "state-success",
-            "state-error"
-        );
+    $("phoenixState").textContent = status;
+    $("phoenixSub").textContent = subtitle;
+    $("activityLabel").textContent = activity;
 
-        if (state === "thinking") {
-            phoenixState.classList.add(
-                "state-thinking"
-            );
-        }
+}
 
-        if (state === "success") {
-            phoenixState.classList.add(
-                "state-success"
-            );
-        }
+function setSystemStatus(text, online = null) {
 
-        if (state === "error") {
-            phoenixState.classList.add(
-                "state-error"
-            );
-        }
+    $("systemStatus").textContent = text;
 
-        phoenixStateText.textContent =
-            text;
+    if (online === true) {
+        $("systemDot").style.background = "var(--green)";
+        $("systemDot").style.boxShadow = "0 0 12px var(--green)";
     }
 
+    if (online === false) {
+        $("systemDot").style.background = "var(--red)";
+        $("systemDot").style.boxShadow = "0 0 12px var(--red)";
+    }
+}
 
-    /* ========================================================
-       API STATUS
-       ======================================================== */
 
-    function updateStatus(
-        online,
-        text
-    ) {
+/* =========================================================
+   API HEALTH
+========================================================= */
 
-        apiOnline = online;
+async function loadHealth() {
 
-        const dots = [
-            document.getElementById(
-                "mainStatusDot"
-            ),
-            document.getElementById(
-                "sidebarStatusDot"
-            ),
-            document.getElementById(
-                "mobileStatusDot"
-            )
-        ];
+    try {
 
-        const texts = [
-            document.getElementById(
-                "mainStatusText"
-            ),
-            document.getElementById(
-                "sidebarStatusText"
-            ),
-            document.getElementById(
-                "mobileStatusText"
-            )
-        ];
+        setPhoenix(
+            "Vérification du système",
+            "Connexion à l'API ADRYNX…",
+            "SYSTEM CHECK"
+        );
 
-        dots.forEach(dot => {
-
-            if (!dot) {
-                return;
-            }
-
-            dot.classList.toggle(
-                "online",
-                online
-            );
-
-            dot.classList.toggle(
-                "error",
-                !online
-            );
-
+        const response = await fetch("/api/health", {
+            method: "GET",
+            cache: "no-store"
         });
 
-        texts.forEach(element => {
-
-            if (element) {
-                element.textContent =
-                    text;
-            }
-
-        });
-
-        const chatStatus =
-            document.getElementById(
-                "chatStatus"
-            );
-
-        if (chatStatus) {
-            chatStatus.textContent =
-                online
-                    ? "API EN LIGNE"
-                    : "API HORS LIGNE";
+        if (!response.ok) {
+            throw new Error("API HTTP " + response.status);
         }
-    }
 
+        const data = await response.json();
 
-    async function verifierAPI() {
+        state.apiOnline = true;
 
-        try {
+        $("apiDot").classList.add("online");
+        $("apiDot").classList.remove("offline");
+        $("apiText").textContent = "API en ligne";
 
-            const response =
-                await fetch(
-                    API + "/api/health",
-                    {
-                        method: "GET",
-                        cache: "no-store"
-                    }
-                );
+        setSystemStatus("API en ligne", true);
 
-            if (!response.ok) {
-                throw new Error(
-                    "HTTP " +
-                    response.status
-                );
-            }
+        $("metricService").textContent =
+            data.service ?? "ADRYNX";
 
-            const data =
-                await response.json();
+        $("metricVersion").textContent =
+            data.version ?? "—";
 
-            updateStatus(
-                true,
-                "API en ligne"
-            );
+        $("metricModel").textContent =
+            data.model ?? "—";
 
-            document.getElementById(
-                "engineService"
-            ).textContent =
-                data.service || "ADRYNX";
+        $("metricGroq").textContent =
+            data.groq_configured === true
+                ? "Configuré"
+                : "Non configuré";
 
-            document.getElementById(
-                "engineVersion"
-            ).textContent =
-                data.version || "—";
+        $("metricVerification").textContent =
+            data.verification
+                ? "Disponible"
+                : "Inactive";
 
-            document.getElementById(
-                "engineModel"
-            ).textContent =
-                data.model || "—";
+        $("engineBadge").textContent = "ONLINE";
 
-            document.getElementById(
-                "engineGroq"
-            ).textContent =
-                data.groq_configured
-                    ? "Configuré"
-                    : "Non configuré";
-
-            document.getElementById(
-                "engineVerification"
-            ).textContent =
-                data.verification
-                    ? "Active"
-                    : "Inactive";
-
-            return true;
-
-        } catch (error) {
-
-            updateStatus(
-                false,
-                "API indisponible"
-            );
-
-            document.getElementById(
-                "engineService"
-            ).textContent =
-                "Indisponible";
-
-            document.getElementById(
-                "engineVersion"
-            ).textContent =
-                "—";
-
-            document.getElementById(
-                "engineModel"
-            ).textContent =
-                "—";
-
-            document.getElementById(
-                "engineGroq"
-            ).textContent =
-                "—";
-
-            document.getElementById(
-                "engineVerification"
-            ).textContent =
-                "—";
-
-            return false;
-        }
-    }
-
-
-    /* ========================================================
-       CHAT UI
-       ======================================================== */
-
-    function removeWelcome() {
-
-        if (
-            document.getElementById(
-                "chatWelcome"
-            )
-        ) {
-            document.getElementById(
-                "chatWelcome"
-            ).remove();
-        }
-    }
-
-
-    function ajouterMessage(
-        texte,
-        type
-    ) {
-
-        removeWelcome();
-
-        const wrapper =
-            document.createElement(
-                "div"
-            );
-
-        wrapper.className =
-            "message " + type;
-
-        const bubble =
-            document.createElement(
-                "div"
-            );
-
-        bubble.className =
-            "bubble";
-
-        bubble.textContent =
-            texte;
-
-        wrapper.appendChild(
-            bubble
+        setPhoenix(
+            "En attente",
+            "ADRYNX est connecté et prêt.",
+            "PHOENIX CORE LIVE"
         );
 
-        chatBody.appendChild(
-            wrapper
+    } catch (error) {
+
+        state.apiOnline = false;
+
+        $("apiDot").classList.remove("online");
+        $("apiDot").classList.add("offline");
+        $("apiText").textContent = "API indisponible";
+
+        setSystemStatus("API indisponible", false);
+
+        $("engineBadge").textContent = "OFFLINE";
+
+        setPhoenix(
+            "Connexion indisponible",
+            "Le frontend ne reçoit actuellement aucune réponse de l'API ADRYNX.",
+            "CONNECTION ERROR"
         );
 
-        chatBody.scrollTop =
-            chatBody.scrollHeight;
-
-        return wrapper;
+        console.error("ADRYNX health:", error);
     }
+}
 
 
-    function ajouterChargement() {
+/* =========================================================
+   PROJECTS
+========================================================= */
 
-        removeWelcome();
+async function loadProjects() {
 
-        const wrapper =
-            document.createElement(
-                "div"
-            );
+    const grid = $("projectsGrid");
 
-        wrapper.className =
-            "message ai";
+    try {
 
-        wrapper.id =
-            "loadingMessage";
-
-        const typing =
-            document.createElement(
-                "div"
-            );
-
-        typing.className =
-            "typing";
-
-        typing.innerHTML = `
-            <span></span>
-            <span></span>
-            <span></span>
-        `;
-
-        wrapper.appendChild(
-            typing
+        const response = await fetch(
+            "/api/projects?telephone=anon",
+            { cache: "no-store" }
         );
 
-        chatBody.appendChild(
-            wrapper
-        );
-
-        chatBody.scrollTop =
-            chatBody.scrollHeight;
-
-        return wrapper;
-    }
-
-
-    function extraireReponse(data) {
-
-        if (
-            typeof data === "string"
-        ) {
-            return data;
+        if (!response.ok) {
+            throw new Error("Impossible de charger les projets.");
         }
 
-        if (!data) {
-            return "ADRYNX n'a pas retourné de réponse.";
+        const data = await response.json();
+
+        let projects = [];
+
+        if (Array.isArray(data)) {
+            projects = data;
+        } else if (Array.isArray(data.projects)) {
+            projects = data.projects;
+        } else if (Array.isArray(data.items)) {
+            projects = data.items;
         }
 
-        if (
-            typeof data.reponse === "string"
-        ) {
-            return data.reponse;
-        }
+        if (!projects.length) {
 
-        if (
-            typeof data.response === "string"
-        ) {
-            return data.response;
-        }
+            grid.innerHTML = `
+                <div class="project">
+                    <div class="project-name">Aucun projet</div>
+                    <div class="project-desc">
+                        Aucun projet disponible dans les données actuellement retournées par ADRYNX.
+                    </div>
+                </div>
+            `;
 
-        if (
-            typeof data.answer === "string"
-        ) {
-            return data.answer;
-        }
-
-        if (
-            typeof data.message === "string"
-        ) {
-            return data.message;
-        }
-
-        if (data.data) {
-            return extraireReponse(
-                data.data
-            );
-        }
-
-        return JSON.stringify(
-            data,
-            null,
-            2
-        );
-    }
-
-
-    /* ========================================================
-       ENVOI RÉEL À ADRYNX
-       ======================================================== */
-
-    async function envoyerMessage() {
-
-        const message =
-            input.value.trim();
-
-        if (
-            !message ||
-            requestActive
-        ) {
             return;
         }
 
-        requestActive = true;
+        grid.innerHTML = "";
 
-        ajouterMessage(
-            message,
-            "user"
+        projects.forEach(project => {
+
+            const card = document.createElement("div");
+            card.className = "project";
+
+            const name =
+                project.nom ??
+                project.name ??
+                "Projet ADRYNX";
+
+            const description =
+                project.description ??
+                project.desc ??
+                "Projet enregistré dans ADRYNX.";
+
+            const status =
+                project.statut ??
+                project.status ??
+                "Enregistré";
+
+            card.innerHTML = `
+                <div class="project-name"></div>
+                <div class="project-desc"></div>
+                <div class="project-status"></div>
+            `;
+
+            card.querySelector(".project-name").textContent = name;
+            card.querySelector(".project-desc").textContent = description;
+            card.querySelector(".project-status").textContent = status;
+
+            grid.appendChild(card);
+        });
+
+    } catch (error) {
+
+        grid.innerHTML = `
+            <div class="project">
+                <div class="project-name">Données indisponibles</div>
+                <div class="project-desc">
+                    L'API n'a pas retourné les projets.
+                </div>
+            </div>
+        `;
+
+        console.error("ADRYNX projects:", error);
+    }
+}
+
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+async function loadDashboard() {
+
+    try {
+
+        const response = await fetch(
+            "/api/dashboard?telephone=anon",
+            { cache: "no-store" }
         );
 
-        input.value = "";
-
-        input.style.height =
-            "40px";
-
-        send.disabled = true;
-
-        setPhoenixState(
-            "thinking",
-            "ADRYNX traite la demande"
-        );
-
-        const loading =
-            ajouterChargement();
-
-        try {
-
-            const response =
-                await fetch(
-                    API + "/api/ask",
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body:
-                            JSON.stringify({
-                                message,
-                                telephone:
-                                    TELEPHONE,
-                                conversation_id:
-                                    conversationId
-                            })
-                    }
-                );
-
-            let data = null;
-
-            try {
-                data =
-                    await response.json();
-            } catch {
-                data = null;
-            }
-
-            if (
-                document.getElementById(
-                    "loadingMessage"
-                )
-            ) {
-                loading.remove();
-            }
-
-            if (!response.ok) {
-
-                const erreur =
-                    data?.detail ||
-                    "Une erreur est survenue.";
-
-                ajouterMessage(
-                    "Erreur : " + erreur,
-                    "ai"
-                );
-
-                setPhoenixState(
-                    "error",
-                    "Erreur de traitement"
-                );
-
-                return;
-            }
-
-            if (
-                data &&
-                data.conversation_id
-            ) {
-
-                conversationId =
-                    data.conversation_id;
-            }
-
-            const reponse =
-                extraireReponse(
-                    data
-                );
-
-            ajouterMessage(
-                reponse,
-                "ai"
-            );
-
-            setPhoenixState(
-                "success",
-                "Réponse reçue"
-            );
-
-            setTimeout(
-                () => {
-
-                    if (!requestActive) {
-
-                        setPhoenixState(
-                            "",
-                            "En attente"
-                        );
-
-                    }
-
-                },
-                1800
-            );
-
-        } catch (error) {
-
-            if (
-                document.getElementById(
-                    "loadingMessage"
-                )
-            ) {
-                loading.remove();
-            }
-
-            ajouterMessage(
-                "Impossible de contacter ADRYNX pour le moment.",
-                "ai"
-            );
-
-            setPhoenixState(
-                "error",
-                "Connexion indisponible"
-            );
-
-            updateStatus(
-                false,
-                "Connexion indisponible"
-            );
-
-        } finally {
-
-            requestActive = false;
-
-            send.disabled = false;
-
-            input.focus();
+        if (!response.ok) {
+            throw new Error("Dashboard indisponible.");
         }
+
+        const data = await response.json();
+
+        /*
+         * On cherche plusieurs noms possibles afin de rester
+         * compatible avec le backend actuel.
+         */
+
+        $("dashConversations").textContent =
+            findValue(data, [
+                "conversations",
+                "conversation_count",
+                "total_conversations"
+            ]);
+
+        $("dashMessages").textContent =
+            findValue(data, [
+                "messages",
+                "message_count",
+                "total_messages"
+            ]);
+
+        $("dashProjects").textContent =
+            findValue(data, [
+                "projects",
+                "project_count",
+                "total_projects"
+            ]);
+
+        $("dashTasks").textContent =
+            findValue(data, [
+                "tasks",
+                "task_count",
+                "total_tasks"
+            ]);
+
+        $("dashLearning").textContent =
+            findValue(data, [
+                "learning",
+                "learning_examples",
+                "apprentissage"
+            ]);
+
+        $("dashEvents").textContent =
+            findValue(data, [
+                "events",
+                "event_count",
+                "total_events"
+            ]);
+
+    } catch (error) {
+
+        console.error("ADRYNX dashboard:", error);
+
+    }
+}
+
+
+function findValue(object, keys) {
+
+    for (const key of keys) {
+
+        if (
+            object &&
+            Object.prototype.hasOwnProperty.call(object, key)
+        ) {
+            return object[key];
+        }
+
     }
 
+    return "—";
+}
 
-    /* ========================================================
-       FORMULAIRE
-       ======================================================== */
 
-    composer.addEventListener(
-        "submit",
-        event => {
+/* =========================================================
+   CHAT
+========================================================= */
+
+function addMessage(text, type, meta = "") {
+
+    const message = document.createElement("div");
+
+    message.className =
+        "message " +
+        (type === "user" ? "user" : "ai");
+
+    message.textContent = text;
+
+    if (meta) {
+
+        const metadata = document.createElement("div");
+
+        metadata.className = "message-meta";
+        metadata.textContent = meta;
+
+        message.appendChild(metadata);
+    }
+
+    $("messages").appendChild(message);
+
+    $("messages").scrollTop =
+        $("messages").scrollHeight;
+}
+
+
+function setBusy(value) {
+
+    state.busy = value;
+
+    $("sendButton").disabled = value;
+
+    $("typing").classList.toggle(
+        "active",
+        value
+    );
+}
+
+
+async function sendMessage() {
+
+    if (state.busy) return;
+
+    const input = $("input");
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    if (!state.apiOnline) {
+
+        addMessage(
+            "L'API ADRYNX est actuellement indisponible.",
+            "ai",
+            "Connexion"
+        );
+
+        return;
+    }
+
+    addMessage(message, "user");
+
+    input.value = "";
+    input.style.height = "auto";
+
+    setBusy(true);
+
+    setPhoenix(
+        "ADRYNX traite la demande",
+        "Compréhension et traitement de la requête en cours.",
+        "PROCESSING"
+    );
+
+    try {
+
+        const payload = {
+            message: message,
+            telephone: "anon"
+        };
+
+        if (state.conversationId) {
+            payload.conversation_id =
+                state.conversationId;
+        }
+
+        const response = await fetch("/api/ask", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Erreur API HTTP " + response.status
+            );
+        }
+
+        const data = await response.json();
+
+        state.conversationId =
+            data.conversation_id ??
+            data.conversationId ??
+            state.conversationId;
+
+        $("metricConversation").textContent =
+            state.conversationId
+                ? String(state.conversationId).slice(0,12) + "…"
+                : "Active";
+
+        const answer =
+            data.response ??
+            data.answer ??
+            data.text ??
+            "ADRYNX n'a pas retourné de réponse.";
+
+        addMessage(
+            answer,
+            "ai",
+            "ADRYNX"
+        );
+
+        if (data.intent) {
+            $("metricIntent").textContent =
+                data.intent;
+        }
+
+        if (data.mode) {
+            $("metricMode").textContent =
+                data.mode;
+        }
+
+        setPhoenix(
+            "Réponse reçue",
+            "ADRYNX a terminé le traitement de cette interaction.",
+            "RESPONSE READY"
+        );
+
+        loadDashboard();
+
+    } catch (error) {
+
+        console.error("ADRYNX ask:", error);
+
+        addMessage(
+            "Une erreur est survenue pendant la communication avec ADRYNX.",
+            "ai",
+            "Erreur"
+        );
+
+        setPhoenix(
+            "Erreur de traitement",
+            "La requête n'a pas pu être traitée correctement.",
+            "PROCESS ERROR"
+        );
+
+    } finally {
+
+        setBusy(false);
+
+    }
+}
+
+
+/* =========================================================
+   NEW CHAT
+========================================================= */
+
+function newConversation() {
+
+    state.conversationId = null;
+
+    $("metricConversation").textContent =
+        "Nouvelle";
+
+    $("metricIntent").textContent =
+        "—";
+
+    $("metricMode").textContent =
+        "—";
+
+    $("messages").innerHTML = "";
+
+    addMessage(
+        "Nouvelle conversation. Bonjour ! 👋",
+        "ai",
+        "ADRYNX"
+    );
+
+    setPhoenix(
+        "En attente",
+        "Nouvelle conversation prête.",
+        "NEW CONVERSATION"
+    );
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+$("input").addEventListener(
+    "input",
+    function(){
+
+        this.style.height = "auto";
+
+        this.style.height =
+            Math.min(this.scrollHeight,130) + "px";
+    }
+);
+
+
+$("input").addEventListener(
+    "keydown",
+    function(event){
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ){
 
             event.preventDefault();
 
-            envoyerMessage();
-
-        }
-    );
-
-
-    input.addEventListener(
-        "input",
-        function () {
-
-            this.style.height =
-                "40px";
-
-            this.style.height =
-                Math.min(
-                    this.scrollHeight,
-                    125
-                ) + "px";
-
-        }
-    );
-
-
-    input.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
-
-                event.preventDefault();
-
-                envoyerMessage();
-            }
-
-        }
-    );
-
-
-    /* ========================================================
-       FOCUS CHAT
-       ======================================================== */
-
-    function focusChat() {
-
-        input.focus();
-
-        if (
-            window.innerWidth <= 1100
-        ) {
-
-            document.getElementById(
-                "chatPanel"
-            )?.scrollIntoView({
-                behavior: "smooth"
-            });
-
+            sendMessage();
         }
 
     }
+);
 
 
-    /* ========================================================
-       PROJETS RÉELS
-       ======================================================== */
+$("sendButton").addEventListener(
+    "click",
+    sendMessage
+);
 
-    async function chargerProjets(
-        scroll = false
-    ) {
 
-        const container =
-            document.getElementById(
-                "projects"
-            );
+$("newChat").addEventListener(
+    "click",
+    newConversation
+);
 
-        try {
 
-            const response =
-                await fetch(
-                    API +
-                    "/api/projects?telephone=" +
-                    encodeURIComponent(
-                        TELEPHONE
-                    ),
-                    {
-                        cache: "no-store"
-                    }
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+document.querySelectorAll(".nav button")
+.forEach(button => {
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            document
+                .querySelectorAll(".nav button")
+                .forEach(item =>
+                    item.classList.remove("active")
                 );
 
-            if (!response.ok) {
-                throw new Error(
-                    "HTTP " +
-                    response.status
-                );
+            button.classList.add("active");
+
+            const section =
+                button.dataset.section;
+
+            if (section === "chat") {
+
+                $("chatPanel")
+                    .scrollIntoView({
+                        behavior:"smooth",
+                        block:"start"
+                    });
+
             }
 
-            const data =
-                await response.json();
+            if (section === "projects") {
 
-            const projects =
-                Array.isArray(
-                    data.projects
-                )
-                    ? data.projects
-                    : [];
+                $("projectsSection")
+                    .scrollIntoView({
+                        behavior:"smooth",
+                        block:"start"
+                    });
 
-            document.getElementById(
-                "projectCount"
-            ).textContent =
-                projects.length +
-                (
-                    projects.length > 1
-                        ? " projets"
-                        : " projet"
-                );
-
-            container.innerHTML = "";
-
-            if (!projects.length) {
-
-                const empty =
-                    document.createElement(
-                        "div"
-                    );
-
-                empty.className =
-                    "glass-card empty-projects";
-
-                empty.textContent =
-                    "Aucun projet enregistré dans ADRYNX pour cet utilisateur.";
-
-                container.appendChild(
-                    empty
-                );
-
-                return;
             }
 
-            projects.forEach(
-                project => {
+            if (section === "dashboard") {
 
-                    const card =
-                        document.createElement(
-                            "article"
-                        );
+                $("dashboardSection")
+                    .scrollIntoView({
+                        behavior:"smooth",
+                        block:"start"
+                    });
 
-                    card.className =
-                        "glass-card project";
+            }
 
-                    const icon =
-                        document.createElement(
-                            "div"
-                        );
+            if (section === "center") {
 
-                    icon.className =
-                        "project-icon";
-
-                    icon.textContent =
-                        "◇";
-
-                    const title =
-                        document.createElement(
-                            "h3"
-                        );
-
-                    title.textContent =
-                        project.nom ||
-                        "Projet ADRYNX";
-
-                    const description =
-                        document.createElement(
-                            "p"
-                        );
-
-                    description.textContent =
-                        project.objectif ||
-                        "Aucun objectif renseigné.";
-
-                    card.appendChild(
-                        icon
-                    );
-
-                    card.appendChild(
-                        title
-                    );
-
-                    card.appendChild(
-                        description
-                    );
-
-                    container.appendChild(
-                        card
-                    );
-
-                }
-            );
-
-            if (scroll) {
-
-                container.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
+                window.scrollTo({
+                    top:0,
+                    behavior:"smooth"
                 });
 
             }
 
-        } catch (error) {
-
-            container.innerHTML = "";
-
-            const errorBox =
-                document.createElement(
-                    "div"
-                );
-
-            errorBox.className =
-                "glass-card empty-projects";
-
-            errorBox.textContent =
-                "Impossible de charger les projets depuis l'API ADRYNX.";
-
-            container.appendChild(
-                errorBox
-            );
-
-            document.getElementById(
-                "projectCount"
-            ).textContent =
-                "Indisponible";
-        }
-    }
-
-
-    /* ========================================================
-       DASHBOARD RÉEL
-       ======================================================== */
-
-    async function chargerDashboard() {
-
-        try {
-
-            const response =
-                await fetch(
-                    API +
-                    "/api/dashboard?telephone=" +
-                    encodeURIComponent(
-                        TELEPHONE
-                    ),
-                    {
-                        cache: "no-store"
-                    }
-                );
-
-            if (!response.ok) {
-                throw new Error(
-                    "HTTP " +
-                    response.status
-                );
-            }
-
-            const data =
-                await response.json();
-
-            /*
-             * Le dashboard reste volontairement
-             * discret ici : aucune donnée n'est
-             * inventée pour créer des statistiques
-             * visuelles.
-             *
-             * Les données réelles sont récupérées
-             * et peuvent être intégrées à une vue
-             * dédiée lorsque leur structure est
-             * stabilisée.
-             */
-
-            console.info(
-                "ADRYNX dashboard:",
-                data.dashboard
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "Dashboard indisponible:",
-                error
-            );
-
-        }
-
-    }
-
-
-    /* ========================================================
-       PHOENIX VIDEO
-       ======================================================== */
-
-    phoenixVideo.addEventListener(
-        "error",
-        () => {
-
-            /*
-             * La vidéo est purement visuelle.
-             * Son absence ne doit jamais empêcher
-             * ADRYNX de fonctionner.
-             */
-
-            phoenixVideo.style.display =
-                "none";
-
         }
     );
 
+});
 
-    /* ========================================================
-       INITIALISATION
-       ======================================================== */
 
-    async function initialiser() {
+/* =========================================================
+   PHOENIX VIDEO FAILURE
+========================================================= */
 
-        setPhoenixState(
-            "",
-            "Vérification du système"
+$("phoenixVideo").addEventListener(
+    "error",
+    () => {
+
+        $("phoenixVideo").style.display =
+            "none";
+
+        /*
+         * Le fonctionnement de l'IA ne dépend
+         * jamais de la vidéo.
+         */
+
+        console.warn(
+            "Phoenix video indisponible."
         );
-
-        await verifierAPI();
-
-        await chargerProjets();
-
-        chargerDashboard();
-
-        setPhoenixState(
-            "",
-            apiOnline
-                ? "En attente"
-                : "API indisponible"
-        );
-
-        input.focus();
-
     }
+);
 
 
-    initialiser();
+/* =========================================================
+   STARTUP
+========================================================= */
 
-</script></body>
+async function boot() {
+
+    setPhoenix(
+        "Vérification du système",
+        "Initialisation du Command Center ADRYNX…",
+        "BOOT"
+    );
+
+    await loadHealth();
+
+    await Promise.all([
+        loadProjects(),
+        loadDashboard()
+    ]);
+
+}
+
+boot();
+
+</script>
+
+</body>
 </html>
