@@ -1,3 +1,4 @@
+# api.py v4.0.1 FIX - Ton design plateforme interactive - Indentation corrigee
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 import adrynx
@@ -29,21 +30,20 @@ HTML = r"""
 #msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
 .msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:14px}
 .bot{align-self:flex-start;background:#1f2937;color:#e5e7eb;display:flex;gap:8px;border-top-left-radius:4px}
-.bot.a{width:22px;height:22px;background:#4f7cff;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:white;min-width:22px}
+.bot .a{width:22px;height:22px;background:#4f7cff;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:white;min-width:22px}
 .user{align-self:flex-end;background:#4f7cff;color:white;border-top-right-radius:4px}
 .bar{padding:10px;background:#111113;border-top:1px solid #232326;display:flex;gap:8px}
 .bar input{flex:1;background:#18181b;border:1px solid #27272a;border-radius:24px;padding:12px 16px;color:white;outline:none}
 .bar button{width:42px;height:42px;border-radius:50%;background:#4f7cff;border:none;color:white;cursor:pointer}
-.proj-card{background:#1e1e22;border:1px solid #2a2a2e;border-radius:10px;padding:10px;margin:4px 0}
 .foot{text-align:center;font-size:10px;color:#52525b;padding:4px}
 </style></head><body>
 <div class="top"><div class="logo">A</div><div><div class="t1">ADRYNX AI</div><div class="t2">Plateforme Interactive - Jonathan Dejah OBENDA - 02/06/2026</div></div></div>
 <div class="nav">
-<button class="active" onclick="switchTab('chat')">Conversation</button>
-<button onclick="switchTab('dashboard')">Tableau de bord vivant</button>
-<button onclick="switchTab('projets')">Projets</button>
-<button onclick="switchTab('fichiers')">Fichiers</button>
-<button onclick="switchTab('profil')">Profil</button>
+<button class="active" onclick="switchTab('chat',event)">Conversation</button>
+<button onclick="switchTab('dashboard',event)">Tableau de bord vivant</button>
+<button onclick="switchTab('projets',event)">Projets</button>
+<button onclick="switchTab('fichiers',event)">Fichiers</button>
+<button onclick="switchTab('profil',event)">Profil</button>
 </div>
 <div class="main">
 <div class="sidebar" id="sidebar">
@@ -51,54 +51,90 @@ HTML = r"""
 <div id="dash" class="dash">Chargement...</div>
 </div>
 <div class="chat">
-<div id="msgs"><div class="msg bot"><div class="a">A</div><div>Bonjour! Je suis ADRYNX, orchestrateur de ta plateforme. Je comprends → personnalise → agis. Essaie: "Montre mes projets" ou "Crée un projet ADRYNX" ou "Tableau de bord".</div></div></div>
+<div id="msgs"><div class="msg bot"><div class="a">A</div><div>Bonjour! Je suis ADRYNX, orchestrateur de ta plateforme. Je comprends - personnalise - agis. Essaie: "Montre mes projets" ou "Cree un projet ADRYNX" ou "Tableau de bord".</div></div></div>
 <div class="bar"><input id="q" placeholder="Pose ta question, commande naturelle..." onkeydown="if(event.key==='Enter')send()"><button onclick="send()">➤</button></div>
-<div class="foot">adrynx-ai.onrender.com - SOURCE DE VERITE: serveur - IA explicable</div>
+<div class="foot">adrynx-ai.onrender.com - SOURCE DE VERITE: serveur</div>
 </div></div>
 <script>
 let phone=localStorage.getItem('adrynx_phone')||''; document.getElementById('phone').value=phone;
-function savePhone(){phone=document.getElementById('phone').value.trim(); localStorage.setItem('adrynx_phone',phone); loadDash()}
-async function switchTab(t){
-document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
-event.target.classList.add('active');
-if(t==='dashboard'){loadDash(); addBot('Voici ton tableau de bord vivant:');}
-if(t==='projets'){let r=await fetch('/api/projects?owner='+encodeURIComponent(phone)); let j=await r.json(); let txt=j.length? j.map(p=>`[${p.id}] ${p.nom} ${p.progression}%`).join('\n') : 'Aucun projet'; addBot(txt)}
-if(t==='chat'){addBot('Mode conversation actif. Contexte global conservé.')}
+function savePhone(){
+  phone=document.getElementById('phone').value.trim();
+  localStorage.setItem('adrynx_phone',phone);
+  loadDash();
+}
+async function switchTab(t,evt){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  if(evt) evt.target.classList.add('active');
+  if(t==='dashboard'){loadDash(); addBot('Voici ton tableau de bord vivant:');}
+  if(t==='projets'){
+    let r=await fetch('/api/projects?owner='+encodeURIComponent(phone||'anonyme'));
+    let j=await r.json();
+    let txt=j.length? j.map(p=>`[${p.id}] ${p.nom} ${p.progression}%`).join('\n') : 'Aucun projet';
+    addBot(txt);
+  }
+  if(t==='chat'){addBot('Mode conversation actif. Contexte global conserve.');}
+  if(t==='fichiers'){addBot('Module fichiers bientot disponible.');}
+  if(t==='profil'){addBot('Profil: '+ (phone||'anonyme'));}
 }
 async function loadDash(){
-try{let r=await fetch('/api/dashboard?owner='+encodeURIComponent(phone)); let d=await r.json(); document.getElementById('dash').innerHTML=`<b>${d.bonjour}</b><br>PROJETS → ${d.projets}<br>TÂCHES → ${d.taches}<br>MESSAGES → ${d.messages}<br>ACTIVITÉ → ${d.activite}<br>ADRYNX → ${d.suggestion}`;}catch(e){}
+  try{
+    let r=await fetch('/api/dashboard?owner='+encodeURIComponent(phone||'anonyme'));
+    let d=await r.json();
+    document.getElementById('dash').innerHTML=`<b>${d.bonjour}</b><br>PROJETS -> ${d.projets}<br>TACHES -> ${d.taches}<br>MESSAGES -> ${d.messages}<br>ACTIVITE -> ${d.activite}<br>ADRYNX -> ${d.suggestion}`;
+  }catch(e){}
 }
-function addUser(t){let d=document.createElement('div');d.className='msg user';d.textContent=t;document.getElementById('msgs').appendChild(d);document.getElementById('msgs').scrollTop=99999}
-function addBot(t){let c=document.createElement('div');c.className='msg bot';let a=document.createElement('div');a.className='a';a.textContent='A';let b=document.createElement('div');b.innerText=t;c.appendChild(a);c.appendChild(b);document.getElementById('msgs').appendChild(c);document.getElementById('msgs').scrollTop=99999}
-async function send(){let i=document.getElementById('q');let q=i.value.trim();if(!q)return;addUser(q);i.value='';let r=await fetch('/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,telephone:phone})});let j=await r.json();addBot(j.reponse);loadDash()}
+function addUser(t){
+  let d=document.createElement('div');d.className='msg user';d.textContent=t;
+  document.getElementById('msgs').appendChild(d);
+  document.getElementById('msgs').scrollTop=99999;
+}
+function addBot(t){
+  let c=document.createElement('div');c.className='msg bot';
+  let a=document.createElement('div');a.className='a';a.textContent='A';
+  let b=document.createElement('div');b.innerText=t;
+  c.appendChild(a);c.appendChild(b);
+  document.getElementById('msgs').appendChild(c);
+  document.getElementById('msgs').scrollTop=99999;
+}
+async function send(){
+  let i=document.getElementById('q');let q=i.value.trim();if(!q)return;
+  addUser(q); i.value='';
+  let r=await fetch('/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,telephone:phone})});
+  let j=await r.json(); addBot(j.reponse); loadDash();
+}
 loadDash();
 </script></body></html>
 """
 
 @app.get("/", response_class=HTMLResponse)
-def home(): return HTML
+async def home():
+    return HTML
 
 @app.post("/ask")
 async def ask(req: Request):
-data=await req.json()
-q=data.get("question",""); tel=data.get("telephone","")
-rep=adrynx.traiter_question(q, telephone=tel or None, anon=req.client.host)
-return JSONResponse({"reponse":rep})
+    data = await req.json()
+    q = data.get("question", "")
+    tel = data.get("telephone", "")
+    anon = req.client.host if req.client else "anon"
+    rep = adrynx.traiter_question(q, telephone=tel or None, anon=anon)
+    return JSONResponse({"reponse": rep})
 
 @app.get("/api/dashboard")
-def dashboard(owner: str = "anonyme"):
-return adrynx.get_dashboard(owner or "anonyme")
+async def dashboard(owner: str = "anonyme"):
+    return adrynx.get_dashboard(owner or "anonyme")
 
 @app.get("/api/projects")
-def projects(owner: str = "anonyme"):
-return adrynx.list_projects(owner or "anonyme")
+async def projects(owner: str = "anonyme"):
+    return adrynx.list_projects(owner or "anonyme")
 
 @app.post("/api/projects")
 async def create_proj(req: Request):
-data=await req.json()
-owner=data.get("owner","anonyme"); nom=data.get("nom","Nouveau projet")
-pid=adrynx.create_project(owner, nom, data.get("objectif",""))
-return {"id":pid,"nom":nom}
+    data = await req.json()
+    owner = data.get("owner", "anonyme")
+    nom = data.get("nom", "Nouveau projet")
+    pid = adrynx.create_project(owner, nom, data.get("objectif", ""))
+    return {"id": pid, "nom": nom}
 
 @app.get("/health")
-def health(): return {"status":"ok","version":"4.0","architecture":"monolithe modulaire + event bus"}
+async def health():
+    return {"status": "ok", "version": "4.0-fix", "architecture": "monolithe modulaire + event bus"}
