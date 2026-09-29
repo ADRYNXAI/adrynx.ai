@@ -1,0 +1,2803 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#05050a">
+<meta name="description" content="ADRYNX — Intelligence conversationnelle et plateforme numérique interactive">
+<title>ADRYNX — Intelligence conversationnelle</title>
+
+<style>
+:root{
+    --bg:#05050a;
+    --bg2:#090910;
+    --panel:rgba(14,14,24,.78);
+    --panel2:rgba(20,20,32,.72);
+    --border:rgba(255,255,255,.09);
+    --border2:rgba(0,212,255,.20);
+    --text:#f5f7ff;
+    --muted:#8c91a8;
+    --blue:#00d4ff;
+    --purple:#7b5cff;
+    --green:#7cff6b;
+    --red:#ff5577;
+    --yellow:#ffd166;
+    --shadow:0 20px 80px rgba(0,0,0,.45);
+    --radius:22px;
+}
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html{
+    min-height:100%;
+    background:var(--bg);
+}
+
+body{
+    min-height:100vh;
+    font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:
+        radial-gradient(circle at 20% 10%,rgba(123,92,255,.12),transparent 30%),
+        radial-gradient(circle at 80% 20%,rgba(0,212,255,.09),transparent 28%),
+        radial-gradient(circle at 50% 100%,rgba(123,92,255,.08),transparent 35%),
+        var(--bg);
+    color:var(--text);
+    overflow-x:hidden;
+}
+
+button,
+input,
+textarea{
+    font:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+.app{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns:260px minmax(0,1fr) 390px;
+    gap:16px;
+    padding:16px;
+}
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+#particles{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    opacity:.55;
+}
+
+.scanline{
+    position:fixed;
+    left:0;
+    right:0;
+    height:1px;
+    background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(0,212,255,.35),
+        transparent
+    );
+    animation:scan 8s linear infinite;
+    pointer-events:none;
+    z-index:1;
+}
+
+@keyframes scan{
+    from{top:-5%}
+    to{top:105%}
+}
+
+@keyframes pulse{
+    0%,100%{
+        box-shadow:
+            0 0 15px rgba(0,212,255,.2),
+            0 0 40px rgba(123,92,255,.08);
+    }
+    50%{
+        box-shadow:
+            0 0 25px rgba(0,212,255,.5),
+            0 0 70px rgba(123,92,255,.18);
+    }
+}
+
+@keyframes phoenixPulse{
+    0%,100%{
+        transform:scale(1) rotate(0deg);
+        filter:
+            drop-shadow(0 0 8px rgba(0,212,255,.55))
+            drop-shadow(0 0 24px rgba(123,92,255,.35));
+    }
+    50%{
+        transform:scale(1.05) rotate(1deg);
+        filter:
+            drop-shadow(0 0 16px rgba(0,212,255,.9))
+            drop-shadow(0 0 40px rgba(123,92,255,.65));
+    }
+}
+
+@keyframes typing{
+    0%,100%{opacity:.3;transform:translateY(0)}
+    50%{opacity:1;transform:translateY(-3px)}
+}
+
+/* =========================================================
+   GLASS
+========================================================= */
+
+.glass{
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.045),
+            rgba(255,255,255,.012)
+        ),
+        var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+}
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar{
+    position:relative;
+    z-index:5;
+    min-height:calc(100vh - 32px);
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:13px;
+}
+
+.logo{
+    width:54px;
+    height:54px;
+    border-radius:18px;
+    display:grid;
+    place-items:center;
+    position:relative;
+    overflow:hidden;
+    border:1px solid rgba(0,212,255,.25);
+    background:
+        radial-gradient(circle at center,
+            rgba(0,212,255,.20),
+            rgba(123,92,255,.10) 45%,
+            transparent 70%),
+        rgba(255,255,255,.025);
+    animation:phoenixPulse 3.2s ease-in-out infinite;
+}
+
+.logo::before{
+    content:"✦";
+    color:var(--blue);
+    font-size:30px;
+    text-shadow:
+        0 0 8px var(--blue),
+        0 0 25px var(--purple);
+}
+
+.brand h1{
+    font-size:21px;
+    letter-spacing:.12em;
+    font-weight:900;
+}
+
+.brand span{
+    display:block;
+    margin-top:2px;
+    color:var(--muted);
+    font-size:9px;
+    letter-spacing:.18em;
+}
+
+.status-card{
+    padding:15px;
+}
+
+.status-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.status-title{
+    font-size:10px;
+    letter-spacing:.12em;
+    color:var(--muted);
+    text-transform:uppercase;
+}
+
+.status-value{
+    margin-top:5px;
+    font-size:13px;
+    font-weight:800;
+}
+
+.dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:var(--muted);
+    box-shadow:none;
+}
+
+.dot.online{
+    background:var(--green);
+    box-shadow:0 0 12px var(--green);
+}
+
+.dot.offline{
+    background:var(--red);
+    box-shadow:0 0 12px var(--red);
+}
+
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.nav button{
+    width:100%;
+    border:1px solid transparent;
+    background:transparent;
+    color:var(--muted);
+    padding:13px 14px;
+    border-radius:14px;
+    text-align:left;
+    transition:.2s;
+}
+
+.nav button:hover,
+.nav button.active{
+    color:var(--text);
+    border-color:var(--border);
+    background:rgba(255,255,255,.045);
+}
+
+.nav button.active{
+    box-shadow:inset 2px 0 0 var(--blue);
+}
+
+.profile{
+    margin-top:auto;
+    padding:15px;
+}
+
+.profile-name{
+    font-weight:800;
+    font-size:14px;
+}
+
+.profile-location{
+    color:var(--muted);
+    font-size:12px;
+    margin-top:4px;
+}
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.main{
+    position:relative;
+    z-index:3;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+}
+
+.topbar{
+    min-height:72px;
+    padding:14px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+}
+
+.topbar-title{
+    font-size:13px;
+    color:var(--muted);
+}
+
+.topbar-title strong{
+    display:block;
+    color:var(--text);
+    font-size:20px;
+    margin-bottom:2px;
+}
+
+.top-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.icon-btn{
+    width:42px;
+    height:42px;
+    border-radius:13px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.035);
+    color:var(--text);
+}
+
+.icon-btn:hover{
+    border-color:rgba(0,212,255,.3);
+    background:rgba(0,212,255,.05);
+}
+
+.hero{
+    min-height:350px;
+    overflow:hidden;
+    position:relative;
+}
+
+.hero-content{
+    min-height:350px;
+    display:grid;
+    grid-template-columns:1.1fr .9fr;
+}
+
+.hero-info{
+    padding:30px;
+    position:relative;
+    z-index:2;
+}
+
+.eyebrow{
+    color:var(--blue);
+    font-size:10px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    font-weight:900;
+}
+
+.hero h2{
+    font-size:clamp(34px,5vw,64px);
+    line-height:.94;
+    margin-top:15px;
+    max-width:650px;
+    letter-spacing:-.045em;
+}
+
+.hero h2 span{
+    background:linear-gradient(90deg,var(--blue),#fff,var(--purple));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+}
+
+.hero p{
+    margin-top:18px;
+    color:var(--muted);
+    max-width:600px;
+    line-height:1.6;
+    font-size:14px;
+}
+
+.hero-actions{
+    margin-top:25px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.btn{
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.04);
+    color:var(--text);
+    border-radius:14px;
+    padding:13px 17px;
+    font-weight:800;
+    transition:.2s;
+}
+
+.btn:hover{
+    transform:translateY(-1px);
+    border-color:rgba(255,255,255,.2);
+}
+
+.btn-primary{
+    border-color:rgba(0,212,255,.35);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,212,255,.16),
+            rgba(123,92,255,.16)
+        );
+    box-shadow:
+        0 0 30px rgba(0,212,255,.07);
+}
+
+.btn-green{
+    color:#061007;
+    background:var(--green);
+    border-color:var(--green);
+    box-shadow:0 0 35px rgba(124,255,107,.15);
+}
+
+.phoenix-stage{
+    position:relative;
+    min-height:350px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+}
+
+.phoenix-stage::before{
+    content:"";
+    position:absolute;
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    background:
+        radial-gradient(
+            circle,
+            rgba(0,212,255,.15),
+            rgba(123,92,255,.08) 40%,
+            transparent 70%
+        );
+    filter:blur(5px);
+    animation:phoenixPulse 3s ease-in-out infinite;
+}
+
+.phoenix-video{
+    width:88%;
+    max-width:430px;
+    max-height:330px;
+    object-fit:contain;
+    border-radius:24px;
+    position:relative;
+    z-index:2;
+    mix-blend-mode:screen;
+    opacity:.9;
+    filter:
+        drop-shadow(0 0 20px rgba(0,212,255,.35))
+        drop-shadow(0 0 50px rgba(123,92,255,.18));
+}
+
+.video-fallback{
+    position:absolute;
+    inset:0;
+    display:none;
+    place-items:center;
+    text-align:center;
+    padding:30px;
+    color:var(--muted);
+    z-index:3;
+}
+
+/* =========================================================
+   METRICS
+========================================================= */
+
+.metrics{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+}
+
+.metric{
+    padding:17px;
+    min-width:0;
+}
+
+.metric-label{
+    color:var(--muted);
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.1em;
+}
+
+.metric-value{
+    margin-top:8px;
+    font-size:18px;
+    font-weight:900;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.metric-sub{
+    margin-top:4px;
+    color:var(--muted);
+    font-size:11px;
+}
+
+/* =========================================================
+   ENGINE
+========================================================= */
+
+.section-title{
+    display:flex;
+    align-items:end;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.section-title h3{
+    font-size:15px;
+}
+
+.section-title span{
+    color:var(--muted);
+    font-size:11px;
+}
+
+.engine{
+    padding:18px;
+}
+
+.engine-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.engine-card{
+    min-height:155px;
+    padding:20px;
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:rgba(255,255,255,.02);
+    position:relative;
+    overflow:hidden;
+}
+
+.engine-card::after{
+    content:"";
+    position:absolute;
+    width:150px;
+    height:150px;
+    right:-70px;
+    bottom:-80px;
+    border-radius:50%;
+    background:rgba(0,212,255,.08);
+    filter:blur(20px);
+}
+
+.engine-card h4{
+    font-size:12px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+}
+
+.engine-card p{
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.5;
+    margin-top:8px;
+}
+
+.engine-state{
+    margin-top:18px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+}
+
+.progress{
+    height:5px;
+    margin-top:14px;
+    background:rgba(255,255,255,.07);
+    border-radius:10px;
+    overflow:hidden;
+}
+
+.progress span{
+    display:block;
+    width:0%;
+    height:100%;
+    background:linear-gradient(90deg,var(--blue),var(--purple));
+    border-radius:10px;
+    transition:width .5s ease;
+}
+
+/* =========================================================
+   PROJECTS
+========================================================= */
+
+.projects{
+    padding:18px;
+}
+
+.project-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+}
+
+.project{
+    padding:18px;
+    min-height:145px;
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:rgba(255,255,255,.02);
+    transition:.25s;
+}
+
+.project:hover{
+    transform:translateY(-3px);
+    border-color:rgba(123,92,255,.3);
+}
+
+.project-icon{
+    width:40px;
+    height:40px;
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    background:rgba(123,92,255,.1);
+    border:1px solid rgba(123,92,255,.2);
+}
+
+.project h4{
+    margin-top:12px;
+    font-size:14px;
+}
+
+.project p{
+    color:var(--muted);
+    margin-top:5px;
+    font-size:11px;
+}
+
+.project-empty{
+    grid-column:1/-1;
+    color:var(--muted);
+    text-align:center;
+    padding:28px;
+}
+
+/* =========================================================
+   PAYMENT
+========================================================= */
+
+.payment{
+    padding:20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    border-color:rgba(124,255,107,.16);
+    background:
+        radial-gradient(circle at 90% 50%,rgba(124,255,107,.08),transparent 35%),
+        var(--panel);
+}
+
+.payment h3{
+    font-size:18px;
+}
+
+.payment p{
+    margin-top:6px;
+    color:var(--muted);
+    font-size:12px;
+}
+
+.payment button{
+    min-width:230px;
+}
+
+/* =========================================================
+   RIGHT CHAT
+========================================================= */
+
+.chat{
+    position:relative;
+    z-index:5;
+    min-height:calc(100vh - 32px);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+}
+
+.chat-header{
+    padding:18px;
+    border-bottom:1px solid var(--border);
+}
+
+.chat-brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.chat-orb{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    background:
+        radial-gradient(circle,
+            rgba(0,212,255,.4),
+            rgba(123,92,255,.18) 45%,
+            transparent 70%);
+    border:1px solid rgba(0,212,255,.25);
+    animation:phoenixPulse 3s infinite;
+}
+
+.chat-title{
+    font-weight:900;
+}
+
+.chat-sub{
+    color:var(--muted);
+    font-size:10px;
+    margin-top:3px;
+}
+
+.chat-state{
+    margin-top:15px;
+    padding:9px 11px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    font-size:10px;
+    color:var(--muted);
+}
+
+.chat-state strong{
+    color:var(--green);
+}
+
+.messages{
+    flex:1;
+    overflow-y:auto;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    min-height:0;
+}
+
+.messages::-webkit-scrollbar{
+    width:5px;
+}
+
+.messages::-webkit-scrollbar-thumb{
+    background:rgba(255,255,255,.12);
+    border-radius:10px;
+}
+
+.message{
+    max-width:88%;
+    padding:12px 14px;
+    border-radius:17px;
+    font-size:13px;
+    line-height:1.55;
+    animation:messageIn .22s ease;
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+}
+
+@keyframes messageIn{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.message.user{
+    align-self:flex-end;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,212,255,.14),
+            rgba(123,92,255,.18)
+        );
+    border:1px solid rgba(0,212,255,.16);
+}
+
+.message.ai{
+    align-self:flex-start;
+    background:rgba(255,255,255,.035);
+    border:1px solid var(--border);
+}
+
+.message.system{
+    align-self:center;
+    color:var(--muted);
+    font-size:10px;
+    border:1px dashed var(--border);
+    background:transparent;
+}
+
+.message-meta{
+    margin-top:6px;
+    font-size:9px;
+    color:var(--muted);
+}
+
+.typing{
+    display:none;
+    align-items:center;
+    gap:4px;
+    width:max-content;
+    padding:10px 13px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,.03);
+}
+
+.typing.show{
+    display:flex;
+}
+
+.typing span{
+    width:5px;
+    height:5px;
+    border-radius:50%;
+    background:var(--blue);
+    animation:typing 1s infinite;
+}
+
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+
+.chat-input{
+    padding:14px;
+    border-top:1px solid var(--border);
+}
+
+.input-box{
+    display:flex;
+    align-items:end;
+    gap:8px;
+    padding:8px;
+    border:1px solid var(--border);
+    background:rgba(0,0,0,.22);
+    border-radius:18px;
+}
+
+#messageInput{
+    flex:1;
+    min-width:0;
+    max-height:130px;
+    resize:none;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:var(--text);
+    padding:10px;
+}
+
+#messageInput::placeholder{
+    color:#666b80;
+}
+
+.send{
+    width:43px;
+    height:43px;
+    flex:0 0 43px;
+    border-radius:14px;
+    border:1px solid rgba(0,212,255,.25);
+    background:rgba(0,212,255,.08);
+    color:var(--blue);
+    font-size:18px;
+}
+
+.send:hover{
+    background:rgba(0,212,255,.15);
+}
+
+.chat-info{
+    margin-top:7px;
+    padding:0 5px;
+    display:flex;
+    justify-content:space-between;
+    color:#656a7d;
+    font-size:9px;
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.7);
+    backdrop-filter:blur(8px);
+    z-index:50;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+
+.modal.show{
+    display:flex;
+}
+
+.modal-box{
+    width:min(560px,100%);
+    padding:25px;
+}
+
+.modal-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+}
+
+.modal-head h3{
+    font-size:19px;
+}
+
+.close{
+    border:0;
+    background:transparent;
+    color:var(--muted);
+    font-size:22px;
+}
+
+.modal-body{
+    margin-top:18px;
+    color:var(--muted);
+    line-height:1.7;
+    font-size:13px;
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast{
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    z-index:100;
+    max-width:360px;
+    padding:13px 16px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:rgba(12,12,20,.95);
+    box-shadow:var(--shadow);
+    color:var(--text);
+    font-size:12px;
+    transform:translateY(20px);
+    opacity:0;
+    pointer-events:none;
+    transition:.25s;
+}
+
+.toast.show{
+    transform:translateY(0);
+    opacity:1;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:1200px){
+    .app{
+        grid-template-columns:220px minmax(0,1fr);
+    }
+
+    .chat{
+        grid-column:1/-1;
+        min-height:620px;
+    }
+}
+
+@media(max-width:850px){
+    .app{
+        display:flex;
+        flex-direction:column;
+        padding:10px;
+    }
+
+    .sidebar{
+        min-height:auto;
+        padding:14px;
+    }
+
+    .nav{
+        flex-direction:row;
+        overflow-x:auto;
+    }
+
+    .nav button{
+        white-space:nowrap;
+        width:auto;
+    }
+
+    .profile{
+        margin-top:0;
+    }
+
+    .hero-content{
+        grid-template-columns:1fr;
+    }
+
+    .phoenix-stage{
+        min-height:230px;
+    }
+
+    .hero{
+        min-height:auto;
+    }
+
+    .hero-content{
+        min-height:auto;
+    }
+
+    .metrics{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .chat{
+        min-height:600px;
+    }
+}
+
+@media(max-width:600px){
+    .hero-info{
+        padding:22px;
+    }
+
+    .hero h2{
+        font-size:38px;
+    }
+
+    .engine-grid,
+    .project-grid{
+        grid-template-columns:1fr;
+    }
+
+    .payment{
+        flex-direction:column;
+        align-items:stretch;
+    }
+
+    .payment button{
+        width:100%;
+    }
+
+    .topbar-title strong{
+        font-size:16px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="particles"></canvas>
+<div class="scanline"></div>
+
+<div class="app">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar glass">
+
+        <div class="brand">
+            <div class="logo"></div>
+
+            <div>
+                <h1>ADRYNX</h1>
+                <span>INTELLIGENCE PLATFORM</span>
+            </div>
+        </div>
+
+        <div class="status-card glass">
+            <div class="status-row">
+                <div>
+                    <div class="status-title">Connexion API</div>
+                    <div class="status-value" id="apiStatusText">
+                        Vérification...
+                    </div>
+                </div>
+
+                <div class="dot" id="apiDot"></div>
+            </div>
+        </div>
+
+        <nav class="nav">
+            <button class="active" data-section="workspace">
+                ◈ Workspace
+            </button>
+
+            <button data-section="projects">
+                ◇ Projets
+            </button>
+
+            <button data-section="intelligence">
+                ⬡ Intelligence
+            </button>
+
+            <button id="newConversationBtn">
+                ＋ Nouvelle conversation
+            </button>
+        </nav>
+
+        <div class="status-card glass">
+            <div class="status-title">Mobile Money</div>
+
+            <div class="status-row" style="margin-top:8px">
+                <div>
+                    <div class="status-value" id="paymentStatus">
+                        Non configuré
+                    </div>
+                </div>
+
+                <div class="dot" id="paymentDot"></div>
+            </div>
+        </div>
+
+        <div class="profile glass">
+            <div class="profile-name">
+                Jonathan
+            </div>
+
+            <div class="profile-location">
+                Brazzaville · République du Congo
+            </div>
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN WORKSPACE
+    ====================================================== -->
+
+    <main class="main">
+
+        <header class="topbar glass">
+
+            <div class="topbar-title">
+                <strong>Command Center</strong>
+                Intelligence conversationnelle ADRYNX
+            </div>
+
+            <div class="top-actions">
+
+                <button
+                    class="icon-btn"
+                    id="refreshBtn"
+                    title="Actualiser"
+                >
+                    ↻
+                </button>
+
+                <button
+                    class="icon-btn"
+                    id="infoBtn"
+                    title="Informations"
+                >
+                    i
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- HERO -->
+
+        <section class="hero glass">
+
+            <div class="hero-content">
+
+                <div class="hero-info">
+
+                    <div class="eyebrow">
+                        PHÉNIX · CORE 5.1
+                    </div>
+
+                    <h2>
+                        L'intelligence
+                        <span>prend vie.</span>
+                    </h2>
+
+                    <p>
+                        ADRYNX est une intelligence conversationnelle
+                        conçue pour comprendre le contexte, utiliser sa
+                        mémoire, exploiter ses connaissances et dialoguer
+                        avec toi.
+                    </p>
+
+                    <div class="hero-actions">
+
+                        <button
+                            class="btn btn-primary"
+                            id="focusChatBtn"
+                        >
+                            Parler à ADRYNX →
+                        </button>
+
+                        <button
+                            class="btn"
+                            id="healthBtn"
+                        >
+                            Vérifier le système
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div class="phoenix-stage">
+
+                    <video
+                        id="phoenixVideo"
+                        class="phoenix-video"
+                        autoplay
+                        muted
+                        loop
+                        playsinline
+                        preload="metadata"
+                    >
+                        <source
+                            src="https://files.catbox.moe/y2nvi4.mp4"
+                            type="video/mp4"
+                        >
+                    </video>
+
+                    <div
+                        id="videoFallback"
+                        class="video-fallback"
+                    >
+                        <div>
+                            <strong>PHÉNIX CORE</strong>
+                            <br><br>
+                            Animation indisponible.
+                            <br>
+                            Le reste d'ADRYNX continue de fonctionner.
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- METRICS -->
+
+        <section class="metrics">
+
+            <div class="metric glass">
+                <div class="metric-label">
+                    Service
+                </div>
+
+                <div
+                    class="metric-value"
+                    id="serviceValue"
+                >
+                    —
+                </div>
+
+                <div class="metric-sub">
+                    API backend
+                </div>
+            </div>
+
+            <div class="metric glass">
+                <div class="metric-label">
+                    Version
+                </div>
+
+                <div
+                    class="metric-value"
+                    id="versionValue"
+                >
+                    —
+                </div>
+
+                <div class="metric-sub">
+                    Backend
+                </div>
+            </div>
+
+            <div class="metric glass">
+                <div class="metric-label">
+                    Moteur
+                </div>
+
+                <div
+                    class="metric-value"
+                    id="modelValue"
+                >
+                    —
+                </div>
+
+                <div class="metric-sub">
+                    Modèle configuré
+                </div>
+            </div>
+
+            <div class="metric glass">
+                <div class="metric-label">
+                    Vérification
+                </div>
+
+                <div
+                    class="metric-value"
+                    id="verificationValue"
+                >
+                    —
+                </div>
+
+                <div class="metric-sub">
+                    SMS backend
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ENGINE -->
+
+        <section
+            class="engine glass"
+            id="intelligenceSection"
+        >
+
+            <div class="section-title">
+
+                <h3>
+                    Cristal Engine
+                </h3>
+
+                <span id="engineCaption">
+                    État réel du backend
+                </span>
+
+            </div>
+
+            <div class="engine-grid">
+
+                <div class="engine-card">
+
+                    <h4>
+                        Cognitive Core
+                    </h4>
+
+                    <p>
+                        Compréhension, intention, contexte,
+                        mémoire, génération et validation.
+                    </p>
+
+                    <div class="engine-state">
+                        <div class="dot" id="coreDot"></div>
+
+                        <span id="coreState">
+                            En attente
+                        </span>
+                    </div>
+
+                    <div class="progress">
+                        <span id="coreProgress"></span>
+                    </div>
+
+                </div>
+
+
+                <div class="engine-card">
+
+                    <h4>
+                        Conversation
+                    </h4>
+
+                    <p>
+                        État de la conversation actuellement
+                        utilisée par l'interface.
+                    </p>
+
+                    <div class="engine-state">
+
+                        <div
+                            class="dot"
+                            id="conversationDot"
+                        ></div>
+
+                        <span id="conversationState">
+                            Aucune conversation
+                        </span>
+
+                    </div>
+
+                    <div class="progress">
+                        <span id="conversationProgress"></span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- PROJECTS -->
+
+        <section
+            class="projects glass"
+            id="projectsSection"
+        >
+
+            <div class="section-title">
+
+                <h3>
+                    Projets
+                </h3>
+
+                <span id="projectCount">
+                    0 projet
+                </span>
+
+            </div>
+
+            <div
+                class="project-grid"
+                id="projectGrid"
+            >
+
+                <div class="project-empty">
+                    Chargement des projets...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- PAYMENT -->
+
+        <section class="payment glass">
+
+            <div>
+
+                <h3>
+                    Mobile Money
+                </h3>
+
+                <p id="paymentDescription">
+                    Aucun système de paiement réel n'est
+                    actuellement connecté au frontend.
+                </p>
+
+            </div>
+
+            <button
+                class="btn btn-green"
+                id="paymentBtn"
+            >
+                ACTIVER PAIEMENT 5000 FCFA
+            </button>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         CHAT
+    ====================================================== -->
+
+    <aside class="chat glass" id="chatPanel">
+
+        <div class="chat-header">
+
+            <div class="chat-brand">
+
+                <div class="chat-orb">
+                    ✦
+                </div>
+
+                <div>
+
+                    <div class="chat-title">
+                        Phoenix Chat
+                    </div>
+
+                    <div class="chat-sub">
+                        ADRYNX · CONVERSATION
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="chat-state">
+                État :
+                <strong id="chatState">
+                    PRÊT
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div
+            class="messages"
+            id="messages"
+        >
+
+            <div class="message ai">
+
+                Bonjour ! 👋 Je suis ADRYNX.
+                Que veux-tu faire ?
+
+                <div class="message-meta">
+                    ADRYNX
+                </div>
+
+            </div>
+
+            <div
+                class="typing"
+                id="typing"
+            >
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+        </div>
+
+
+        <div class="chat-input">
+
+            <div class="input-box">
+
+                <textarea
+                    id="messageInput"
+                    rows="1"
+                    placeholder="Écris quelque chose à ADRYNX..."
+                    autocomplete="off"
+                ></textarea>
+
+                <button
+                    class="send"
+                    id="sendBtn"
+                    title="Envoyer"
+                >
+                    ↑
+                </button>
+
+            </div>
+
+            <div class="chat-info">
+
+                <span id="conversationInfo">
+                    Conversation locale
+                </span>
+
+                <span>
+                    Entrée = envoyer
+                </span>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+</div>
+
+
+<!-- =========================================================
+     MODAL
+========================================================= -->
+
+<div
+    class="modal"
+    id="infoModal"
+>
+
+    <div class="modal-box glass">
+
+        <div class="modal-head">
+
+            <h3>
+                ADRYNX
+            </h3>
+
+            <button
+                class="close"
+                id="closeModal"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div class="modal-body">
+
+            <strong>
+                Intelligence conversationnelle et plateforme
+                numérique interactive.
+            </strong>
+
+            <br><br>
+
+            Cette interface communique directement avec
+            l'API ADRYNX configurée sur ton serveur.
+
+            <br><br>
+
+            Les informations d'état affichées ici proviennent
+            du backend lorsque celui-ci est disponible.
+
+            <br><br>
+
+            Créateur :
+            <strong>Jonathan Dejah OBENDA</strong>
+
+            <br>
+
+            Date de création :
+            <strong>2 juin 2026</strong>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div
+    class="toast"
+    id="toast"
+></div>
+
+
+<script>
+/* =========================================================
+   CONFIGURATION
+========================================================= */
+
+/*
+   Si ton frontend et ton API sont hébergés sur le même domaine,
+   laisse API_BASE = "".
+
+   Exemple :
+   https://adrynx.onrender.com/
+   → API_BASE = ""
+
+   Si GitHub Pages héberge le frontend et Render l'API,
+   remplace par ton URL Render :
+   const API_BASE = "https://TON-SERVICE.onrender.com";
+*/
+
+const API_BASE = "";
+
+
+/* =========================================================
+   ÉTAT LOCAL
+========================================================= */
+
+let conversationId = null;
+let ownerId = "anon";
+let apiOnline = false;
+
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const $ = id => document.getElementById(id);
+
+const messages = $("messages");
+const input = $("messageInput");
+const sendBtn = $("sendBtn");
+const typing = $("typing");
+const chatState = $("chatState");
+
+const apiDot = $("apiDot");
+const apiStatusText = $("apiStatusText");
+
+const serviceValue = $("serviceValue");
+const versionValue = $("versionValue");
+const modelValue = $("modelValue");
+const verificationValue = $("verificationValue");
+
+const coreDot = $("coreDot");
+const coreState = $("coreState");
+const coreProgress = $("coreProgress");
+
+const conversationDot = $("conversationDot");
+const conversationState = $("conversationState");
+const conversationProgress = $("conversationProgress");
+
+const projectGrid = $("projectGrid");
+const projectCount = $("projectCount");
+
+const paymentBtn = $("paymentBtn");
+const paymentStatus = $("paymentStatus");
+const paymentDot = $("paymentDot");
+const paymentDescription = $("paymentDescription");
+
+
+/* =========================================================
+   UTILITAIRES
+========================================================= */
+
+function apiUrl(path){
+    return API_BASE + path;
+}
+
+function escapeHtml(value){
+    return String(value ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+}
+
+function showToast(text){
+    const toast = $("toast");
+
+    toast.textContent = text;
+    toast.classList.add("show");
+
+    clearTimeout(showToast.timer);
+
+    showToast.timer = setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3000);
+}
+
+function setApiState(online){
+    apiOnline = online;
+
+    apiDot.className =
+        "dot " + (online ? "online" : "offline");
+
+    apiStatusText.textContent =
+        online ? "API en ligne" : "API hors ligne";
+}
+
+function setCoreState(active, label){
+    coreDot.className =
+        "dot " + (active ? "online" : "");
+
+    coreState.textContent =
+        label || (active ? "Disponible" : "En attente");
+
+    coreProgress.style.width =
+        active ? "100%" : "0%";
+}
+
+function setConversationState(active, label){
+    conversationDot.className =
+        "dot " + (active ? "online" : "");
+
+    conversationState.textContent =
+        label || (active ? "Active" : "Aucune conversation");
+
+    conversationProgress.style.width =
+        active ? "100%" : "0%";
+}
+
+
+/* =========================================================
+   HEALTH API
+========================================================= */
+
+async function loadHealth(){
+
+    try{
+
+        const response = await fetch(
+            apiUrl("/api/health"),
+            {
+                method:"GET",
+                headers:{
+                    "Accept":"application/json"
+                }
+            }
+        );
+
+        if(!response.ok){
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        setApiState(Boolean(data.ok));
+
+        serviceValue.textContent =
+            data.service || "ADRYNX";
+
+        versionValue.textContent =
+            data.version || "—";
+
+        modelValue.textContent =
+            data.model || "—";
+
+        verificationValue.textContent =
+            data.verification
+                ? "ACTIVE"
+                : "INACTIVE";
+
+        setCoreState(
+            Boolean(data.ok),
+            data.ok
+                ? "Backend disponible"
+                : "Backend indisponible"
+        );
+
+        /*
+           Le backend actuel ne fournit pas de système
+           de paiement. Nous n'inventons donc pas un état LIVE.
+        */
+
+        paymentStatus.textContent =
+            "Non configuré";
+
+        paymentDot.className =
+            "dot";
+
+        paymentDescription.textContent =
+            "Aucun système de paiement réel n'est actuellement connecté au frontend.";
+
+        return data;
+
+    }catch(error){
+
+        setApiState(false);
+
+        serviceValue.textContent = "OFFLINE";
+        versionValue.textContent = "—";
+        modelValue.textContent = "—";
+        verificationValue.textContent = "—";
+
+        setCoreState(false,"API indisponible");
+
+        showToast(
+            "ADRYNX API inaccessible."
+        );
+
+        return null;
+    }
+}
+
+
+/* =========================================================
+   PROJECTS API
+========================================================= */
+
+async function loadProjects(){
+
+    try{
+
+        const response = await fetch(
+            apiUrl(
+                "/api/projects?telephone=" +
+                encodeURIComponent(ownerId)
+            )
+        );
+
+        if(!response.ok){
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        const projects =
+            Array.isArray(data.projects)
+                ? data.projects
+                : [];
+
+        projectCount.textContent =
+            projects.length +
+            (projects.length > 1
+                ? " projets"
+                : " projet");
+
+        if(!projects.length){
+
+            projectGrid.innerHTML = `
+                <div class="project-empty">
+                    Aucun projet enregistré dans ADRYNX.
+                </div>
+            `;
+
+            return;
+        }
+
+        projectGrid.innerHTML =
+            projects.map((project,index) => {
+
+                const name =
+                    project.nom ||
+                    project.name ||
+                    "Projet ADRYNX";
+
+                const objective =
+                    project.objectif ||
+                    "Aucun objectif renseigné.";
+
+                return `
+                    <article class="project">
+
+                        <div class="project-icon">
+                            ${index % 2 === 0 ? "◇" : "⬡"}
+                        </div>
+
+                        <h4>
+                            ${escapeHtml(name)}
+                        </h4>
+
+                        <p>
+                            ${escapeHtml(objective)}
+                        </p>
+
+                    </article>
+                `;
+
+            }).join("");
+
+    }catch(error){
+
+        projectCount.textContent = "Indisponible";
+
+        projectGrid.innerHTML = `
+            <div class="project-empty">
+                Impossible de charger les projets.
+            </div>
+        `;
+    }
+}
+
+
+/* =========================================================
+   DASHBOARD API
+========================================================= */
+
+async function loadDashboard(){
+
+    try{
+
+        const response = await fetch(
+            apiUrl(
+                "/api/dashboard?telephone=" +
+                encodeURIComponent(ownerId)
+            )
+        );
+
+        if(!response.ok){
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data = await response.json();
+
+        const dashboard =
+            data.dashboard || {};
+
+        /*
+           Le dashboard est actuellement utilisé
+           pour confirmer que le backend répond.
+           Nous ne fabriquons aucun chiffre absent.
+        */
+
+        const conversations =
+            dashboard.conversations;
+
+        if(
+            typeof conversations === "number" &&
+            conversations > 0
+        ){
+            conversationState.textContent =
+                conversations +
+                " conversation(s)";
+        }
+
+    }catch(error){
+
+        /* Pas de fausse donnée si le dashboard échoue. */
+    }
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+function addMessage(
+    role,
+    text,
+    meta=""
+){
+
+    const element =
+        document.createElement("div");
+
+    element.className =
+        "message " + role;
+
+    element.innerHTML =
+        escapeHtml(text);
+
+    if(meta){
+
+        const metadata =
+            document.createElement("div");
+
+        metadata.className =
+            "message-meta";
+
+        metadata.textContent =
+            meta;
+
+        element.appendChild(metadata);
+    }
+
+    messages.insertBefore(
+        element,
+        typing
+    );
+
+    messages.scrollTop =
+        messages.scrollHeight;
+}
+
+function setTyping(show){
+
+    if(show){
+        typing.classList.add("show");
+    }else{
+        typing.classList.remove("show");
+    }
+
+    messages.scrollTop =
+        messages.scrollHeight;
+}
+
+
+/* =========================================================
+   NOUVELLE CONVERSATION
+========================================================= */
+
+async function newConversation(){
+
+    try{
+
+        const response = await fetch(
+            apiUrl("/api/conversations"),
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({
+                    telephone:ownerId,
+                    titre:"Nouvelle conversation"
+                })
+            }
+        );
+
+        if(!response.ok){
+            throw new Error("HTTP " + response.status);
+        }
+
+        const data =
+            await response.json();
+
+        conversationId =
+            data.conversation_id || null;
+
+        messages.innerHTML = "";
+
+        const welcome =
+            document.createElement("div");
+
+        welcome.className =
+            "message ai";
+
+        welcome.innerHTML =
+            "Nouvelle conversation prête. 👋<div class=\"message-meta\">ADRYNX</div>";
+
+        messages.appendChild(welcome);
+        messages.appendChild(typing);
+
+        setConversationState(
+            true,
+            "Nouvelle conversation"
+        );
+
+        $("conversationInfo").textContent =
+            conversationId
+                ? "Conversation " +
+                  conversationId.slice(0,8)
+                : "Conversation active";
+
+        showToast(
+            "Nouvelle conversation créée."
+        );
+
+    }catch(error){
+
+        /*
+           Même si la création distante échoue,
+           l'interface ne prétend pas avoir créé
+           une conversation backend.
+        */
+
+        showToast(
+            "Impossible de créer la conversation."
+        );
+    }
+}
+
+
+/* =========================================================
+   ENVOI MESSAGE
+========================================================= */
+
+async function sendMessage(){
+
+    const question =
+        input.value.trim();
+
+    if(!question){
+        return;
+    }
+
+    if(!apiOnline){
+
+        addMessage(
+            "system",
+            "ADRYNX API indisponible. Vérifie le serveur."
+        );
+
+        return;
+    }
+
+    addMessage(
+        "user",
+        question,
+        "Vous"
+    );
+
+    input.value = "";
+    input.style.height = "auto";
+
+    sendBtn.disabled = true;
+
+    setTyping(true);
+
+    chatState.textContent =
+        "TRAITEMENT";
+
+    setCoreState(
+        true,
+        "Traitement en cours"
+    );
+
+    try{
+
+        const response = await fetch(
+            apiUrl("/api/ask"),
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "Accept":"application/json"
+                },
+                body:JSON.stringify({
+                    message:question,
+                    telephone:ownerId,
+                    conversation_id:conversationId
+                })
+            }
+        );
+
+        if(!response.ok){
+
+            let detail =
+                "Erreur API HTTP " +
+                response.status;
+
+            try{
+                const errorData =
+                    await response.json();
+
+                if(errorData.detail){
+                    detail =
+                        String(errorData.detail);
+                }
+            }catch(_){}
+
+            throw new Error(detail);
+        }
+
+        const data =
+            await response.json();
+
+        /*
+           IMPORTANT :
+           /api/ask retourne actuellement :
+
+           reponse
+           conv_id
+           intent
+           mode
+
+           et non "response".
+        */
+
+        const answer =
+            data.reponse ||
+            data.response ||
+            data.answer;
+
+        if(!answer){
+
+            throw new Error(
+                "ADRYNX n'a retourné aucune réponse."
+            );
+        }
+
+        if(data.conv_id){
+            conversationId =
+                data.conv_id;
+        }
+
+        const intent =
+            data.intent ||
+            "conversation";
+
+        const mode =
+            data.mode ||
+            "DIALOGUE";
+
+        addMessage(
+            "ai",
+            answer,
+            "ADRYNX · " +
+            intent +
+            " · " +
+            mode
+        );
+
+        setConversationState(
+            true,
+            "Active · " + mode
+        );
+
+        $("conversationInfo").textContent =
+            conversationId
+                ? "Conversation " +
+                  conversationId.slice(0,8)
+                : "Conversation active";
+
+        chatState.textContent =
+            "PRÊT";
+
+        setCoreState(
+            true,
+            "Réponse générée"
+        );
+
+        /*
+           Animation uniquement en réaction
+           à une vraie réponse reçue.
+        */
+        pulsePhoenix();
+
+    }catch(error){
+
+        addMessage(
+            "system",
+            "Erreur : " + error.message
+        );
+
+        chatState.textContent =
+            "ERREUR";
+
+        setCoreState(
+            false,
+            "Erreur de traitement"
+        );
+
+        showToast(
+            error.message
+        );
+
+    }finally{
+
+        setTyping(false);
+
+        sendBtn.disabled = false;
+
+        input.focus();
+    }
+}
+
+
+/* =========================================================
+   PHOENIX
+========================================================= */
+
+function pulsePhoenix(){
+
+    const logo =
+        document.querySelector(".logo");
+
+    const orb =
+        document.querySelector(".chat-orb");
+
+    logo.style.transform =
+        "scale(1.12)";
+
+    orb.style.transform =
+        "scale(1.12)";
+
+    setTimeout(() => {
+
+        logo.style.transform =
+            "";
+
+        orb.style.transform =
+            "";
+
+    },450);
+}
+
+
+/* =========================================================
+   PAYMENT
+========================================================= */
+
+paymentBtn.addEventListener(
+    "click",
+    () => {
+
+        showToast(
+            "Le paiement réel n'est pas encore connecté au backend."
+        );
+
+    }
+);
+
+
+/* =========================================================
+   AUTO HEIGHT TEXTAREA
+========================================================= */
+
+input.addEventListener(
+    "input",
+    () => {
+
+        input.style.height =
+            "auto";
+
+        input.style.height =
+            Math.min(
+                input.scrollHeight,
+                130
+            ) + "px";
+    }
+);
+
+
+/* =========================================================
+   ENTER = SEND
+========================================================= */
+
+input.addEventListener(
+    "keydown",
+    event => {
+
+        if(
+            event.key === "Enter" &&
+            !event.shiftKey
+        ){
+
+            event.preventDefault();
+
+            sendMessage();
+        }
+    }
+);
+
+
+/* =========================================================
+   BUTTON SEND
+========================================================= */
+
+sendBtn.addEventListener(
+    "click",
+    sendMessage
+);
+
+
+/* =========================================================
+   FOCUS CHAT
+========================================================= */
+
+$("focusChatBtn").addEventListener(
+    "click",
+    () => {
+
+        $("chatPanel").scrollIntoView({
+            behavior:"smooth",
+            block:"center"
+        });
+
+        setTimeout(
+            () => input.focus(),
+            500
+        );
+    }
+);
+
+
+/* =========================================================
+   HEALTH BUTTON
+========================================================= */
+
+$("healthBtn").addEventListener(
+    "click",
+    async () => {
+
+        showToast(
+            "Vérification du backend..."
+        );
+
+        const result =
+            await loadHealth();
+
+        if(result){
+
+            showToast(
+                "ADRYNX API opérationnelle."
+            );
+
+        }else{
+
+            showToast(
+                "ADRYNX API inaccessible."
+            );
+        }
+    }
+);
+
+
+/* =========================================================
+   REFRESH
+========================================================= */
+
+$("refreshBtn").addEventListener(
+    "click",
+    async () => {
+
+        await Promise.all([
+            loadHealth(),
+            loadProjects(),
+            loadDashboard()
+        ]);
+
+        showToast(
+            "Interface actualisée."
+        );
+    }
+);
+
+
+/* =========================================================
+   NEW CONVERSATION
+========================================================= */
+
+$("newConversationBtn").addEventListener(
+    "click",
+    newConversation
+);
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+$("infoBtn").addEventListener(
+    "click",
+    () => {
+        $("infoModal").classList.add("show");
+    }
+);
+
+$("closeModal").addEventListener(
+    "click",
+    () => {
+        $("infoModal").classList.remove("show");
+    }
+);
+
+$("infoModal").addEventListener(
+    "click",
+    event => {
+
+        if(event.target === $("infoModal")){
+            $("infoModal").classList.remove("show");
+        }
+    }
+);
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+document
+    .querySelectorAll(".nav button[data-section]")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(".nav button")
+                    .forEach(
+                        b => b.classList.remove("active")
+                    );
+
+                button.classList.add("active");
+
+                const section =
+                    button.dataset.section;
+
+                if(section === "projects"){
+
+                    $("projectsSection")
+                        .scrollIntoView({
+                            behavior:"smooth"
+                        });
+
+                }else if(section === "intelligence"){
+
+                    $("intelligenceSection")
+                        .scrollIntoView({
+                            behavior:"smooth"
+                        });
+
+                }else{
+
+                    window.scrollTo({
+                        top:0,
+                        behavior:"smooth"
+                    });
+                }
+            }
+        );
+    });
+
+
+/* =========================================================
+   PHOENIX VIDEO FALLBACK
+========================================================= */
+
+$("phoenixVideo").addEventListener(
+    "error",
+    () => {
+
+        $("phoenixVideo").style.display =
+            "none";
+
+        $("videoFallback").style.display =
+            "grid";
+    }
+);
+
+
+/* =========================================================
+   PARTICULES
+========================================================= */
+
+const canvas =
+    $("particles");
+
+const ctx =
+    canvas.getContext("2d");
+
+let particles = [];
+
+function resizeCanvas(){
+
+    canvas.width =
+        window.innerWidth *
+        devicePixelRatio;
+
+    canvas.height =
+        window.innerHeight *
+        devicePixelRatio;
+
+    ctx.setTransform(
+        devicePixelRatio,
+        0,
+        0,
+        devicePixelRatio,
+        0,
+        0
+    );
+}
+
+function createParticles(){
+
+    particles = [];
+
+    const amount =
+        Math.min(
+            75,
+            Math.floor(
+                window.innerWidth / 18
+            )
+        );
+
+    for(let i=0;i<amount;i++){
+
+        particles.push({
+            x:Math.random()*window.innerWidth,
+            y:Math.random()*window.innerHeight,
+            r:Math.random()*1.5+.3,
+            vx:(Math.random()-.5)*.18,
+            vy:(Math.random()-.5)*.18,
+            a:Math.random()*.5+.1
+        });
+    }
+}
+
+function drawParticles(){
+
+    ctx.clearRect(
+        0,
+        0,
+        window.innerWidth,
+        window.innerHeight
+    );
+
+    for(const p of particles){
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if(p.x < 0) p.x = window.innerWidth;
+        if(p.x > window.innerWidth) p.x = 0;
+
+        if(p.y < 0) p.y = window.innerHeight;
+        if(p.y > window.innerHeight) p.y = 0;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.r,
+            0,
+            Math.PI*2
+        );
+
+        /*
+           On ne force pas une couleur CSS
+           sur les composants principaux.
+           Ici les particules sont purement
+           décoratives.
+        */
+
+        ctx.fillStyle =
+            "rgba(120,180,255," +
+            p.a +
+            ")";
+
+        ctx.fill();
+    }
+
+    requestAnimationFrame(
+        drawParticles
+    );
+}
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        resizeCanvas();
+        createParticles();
+    }
+);
+
+resizeCanvas();
+createParticles();
+drawParticles();
+
+
+/* =========================================================
+   BOOT
+========================================================= */
+
+async function boot(){
+
+    /*
+       On utilise "anon" par défaut car le backend
+       actuel accepte cet identifiant.
+    */
+
+    ownerId = "anon";
+
+    setConversationState(
+        false,
+        "Aucune conversation"
+    );
+
+    chatState.textContent =
+        "CONNEXION";
+
+    await loadHealth();
+
+    await Promise.all([
+        loadProjects(),
+        loadDashboard()
+    ]);
+
+    chatState.textContent =
+        apiOnline
+            ? "PRÊT"
+            : "HORS LIGNE";
+
+    if(apiOnline){
+
+        setCoreState(
+            true,
+            "Backend disponible"
+        );
+
+    }
+
+    input.focus();
+}
+
+boot();
+
+</script>
+
+</body>
+</html>
+```
