@@ -9,12 +9,10 @@ import adrynx
 import verification
 
 app = FastAPI(title="ADRYNX API", version="5.2", description="API cognitive PHOENIX FIX")
-
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_PATHS = [BASE_DIR / "index.html", BASE_DIR / "frontend" / "index.html", BASE_DIR / "static" / "index.html"]
-
 PHOENIX_VIDEO = "https://files.catbox.moe/y2nvi4.mp4"
 
 class Ask(BaseModel):
@@ -54,30 +52,17 @@ def root():
 def health():
     return {"ok": True, "service": "ADRYNX", "version": "5.2-phoenix-fix", "video_core": PHOENIX_VIDEO, "groq_configured": bool(getattr(adrynx, "GROQ_API_KEY", None)), "model": getattr(adrynx, "GROQ_MODEL", None), "learning": "memory_examples_not_local_fine_tuning", "verification": verification.verification_active()}
 
-# ============================================================
-# IA - AVEC BLOQUEUR ANTI-WIKIPEDIA
-# ============================================================
 @app.post("/ask")
 @app.post("/api/ask")
 def ask(req: Ask):
     msg = (req.message or req.q or "").strip()
     if not msg: raise HTTPException(status_code=400, detail="message/q requis")
-
-    # --- FIX NUCLEAIRE : bloque Cc, Slt, Quoi, etc. avant d'appeler les parents ---
     low = msg.lower().strip()
     bloqueurs = {"cc","c c","cc?","slt","salut","yo","hey","wesh","bjr","bonjour","quoi","quoi?","comment","comment?","cc mon ami"}
     if low in bloqueurs or len(low) <= 2:
-        return {
-            "ok": True,
-            "reponse": "Cc! C'est ADRYNX 🔥 Je suis en ligne. On lance quoi?",
-            "intent": "salutation",
-            "source": "noyau-direct-fix",
-            "video": PHOENIX_VIDEO
-        }
-
+        return {"ok": True, "reponse": "Cc! C'est ADRYNX 🔥 Je suis en ligne. On lance quoi?", "intent": "salutation", "source": "noyau-direct-fix", "video": PHOENIX_VIDEO}
     return adrynx.traiter_question(msg, owner(req.telephone or req.anon), req.conversation_id)
 
-# Le reste de ton code reste identique
 @app.get("/api/verification/status")
 def verification_status(): return {"ok": True, "verification": verification.informations_verification()}
 @app.post("/api/verification/sms/request")
@@ -131,7 +116,6 @@ async def ws(websocket: WebSocket, owner_id: str):
             data = await websocket.receive_json()
             question = str(data.get("message") or data.get("q") or "").strip()
             if not question: continue
-            # même bloqueur en WS
             if question.lower().strip() in {"cc","slt","salut","yo"}:
                 await websocket.send_json({"type": "answer", "data": {"ok": True, "reponse": "Cc! C'est ADRYNX 🔥", "intent": "salutation"}})
                 continue
