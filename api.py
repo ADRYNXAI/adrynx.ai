@@ -1,140 +1,159 @@
-# api.py v4.0.1 FIX - Ton design plateforme interactive - Indentation corrigee
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
-import adrynx
+from fastapi.responses import HTMLResponse
+import os
 
-app = FastAPI(title="ADRYNX Platform")
+app = FastAPI(title="ADRYNX - Linear OS Congo")
 
-HTML = r"""
-<!DOCTYPE html><html lang="fr"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ADRYNX - Plateforme Interactive</title>
+# Import ton moteur existant
+try:
+    from adrynx import ADRYNX_ENGINE
+except:
+    ADRYNX_ENGINE = None
+
+HTML_LINEAR = """
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADRYNX — Workspace</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#0c0c0e;color:#e5e7eb;font-family:system-ui;display:flex;height:100dvh;flex-direction:column}
-.top{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#111113;border-bottom:1px solid #232326}
-.logo{width:28px;height:28px;background:#4f7cff;border-radius:6px;display:grid;place-items:center;font-weight:800;color:white}
-.t1{font-weight:700;font-size:14px}.t2{font-size:11px;color:#9ca3af}
-.nav{display:flex;gap:6px;padding:8px 12px;background:#111113;border-bottom:1px solid #1f1f23;overflow:auto}
-.nav button{background:#18181b;border:1px solid #27272a;color:#a1a1aa;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;white-space:nowrap}
-.nav button.active{background:#4f7cff;color:white;border-color:#4f7cff}
-.main{flex:1;display:flex;overflow:hidden}
-.sidebar{width:220px;background:#111113;border-right:1px solid #232326;padding:10px;display:none}
-@media(min-width:800px){.sidebar{display:block}}
-.dash{background:#18181b;border:1px solid #232326;border-radius:12px;padding:12px;margin:12px;font-size:13px;line-height:1.6}
-.dash b{color:#fff}
-.phone{margin:12px;background:#18181b;border:1px solid #232326;border-radius:12px;padding:10px}
-.phone label{font-size:11px;color:#a1a1aa}.row{display:flex;gap:6px;margin-top:6px}
-.row input{flex:1;background:#0c0c0e;border:1px solid #2a2a2e;border-radius:8px;padding:8px;color:white}
-.row button{background:#4f7cff;border:none;border-radius:8px;color:white;padding:0 12px;font-weight:600;cursor:pointer}
-.chat{flex:1;display:flex;flex-direction:column;overflow:hidden}
-#msgs{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:85%;padding:10px 14px;border-radius:16px;font-size:14px}
-.bot{align-self:flex-start;background:#1f2937;color:#e5e7eb;display:flex;gap:8px;border-top-left-radius:4px}
-.bot .a{width:22px;height:22px;background:#4f7cff;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:white;min-width:22px}
-.user{align-self:flex-end;background:#4f7cff;color:white;border-top-right-radius:4px}
-.bar{padding:10px;background:#111113;border-top:1px solid #232326;display:flex;gap:8px}
-.bar input{flex:1;background:#18181b;border:1px solid #27272a;border-radius:24px;padding:12px 16px;color:white;outline:none}
-.bar button{width:42px;height:42px;border-radius:50%;background:#4f7cff;border:none;color:white;cursor:pointer}
-.foot{text-align:center;font-size:10px;color:#52525b;padding:4px}
-</style></head><body>
-<div class="top"><div class="logo">A</div><div><div class="t1">ADRYNX AI</div><div class="t2">Plateforme Interactive - Jonathan Dejah OBENDA - 02/06/2026</div></div></div>
-<div class="nav">
-<button class="active" onclick="switchTab('chat',event)">Conversation</button>
-<button onclick="switchTab('dashboard',event)">Tableau de bord vivant</button>
-<button onclick="switchTab('projets',event)">Projets</button>
-<button onclick="switchTab('fichiers',event)">Fichiers</button>
-<button onclick="switchTab('profil',event)">Profil</button>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
+body{background:#0E0E10;color:#EDEEF0;display:flex;height:100vh;overflow:hidden}
+.sidebar{width:260px;background:#121214;border-right:1px solid #1F1F23;display:flex;flex-direction:column;justify-content:space-between}
+.main{flex:1;display:flex;flex-direction:column}
+.topbar{height:56px;border-bottom:1px solid #1F1F23;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.logo{font-weight:800;font-size:20px;letter-spacing:-0.5px;display:flex;align-items:center;gap:8px}
+.logo span{background:#8B5CF6;padding:2px 8px;border-radius:6px;font-size:12px}
+.menu{padding:16px}
+.menu h4{color:#6E6E77;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px}
+.menu a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:#A1A1AA;text-decoration:none;font-size:14px}
+.menu a.active,.menu a:hover{background:#1E1E22;color:white}
+.dashboard{padding:24px;overflow-y:auto;flex:1}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:20px 0}
+.card{background:#17171A;border:1px solid #232326;border-radius:12px;padding:16px}
+.card h3{font-size:13px;color:#A1A1AA;margin-bottom:8px}
+.card b{font-size:22px}
+.projects{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+.proj-list,.templates{background:#17171A;border:1px solid #232326;border-radius:12px;padding:16px}
+.btn{background:#8B5CF6;color:white;border:none;padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer}
+.btn-black{background:#232326;color:white}
+.chat{width:380px;background:#121214;border-left:1px solid #1F1F23;display:flex;flex-direction:column}
+.chatbox{flex:1;padding:16px;overflow-y:auto}
+.msg{background:#232326;padding:12px;border-radius:12px;margin-bottom:12px;font-size:14px;line-height:1.5}
+.msg.me{background:#8B5CF6;color:white;margin-left:30px}
+.inputbar{padding:12px;border-top:1px solid #1F1F23;display:flex;gap:8px}
+.inputbar input{flex:1;background:#1E1E22;border:1px solid #2A2A2E;border-radius:8px;padding:10px;color:white}
+.mobile-badge{background:#00D395;color:black;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="sidebar">
+<div>
+<div style="padding:16px" class="logo">⬣ ADRYNX <span>PRO</span></div>
+<div class="menu">
+<h4>Workspace</h4>
+<a class="active">🏠 Home</a>
+<a>📥 Inbox <span style="margin-left:auto;background:#2A2A2E;padding:2px 6px;border-radius:4px">3</span></a>
+<a>🔍 Search</a>
+<h4>Projects</h4>
+<a>🚀 Lancement Boutique Brazza</a>
+<a>🧪 Recherche Marché</a>
+<a>📢 Campagne Mobile Money</a>
+<h4>AI Agents</h4>
+<a>✨ Assistant Écriture</a>
+<a>📊 Analyste Data</a>
 </div>
+</div>
+<div style="padding:16px;border-top:1px solid #1F1F23;display:flex;justify-content:space-between;align-items:center">
+<div style="display:flex;gap:8px;align-items:center"><div style="width:32px;height:32px;background:#8B5CF6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">J</div><div><div style="font-size:13px;font-weight:600">Jonathan</div><div style="font-size:11px;color:#6E6E77">Brazzaville • Pro</div></div></div>
+</div>
+</div>
+
 <div class="main">
-<div class="sidebar" id="sidebar">
-<div class="phone"><label>Mobile Money</label><div class="row"><input id="phone" placeholder="+242..."><button onclick="savePhone()">OK</button></div></div>
-<div id="dash" class="dash">Chargement...</div>
+<div class="topbar">
+<div><h2>Dashboard</h2><p style="color:#6E6E77;font-size:13px">Bienvenue Jonathan — voici ton workspace aujourd'hui</p></div>
+<div style="display:flex;gap:8px"><button class="btn-black btn">+ New Doc</button><button class="btn">✨ New AI Chat</button></div>
 </div>
+<div class="dashboard">
+<div class="cards">
+<div class="card"><h3>✨ Tokens Used</h3><b>12.4K / 50K</b><p style="font-size:12px;color:#6E6E77;margin-top:6px">24% limite • +12% cette semaine</p></div>
+<div class="card"><h3>⚡ AI Calls</h3><b>342 calls</b><p style="font-size:12px;color:#6E6E77;margin-top:6px">98% réussite • Projet Congo</p></div>
+<div class="card"><h3>📄 Active Docs</h3><b>18 docs</b><p style="font-size:12px;color:#6E6E77;margin-top:6px">5 mis à jour aujourd'hui</p></div>
+<div class="card"><h3>👥 Team <span class="mobile-badge">Mobile Money ON</span></h3><b>6 membres</b><p style="font-size:12px;color:#6E6E77;margin-top:6px">Paiement Airtel • MTN • M-Pesa</p></div>
+</div>
+
+<div class="projects">
+<div class="proj-list">
+<h3 style="margin-bottom:12px">Recent Projects →</h3>
+<div style="background:#1E1E22;padding:12px;border-radius:10px;margin-bottom:12px"><b>🚀 Boutique Brazza</b> <span style="background:#2A2A2E;padding:2px 6px;border-radius:6px;font-size:11px">En cours</span><p style="font-size:13px;color:#A1A1AA;margin-top:6px">Business plan + calcul prix FCFA + Mobile Money</p><div style="height:4px;background:#2A2A2E;border-radius:4px;margin-top:10px"><div style="width:70%;height:100%;background:#8B5CF6"></div></div></div>
+<div style="background:#1E1E22;padding:12px;border-radius:10px"><b>🧪 Recherche Marché Congo</b> <span style="background:#0A3D2E;color:#00D395;padding:2px 6px;border-radius:6px;font-size:11px">Complété</span><p style="font-size:13px;color:#A1A1AA;margin-top:6px">12 papiers analysés sur paiement mobile Afrique</p></div>
+</div>
+<div class="templates">
+<h3>Templates • Browse →</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+<div style="background:#1E1E22;padding:10px;border-radius:8px;font-size:13px"><b>📝 Business Plan Congo</b><br><span style="color:#6E6E77">Avec prix FCFA + Mobile Money</span></div>
+<div style="background:#1E1E22;padding:10px;border-radius:8px;font-size:13px"><b>📢 Pub MTN/Airtel</b><br><span style="color:#6E6E77">Génère campagne SMS</span></div>
+<div style="background:#1E1E22;padding:10px;border-radius:8px;font-size:13px"><b>📊 Analyse Ventes</b><br><span style="color:#6E6E77">CSV + insights</span></div>
+<div style="background:#1E1E22;padding:10px;border-radius:8px;font-size:13px"><b>📄 Devis Pro</b><br><span style="color:#6E6E77">Facture Mobile Money</span></div>
+</div>
+<button onclick="pay()" style="width:100%;margin-top:16px;background:#00D395;color:black;border:none;padding:12px;border-radius:8px;font-weight:800;cursor:pointer">💳 Payer 5000 FCFA avec Mobile Money</button>
+</div>
+</div>
+</div>
+</div>
+
 <div class="chat">
-<div id="msgs"><div class="msg bot"><div class="a">A</div><div>Bonjour! Je suis ADRYNX, orchestrateur de ta plateforme. Je comprends - personnalise - agis. Essaie: "Montre mes projets" ou "Cree un projet ADRYNX" ou "Tableau de bord".</div></div></div>
-<div class="bar"><input id="q" placeholder="Pose ta question, commande naturelle..." onkeydown="if(event.key==='Enter')send()"><button onclick="send()">➤</button></div>
-<div class="foot">adrynx-ai.onrender.com - SOURCE DE VERITE: serveur</div>
-</div></div>
+<div style="padding:16px;border-bottom:1px solid #1F1F23;display:flex;justify-content:space-between"><b>✨ ADRYNX Chat</b><span style="font-size:11px;color:#6E6E77">GPT-5 • Contexte Projet</span></div>
+<div class="chatbox" id="chatbox">
+<div class="msg me">Résume le lancement Q1 risques et next steps en 4 points</div>
+<div class="msg"><b>ADRYNX:</b> Voici le résumé pour Boutique Brazza Q1:<br>• Risque: Délai fournisseur → solution: backup Pointe-Noire<br>• Risque: Frais MTN 18% au dessus → réduire et pousser Airtel Money<br>• Next: Finaliser page avec prix FCFA d'ici Mercredi<br>• Next: Tester paiement M-Pesa avant lancement</div>
+</div>
+<div class="inputbar">
+<input id="inp" placeholder="Ask ADRYNX anything... @K pour commandes, /payer pour Mobile Money">
+<button class="btn" onclick="send()">➤</button>
+</div>
+</div>
+
 <script>
-let phone=localStorage.getItem('adrynx_phone')||''; document.getElementById('phone').value=phone;
-function savePhone(){
-  phone=document.getElementById('phone').value.trim();
-  localStorage.setItem('adrynx_phone',phone);
-  loadDash();
+function pay(){
+ alert('ADRYNX Mobile Money: Redirection Airtel Money / MTN MoMo - 5000 FCFA - Intégration en cours. API: adrynx.py');
+ window.open('https://www.mtn.cg/momo','_blank');
 }
-async function switchTab(t,evt){
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
-  if(evt) evt.target.classList.add('active');
-  if(t==='dashboard'){loadDash(); addBot('Voici ton tableau de bord vivant:');}
-  if(t==='projets'){
-    let r=await fetch('/api/projects?owner='+encodeURIComponent(phone||'anonyme'));
-    let j=await r.json();
-    let txt=j.length? j.map(p=>`[${p.id}] ${p.nom} ${p.progression}%`).join('\n') : 'Aucun projet';
-    addBot(txt);
-  }
-  if(t==='chat'){addBot('Mode conversation actif. Contexte global conserve.');}
-  if(t==='fichiers'){addBot('Module fichiers bientot disponible.');}
-  if(t==='profil'){addBot('Profil: '+ (phone||'anonyme'));}
+function send(){
+ let i=document.getElementById('inp');
+ let box=document.getElementById('chatbox');
+ if(!i.value) return;
+ box.innerHTML+=`<div class='msg me'>${i.value}</div>`;
+ let q=i.value; i.value='';
+ fetch('/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message:q})})
+ .then(r=>r.json()).then(d=>{
+   box.innerHTML+=`<div class='msg'><b>ADRYNX:</b> ${d.reply || 'Traitement en cours... Je crée le projet pour toi.'}</div>`;
+   box.scrollTop=box.scrollHeight;
+ }).catch(()=>{ box.innerHTML+=`<div class='msg'><b>ADRYNX:</b> Mode démo local - Connecte adrynx.py pour réponse IA réelle.</div>`; })
 }
-async function loadDash(){
-  try{
-    let r=await fetch('/api/dashboard?owner='+encodeURIComponent(phone||'anonyme'));
-    let d=await r.json();
-    document.getElementById('dash').innerHTML=`<b>${d.bonjour}</b><br>PROJETS -> ${d.projets}<br>TACHES -> ${d.taches}<br>MESSAGES -> ${d.messages}<br>ACTIVITE -> ${d.activite}<br>ADRYNX -> ${d.suggestion}`;
-  }catch(e){}
-}
-function addUser(t){
-  let d=document.createElement('div');d.className='msg user';d.textContent=t;
-  document.getElementById('msgs').appendChild(d);
-  document.getElementById('msgs').scrollTop=99999;
-}
-function addBot(t){
-  let c=document.createElement('div');c.className='msg bot';
-  let a=document.createElement('div');a.className='a';a.textContent='A';
-  let b=document.createElement('div');b.innerText=t;
-  c.appendChild(a);c.appendChild(b);
-  document.getElementById('msgs').appendChild(c);
-  document.getElementById('msgs').scrollTop=99999;
-}
-async function send(){
-  let i=document.getElementById('q');let q=i.value.trim();if(!q)return;
-  addUser(q); i.value='';
-  let r=await fetch('/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,telephone:phone})});
-  let j=await r.json(); addBot(j.reponse); loadDash();
-}
-loadDash();
-</script></body></html>
+</script>
+</body>
+</html>
 """
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
-    return HTML
+    return HTML_LINEAR
 
-@app.post("/ask")
-async def ask(req: Request):
-    data = await req.json()
-    q = data.get("question", "")
-    tel = data.get("telephone", "")
-    anon = req.client.host if req.client else "anon"
-    rep = adrynx.traiter_question(q, telephone=tel or None, anon=anon)
-    return JSONResponse({"reponse": rep})
-
-@app.get("/api/dashboard")
-async def dashboard(owner: str = "anonyme"):
-    return adrynx.get_dashboard(owner or "anonyme")
-
-@app.get("/api/projects")
-async def projects(owner: str = "anonyme"):
-    return adrynx.list_projects(owner or "anonyme")
-
-@app.post("/api/projects")
-async def create_proj(req: Request):
-    data = await req.json()
-    owner = data.get("owner", "anonyme")
-    nom = data.get("nom", "Nouveau projet")
-    pid = adrynx.create_project(owner, nom, data.get("objectif", ""))
-    return {"id": pid, "nom": nom}
+@app.post("/chat")
+async def chat_api(request: Request):
+    data = await request.json()
+    msg = data.get("message","")
+    if ADRYNX_ENGINE:
+        try:
+            reply = ADRYNX_ENGINE.process(msg)
+            return {"reply": reply}
+        except Exception as e:
+            return {"reply": f"Erreur moteur: {e} - Message reçu: {msg}"}
+    return {"reply": f"ADRYNX a bien reçu: '{msg}'. Connecte ton adrynx.py pour activer l'IA complète + paiement Mobile Money."}
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "4.0-fix", "architecture": "monolithe modulaire + event bus"}
+    return {"status":"live", "platform":"ADRYNX Linear OS v5 Congo", "engine": bool(ADRYNX_ENGINE)}
