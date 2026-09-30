@@ -1,0 +1,1070 @@
+```css
+/* ============================================================
+   ADRYNX PHOENIX v8
+   QUANTUM LIVING ENTITY
+   ÉTAPE A — IDENTITÉ VISUELLE
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   VARIABLES
+   ------------------------------------------------------------ */
+
+:root {
+    --adrynx-bg: #05050A;
+    --adrynx-panel: rgba(10, 12, 17, 0.78);
+    --adrynx-panel-soft: rgba(15, 18, 23, 0.68);
+
+    --phoenix-green: #00FF88;
+    --phoenix-cyan: #00D4FF;
+    --phoenix-white: #ffffff;
+
+    --border-soft: rgba(0, 255, 136, 0.14);
+    --border-active: rgba(0, 255, 136, 0.45);
+
+    --text-main: #ffffff;
+    --text-soft: rgba(255, 255, 255, 0.65);
+    --text-muted: rgba(255, 255, 255, 0.42);
+
+    --radius: 14px;
+}
+
+
+/* ------------------------------------------------------------
+   RESET / BASE
+   ------------------------------------------------------------ */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+    background: var(--adrynx-bg);
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    background:
+        radial-gradient(
+            circle at 50% 45%,
+            rgba(0, 255, 136, 0.045) 0%,
+            rgba(0, 255, 136, 0.018) 18%,
+            transparent 48%
+        ),
+        radial-gradient(
+            circle at 80% 20%,
+            rgba(0, 212, 255, 0.025),
+            transparent 32%
+        ),
+        var(--adrynx-bg);
+
+    color: var(--text-main);
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+
+    display: flex;
+
+    position: relative;
+    overflow-x: hidden;
+
+    isolation: isolate;
+}
+
+
+/* ------------------------------------------------------------
+   QUANTUM NOISE
+   Texture très légère sans image externe.
+   ------------------------------------------------------------ */
+
+body::before {
+    content: "";
+
+    position: fixed;
+    inset: 0;
+
+    pointer-events: none;
+
+    opacity: 0.055;
+
+    background-image:
+        radial-gradient(
+            rgba(255, 255, 255, 0.55) 0.45px,
+            transparent 0.55px
+        );
+
+    background-size: 4px 4px;
+
+    mix-blend-mode: screen;
+
+    z-index: -5;
+}
+
+
+/* ------------------------------------------------------------
+   CHAMP QUANTIQUE CENTRAL
+   ------------------------------------------------------------ */
+
+body::after {
+    content: "";
+
+    position: fixed;
+
+    width: min(75vw, 720px);
+    height: min(75vw, 720px);
+
+    left: 50%;
+    top: 45%;
+
+    transform: translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(0, 255, 136, 0.065) 0%,
+            rgba(0, 255, 136, 0.028) 18%,
+            rgba(0, 212, 255, 0.012) 35%,
+            transparent 70%
+        );
+
+    filter: blur(18px);
+
+    animation: quantum-breathe 6s ease-in-out infinite;
+
+    z-index: -4;
+}
+
+
+/* ------------------------------------------------------------
+   SIDEBAR
+   ------------------------------------------------------------ */
+
+.sidebar {
+    width: 300px;
+
+    min-height: 100vh;
+
+    padding: 20px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(12, 14, 19, 0.94),
+            rgba(7, 8, 12, 0.88)
+        );
+
+    border-right: 1px solid rgba(255, 255, 255, 0.055);
+
+    position: relative;
+
+    z-index: 5;
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    box-shadow:
+        12px 0 50px rgba(0, 0, 0, 0.25);
+}
+
+
+/* ------------------------------------------------------------
+   LOGO / TITRE ADRYNX
+   ------------------------------------------------------------ */
+
+.sidebar h2 {
+    margin: 0 0 22px;
+
+    font-size: 23px;
+    font-weight: 800;
+
+    letter-spacing: 0.16em;
+
+    color: #ffffff;
+
+    text-shadow:
+        0 0 10px rgba(0, 255, 136, 0.28),
+        0 0 25px rgba(0, 255, 136, 0.08);
+}
+
+
+/* ------------------------------------------------------------
+   CARDS
+   ------------------------------------------------------------ */
+
+.card {
+    background:
+        linear-gradient(
+            145deg,
+            rgba(20, 24, 30, 0.78),
+            rgba(8, 10, 14, 0.82)
+        ) !important;
+
+    border: 1px solid rgba(255, 255, 255, 0.065);
+
+    border-radius: var(--radius);
+
+    padding: 12px;
+
+    margin-bottom: 10px;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.025),
+        0 15px 45px rgba(0, 0, 0, 0.25);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+
+/* ------------------------------------------------------------
+   PHOENIX VIDEO EXISTANT
+   On le conserve.
+   ------------------------------------------------------------ */
+
+video {
+    width: 100%;
+
+    border-radius: 11px;
+
+    display: block;
+
+    background: #020306;
+
+    object-fit: cover;
+
+    box-shadow:
+        0 0 0 1px rgba(0, 255, 136, 0.08),
+        0 0 30px rgba(0, 255, 136, 0.055);
+
+    transition:
+        transform 0.6s ease,
+        filter 0.6s ease,
+        box-shadow 0.6s ease;
+}
+
+.card:hover video {
+    transform: scale(1.008);
+
+    filter:
+        brightness(1.06)
+        saturate(1.08);
+
+    box-shadow:
+        0 0 0 1px rgba(0, 255, 136, 0.15),
+        0 0 40px rgba(0, 255, 136, 0.09);
+}
+
+
+/* ------------------------------------------------------------
+   PHOENIX LIVE
+   ------------------------------------------------------------ */
+
+.card div[style*="padding"] {
+    color: rgba(255, 255, 255, 0.76);
+
+    font-size: 12px;
+
+    letter-spacing: 0.08em;
+
+    text-transform: uppercase;
+}
+
+
+/* ------------------------------------------------------------
+   BOUTON TEST
+   ------------------------------------------------------------ */
+
+.btn {
+    position: relative;
+
+    width: 100%;
+
+    padding: 12px;
+
+    border: 1px solid rgba(0, 255, 136, 0.35);
+
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0, 255, 136, 0.95),
+            rgba(0, 220, 145, 0.88)
+        );
+
+    color: #00150b;
+
+    font-weight: 800;
+
+    letter-spacing: 0.06em;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 0 18px rgba(0, 255, 136, 0.12);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.25s ease,
+        filter 0.25s ease;
+}
+
+.btn:hover {
+    opacity: 1;
+
+    transform: translateY(-1px);
+
+    filter: brightness(1.08);
+
+    box-shadow:
+        0 0 28px rgba(0, 255, 136, 0.24);
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+
+/* ------------------------------------------------------------
+   ZONE PRINCIPALE
+   ------------------------------------------------------------ */
+
+.main {
+    flex: 1;
+
+    min-width: 0;
+
+    min-height: 100vh;
+
+    padding: 30px;
+
+    position: relative;
+
+    z-index: 2;
+}
+
+
+/* ------------------------------------------------------------
+   TITRE ADRYNX
+   ------------------------------------------------------------ */
+
+.main h1 {
+    margin: 0 0 24px;
+
+    font-size: clamp(25px, 3vw, 38px);
+
+    font-weight: 800;
+
+    letter-spacing: -0.035em;
+
+    color: #ffffff;
+
+    text-shadow:
+        0 0 18px rgba(0, 255, 136, 0.08);
+}
+
+
+/* ------------------------------------------------------------
+   CARTE CHAT
+   ------------------------------------------------------------ */
+
+.main > .card {
+    position: relative;
+
+    max-width: 1100px;
+
+    margin: 0 auto;
+
+    padding: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(13, 17, 21, 0.72),
+            rgba(5, 7, 11, 0.82)
+        ) !important;
+
+    border: 1px solid rgba(255, 255, 255, 0.075);
+
+    box-shadow:
+        0 30px 100px rgba(0, 0, 0, 0.32),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+}
+
+
+/* ------------------------------------------------------------
+   LIGNE LUMINEUSE DU CHAT
+   ------------------------------------------------------------ */
+
+.main > .card::before {
+    content: "";
+
+    position: absolute;
+
+    left: 8%;
+    right: 8%;
+    top: -1px;
+
+    height: 1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(0, 255, 136, 0.45),
+            rgba(0, 212, 255, 0.2),
+            transparent
+        );
+
+    opacity: 0.7;
+
+    pointer-events: none;
+}
+
+
+/* ------------------------------------------------------------
+   CHAT
+   ------------------------------------------------------------ */
+
+#chat {
+    min-height: 300px;
+
+    max-height: 60vh;
+
+    overflow-y: auto;
+
+    padding: 8px;
+
+    scroll-behavior: smooth;
+
+    scrollbar-width: thin;
+    scrollbar-color:
+        rgba(0, 255, 136, 0.28)
+        transparent;
+}
+
+
+/* Chrome / Android scrollbar */
+
+#chat::-webkit-scrollbar {
+    width: 5px;
+}
+
+#chat::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#chat::-webkit-scrollbar-thumb {
+    background:
+        rgba(0, 255, 136, 0.25);
+
+    border-radius: 10px;
+}
+
+
+/* ------------------------------------------------------------
+   MESSAGES
+   ------------------------------------------------------------ */
+
+.message {
+    padding: 13px 15px;
+
+    margin: 10px 0;
+
+    border-radius: 12px;
+
+    line-height: 1.6;
+
+    font-size: 14px;
+
+    animation:
+        message-materialize
+        0.35s
+        cubic-bezier(0.16, 1, 0.3, 1);
+
+    border: 1px solid transparent;
+
+    word-wrap: break-word;
+}
+
+
+/* ------------------------------------------------------------
+   MESSAGE UTILISATEUR
+   ------------------------------------------------------------ */
+
+.user {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(35, 39, 45, 0.82),
+            rgba(24, 27, 32, 0.76)
+        );
+
+    border-color:
+        rgba(255, 255, 255, 0.055);
+
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+
+/* ------------------------------------------------------------
+   MESSAGE ADRYNX
+   ------------------------------------------------------------ */
+
+.assistant {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0, 255, 136, 0.055),
+            rgba(0, 212, 255, 0.025),
+            rgba(10, 17, 15, 0.72)
+        );
+
+    border-color:
+        rgba(0, 255, 136, 0.13);
+
+    box-shadow:
+        0 0 22px rgba(0, 255, 136, 0.035),
+        inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+
+/* ------------------------------------------------------------
+   ERREUR
+   ------------------------------------------------------------ */
+
+.error {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(100, 20, 20, 0.35),
+            rgba(45, 12, 12, 0.5)
+        );
+
+    color: #ff9c9c;
+
+    border-color:
+        rgba(255, 80, 80, 0.18);
+}
+
+
+/* ------------------------------------------------------------
+   ZONE DE SAISIE
+   ------------------------------------------------------------ */
+
+.input-area {
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 14px;
+
+    padding-top: 12px;
+
+    border-top:
+        1px solid rgba(255, 255, 255, 0.045);
+}
+
+
+/* ------------------------------------------------------------
+   CHAMP
+   ------------------------------------------------------------ */
+
+#q {
+    flex: 1;
+
+    min-width: 0;
+
+    padding: 13px 15px;
+
+    background:
+        rgba(3, 5, 8, 0.78);
+
+    border:
+        1px solid rgba(255, 255, 255, 0.09);
+
+    color: #ffffff;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+}
+
+#q::placeholder {
+    color:
+        rgba(255, 255, 255, 0.35);
+}
+
+#q:focus {
+    border-color:
+        rgba(0, 255, 136, 0.48);
+
+    background:
+        rgba(3, 8, 7, 0.88);
+
+    box-shadow:
+        0 0 0 3px rgba(0, 255, 136, 0.045),
+        0 0 28px rgba(0, 255, 136, 0.06);
+}
+
+
+/* ------------------------------------------------------------
+   BOUTON ENVOI → ORBE
+   ------------------------------------------------------------ */
+
+.send {
+    min-width: 52px;
+
+    padding: 0 18px;
+
+    border: 1px solid rgba(0, 255, 136, 0.28);
+
+    border-radius: 50px;
+
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #7affc1,
+            #00FF88 38%,
+            #00b968 100%
+        );
+
+    color: #00160c;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 0 18px rgba(0, 255, 136, 0.16);
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.25s ease,
+        filter 0.25s ease;
+}
+
+.send:hover {
+    transform: scale(1.035);
+
+    filter: brightness(1.08);
+
+    box-shadow:
+        0 0 28px rgba(0, 255, 136, 0.3);
+}
+
+.send:active {
+    transform: scale(0.86);
+
+    box-shadow:
+        0 0 45px rgba(0, 255, 136, 0.55);
+}
+
+
+/* ------------------------------------------------------------
+   ÉTAT ADRYNX
+   ------------------------------------------------------------ */
+
+#status {
+    margin-top: 13px;
+
+    font-size: 12px;
+
+    color:
+        rgba(255, 255, 255, 0.48);
+
+    letter-spacing: 0.04em;
+
+    transition:
+        color 0.3s ease,
+        text-shadow 0.3s ease;
+}
+
+
+/*
+   Lorsque le texte contient "réfléchit", le navigateur
+   ne permet pas de cibler automatiquement le contenu texte
+   avec CSS.
+
+   L'animation correspondante sera reliée proprement à l'état
+   réel dans l'étape JavaScript.
+*/
+
+
+/* ------------------------------------------------------------
+   LOG TECHNIQUE
+   ------------------------------------------------------------ */
+
+#log {
+    max-width: 1100px;
+
+    margin: 12px auto 0;
+
+    padding: 10px 12px;
+
+    white-space: pre-wrap;
+
+    color:
+        rgba(0, 255, 136, 0.38);
+
+    font-family:
+        "Courier New",
+        monospace;
+
+    font-size: 10px;
+
+    line-height: 1.5;
+
+    opacity: 0.65;
+}
+
+
+/* ------------------------------------------------------------
+   ANIMATION : RESPIRATION QUANTIQUE
+   ------------------------------------------------------------ */
+
+@keyframes quantum-breathe {
+
+    0% {
+        transform:
+            translate(-50%, -50%)
+            scale(0.94);
+
+        opacity: 0.42;
+    }
+
+    50% {
+        transform:
+            translate(-50%, -50%)
+            scale(1.045);
+
+        opacity: 0.68;
+    }
+
+    100% {
+        transform:
+            translate(-50%, -50%)
+            scale(0.94);
+
+        opacity: 0.42;
+    }
+}
+
+
+/* ------------------------------------------------------------
+   ANIMATION : MATÉRIALISATION
+   ------------------------------------------------------------ */
+
+@keyframes message-materialize {
+
+    0% {
+        opacity: 0;
+
+        transform:
+            translateY(8px)
+            scale(0.985);
+
+        filter:
+            blur(4px);
+    }
+
+    55% {
+        opacity: 0.8;
+
+        filter:
+            blur(0.7px);
+    }
+
+    100% {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+
+        filter:
+            blur(0);
+    }
+}
+
+
+/* ------------------------------------------------------------
+   ANIMATION : RESPIRATION DU BOUTON
+   ------------------------------------------------------------ */
+
+@keyframes orb-pulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 14px rgba(0, 255, 136, 0.13);
+    }
+
+    50% {
+        box-shadow:
+            0 0 26px rgba(0, 255, 136, 0.28);
+    }
+}
+
+.send {
+    animation:
+        orb-pulse
+        3s
+        ease-in-out
+        infinite;
+}
+
+
+/* ------------------------------------------------------------
+   ACCESSIBILITÉ / MOTION REDUCED
+   ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+
+/* ------------------------------------------------------------
+   TABLETTE
+   ------------------------------------------------------------ */
+
+@media (max-width: 900px) {
+
+    body {
+        display: block;
+    }
+
+    .sidebar {
+        width: 100%;
+
+        min-height: auto;
+
+        padding: 14px;
+
+        border-right: 0;
+
+        border-bottom:
+            1px solid rgba(255, 255, 255, 0.055);
+    }
+
+    .sidebar h2 {
+        margin-bottom: 12px;
+    }
+
+    .sidebar .card {
+        max-width: 500px;
+
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .sidebar .btn {
+        max-width: 500px;
+
+        display: block;
+
+        margin: 10px auto 0;
+    }
+
+    .main {
+        min-height: auto;
+
+        padding: 18px 14px 30px;
+    }
+
+    #chat {
+        max-height: 55vh;
+    }
+}
+
+
+/* ------------------------------------------------------------
+   TÉLÉPHONE
+   ------------------------------------------------------------ */
+
+@media (max-width: 600px) {
+
+    body {
+        background:
+            radial-gradient(
+                circle at 50% 42%,
+                rgba(0, 255, 136, 0.045),
+                transparent 48%
+            ),
+            var(--adrynx-bg);
+    }
+
+    body::after {
+        width: 120vw;
+        height: 120vw;
+
+        top: 45%;
+
+        filter: blur(24px);
+    }
+
+    .sidebar {
+        padding: 10px;
+
+        background:
+            rgba(5, 6, 10, 0.88);
+    }
+
+    .sidebar h2 {
+        font-size: 19px;
+
+        margin: 2px 4px 10px;
+    }
+
+    .sidebar .card {
+        margin-bottom: 8px;
+    }
+
+    .main {
+        padding: 12px 10px 22px;
+    }
+
+    .main h1 {
+        font-size: 25px;
+
+        margin:
+            4px 2px 15px;
+    }
+
+    .main > .card {
+        padding: 10px;
+
+        border-radius: 13px;
+    }
+
+    #chat {
+        min-height: 260px;
+
+        max-height: 58vh;
+
+        padding: 5px;
+    }
+
+    .message {
+        padding: 11px 12px;
+
+        font-size: 13.5px;
+
+        border-radius: 11px;
+    }
+
+    .input-area {
+        gap: 7px;
+    }
+
+    #q {
+        padding: 12px;
+
+        font-size: 14px;
+    }
+
+    .send {
+        width: 48px;
+
+        min-width: 48px;
+
+        padding: 0;
+
+        font-size: 0;
+
+        border-radius: 50%;
+    }
+
+    .send::before {
+        content: "↑";
+
+        font-size: 20px;
+
+        line-height: 1;
+    }
+
+    #status {
+        font-size: 11px;
+    }
+
+    #log {
+        font-size: 9px;
+
+        overflow-x: auto;
+    }
+}
+
+
+/* ------------------------------------------------------------
+   TRÈS PETITS ÉCRANS
+   ------------------------------------------------------------ */
+
+@media (max-width: 360px) {
+
+    .main {
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+
+    .main > .card {
+        padding: 8px;
+    }
+
+    #chat {
+        min-height: 230px;
+    }
+
+    .message {
+        font-size: 13px;
+    }
+}
+
+
+/* ------------------------------------------------------------
+   ÉCRANS LARGES
+   ------------------------------------------------------------ */
+
+@media (min-width: 1400px) {
+
+    .main {
+        padding-left: 50px;
+        padding-right: 50px;
+    }
+
+    .main > .card,
+    #log {
+        max-width: 1200px;
+    }
+}
+```
