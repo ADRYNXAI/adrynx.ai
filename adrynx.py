@@ -10,816 +10,675 @@ from html.parser import HTMLParser
 
 import requests
 
+
 # ============================================================
-
 # CONFIGURATION
-
 # ============================================================
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 GROQ_MODEL = os.getenv(
-"GROQ_MODEL",
-"openai/gpt-oss-20b"
+    "GROQ_MODEL",
+    "openai/gpt-oss-20b"
 )
 
 PHOENIX_VIDEO = "https://files.catbox.moe/y2nvi4.mp4"
 
-BASE_DIR = Path(**file**).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "adrynx.db"
 
+
 # ============================================================
-
 # BASE DE DONNÉES
-
 # ============================================================
 
 def db():
-connection = sqlite3.connect(DB_PATH)
-connection.row_factory = sqlite3.Row
-return connection
+    connection = sqlite3.connect(DB_PATH)
+    connection.row_factory = sqlite3.Row
+    return connection
+
 
 def init_db():
-connection = db()
+    connection = db()
 
-```
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS conversations (
-        id TEXT PRIMARY KEY,
-        owner TEXT NOT NULL,
-        titre TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-""")
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS conversations (
+            id TEXT PRIMARY KEY,
+            owner TEXT NOT NULL,
+            titre TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
 
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        conversation_id TEXT NOT NULL,
-        owner TEXT NOT NULL,
-        role TEXT NOT NULL,
-        content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-""")
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id TEXT NOT NULL,
+            owner TEXT NOT NULL,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
 
-connection.execute("""
-    CREATE INDEX IF NOT EXISTS idx_messages_conversation
-    ON messages(conversation_id, id)
-""")
+    connection.execute("""
+        CREATE INDEX IF NOT EXISTS idx_messages_conversation
+        ON messages(conversation_id, id)
+    """)
 
-connection.execute("""
-    CREATE TABLE IF NOT EXISTS intent_examples (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        phrase TEXT NOT NULL,
-        intent TEXT NOT NULL
-    )
-""")
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS intent_examples (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            phrase TEXT NOT NULL,
+            intent TEXT NOT NULL
+        )
+    """)
 
-connection.commit()
-connection.close()
-```
+    connection.commit()
+    connection.close()
+
 
 init_db()
 
+
 # ============================================================
-
 # GROQ
-
 # ============================================================
 
 def groq_chat(
-system: str,
-messages: list,
-temperature: float = 0.4,
-max_tokens: int = 700
+    system: str,
+    messages: list,
+    temperature: float = 0.4,
+    max_tokens: int = 700
 ) -> str:
 
-```
-if not GROQ_API_KEY:
-    raise RuntimeError(
-        "GROQ_API_KEY manquante dans les variables d'environnement."
+    if not GROQ_API_KEY:
+        raise RuntimeError(
+            "GROQ_API_KEY manquante dans les variables d'environnement."
+        )
+
+    from groq import Groq
+
+    client = Groq(api_key=GROQ_API_KEY)
+
+    response = client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": system
+            },
+            *messages
+        ],
+        temperature=temperature,
+        max_tokens=max_tokens
     )
 
-from groq import Groq
+    if not response.choices:
+        raise RuntimeError(
+            "Groq n'a retourné aucune réponse."
+        )
 
-client = Groq(api_key=GROQ_API_KEY)
+    content = response.choices[0].message.content
 
-response = client.chat.completions.create(
-    model=GROQ_MODEL,
-    messages=[
-        {
-            "role": "system",
-            "content": system
-        },
-        *messages
-    ],
-    temperature=temperature,
-    max_tokens=max_tokens
-)
+    if not content:
+        raise RuntimeError(
+            "Groq a retourné une réponse vide."
+        )
 
-if not response.choices:
-    raise RuntimeError(
-        "Groq n'a retourné aucune réponse."
-    )
+    return content.strip()
 
-content = response.choices[0].message.content
-
-if not content:
-    raise RuntimeError(
-        "Groq a retourné une réponse vide."
-    )
-
-return content.strip()
-```
 
 # ============================================================
-
 # OUTILS DE RECHERCHE INTERNET
-
 # ============================================================
 
 SEARCH_HEADERS = {
-"User-Agent": (
-"Mozilla/5.0 "
-"(Windows NT 10.0; Win64; x64) "
-"AppleWebKit/537.36 "
-"(KHTML, like Gecko) "
-"Chrome/131.0 Safari/537.36"
-),
-"Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8"
+    "User-Agent": (
+        "Mozilla/5.0 "
+        "(Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/131.0 Safari/537.36"
+    ),
+    "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8"
 }
 
+
 def nettoyer_texte(value: str) -> str:
+    if not value:
+        return ""
 
-```
-if not value:
-    return ""
+    value = html.unescape(value)
+    value = re.sub(r"\s+", " ", value)
 
-value = html.unescape(value)
-value = re.sub(r"\s+", " ", value)
+    return value.strip()
 
-return value.strip()
-```
 
 def nettoyer_url(url: str) -> str:
+    if not url:
+        return ""
 
-```
-if not url:
-    return ""
+    url = html.unescape(url).strip()
 
-url = html.unescape(url).strip()
+    if url.startswith("//"):
+        url = "https:" + url
 
-if url.startswith("//"):
-    url = "https:" + url
+    if "duckduckgo.com/l/" in url:
+        try:
+            parsed = urlparse(url)
+            query = parse_qs(parsed.query)
 
-if "duckduckgo.com/l/" in url:
+            if "uddg" in query:
+                url = unquote(query["uddg"][0])
 
-    try:
-        parsed = urlparse(url)
-        query = parse_qs(parsed.query)
+        except Exception:
+            pass
 
-        if "uddg" in query:
-            url = unquote(query["uddg"][0])
+    if url.startswith("/"):
+        return ""
 
-    except Exception:
-        pass
+    parsed = urlparse(url)
 
-if url.startswith("/"):
-    return ""
+    if parsed.scheme not in {"http", "https"}:
+        return ""
 
-parsed = urlparse(url)
+    if not parsed.netloc:
+        return ""
 
-if parsed.scheme not in {"http", "https"}:
-    return ""
+    return url
 
-if not parsed.netloc:
-    return ""
-
-return url
-```
 
 # ============================================================
-
 # PRIX BITCOIN — DÉTECTION
-
 # ============================================================
 
 def demande_prix_bitcoin(question: str) -> bool:
+    low = (question or "").lower().strip()
 
-```
-low = (question or "").lower().strip()
+    mots_bitcoin = [
+        "bitcoin",
+        "btc"
+    ]
 
-mots_bitcoin = [
-    "bitcoin",
-    "btc"
-]
+    expressions_prix = [
+        "prix",
+        "cours",
+        "valeur",
+        "combien vaut",
+        "combien coûte",
+        "combien coute",
+        "price",
+        "cours actuel",
+        "prix actuel",
+        "prix maintenant",
+        "valeur actuelle",
+        "valeur actuelle du",
+        "prix du"
+    ]
 
-expressions_prix = [
-    "prix",
-    "cours",
-    "valeur",
-    "combien vaut",
-    "combien coûte",
-    "combien coute",
-    "price",
-    "cours actuel",
-    "prix actuel",
-    "prix maintenant",
-    "valeur actuelle",
-    "valeur actuelle du",
-    "prix du"
-]
+    contient_bitcoin = any(
+        mot in low
+        for mot in mots_bitcoin
+    )
 
-contient_bitcoin = any(
-    mot in low
-    for mot in mots_bitcoin
-)
+    contient_prix = any(
+        expression in low
+        for expression in expressions_prix
+    )
 
-contient_prix = any(
-    expression in low
-    for expression in expressions_prix
-)
+    if not contient_bitcoin:
+        return False
 
-if not contient_bitcoin:
-    return False
+    return contient_prix
 
-return contient_prix
-```
 
 # ============================================================
-
 # BITCOIN — COINGECKO
-
 # ============================================================
 
 def obtenir_prix_bitcoin_coingecko() -> Dict[str, Any]:
+    url = "https://api.coingecko.com/api/v3/simple/price"
 
-```
-url = "https://api.coingecko.com/api/v3/simple/price"
+    params = {
+        "ids": "bitcoin",
+        "vs_currencies": "usd,eur",
+        "include_last_updated_at": "true"
+    }
 
-params = {
-    "ids": "bitcoin",
-    "vs_currencies": "usd,eur",
-    "include_last_updated_at": "true"
-}
-
-response = requests.get(
-    url,
-    params=params,
-    headers=SEARCH_HEADERS,
-    timeout=15
-)
-
-response.raise_for_status()
-
-data = response.json()
-
-bitcoin = data.get("bitcoin")
-
-if not isinstance(bitcoin, dict):
-    raise RuntimeError(
-        "Réponse Bitcoin absente ou invalide."
+    response = requests.get(
+        url,
+        params=params,
+        headers=SEARCH_HEADERS,
+        timeout=15
     )
 
-usd = bitcoin.get("usd")
-eur = bitcoin.get("eur")
-updated_at = bitcoin.get("last_updated_at")
+    response.raise_for_status()
 
-if not isinstance(usd, (int, float)):
-    raise RuntimeError(
-        "Le prix USD retourné par CoinGecko n'est pas numérique."
-    )
+    data = response.json()
 
-if not isinstance(eur, (int, float)):
-    raise RuntimeError(
-        "Le prix EUR retourné par CoinGecko n'est pas numérique."
-    )
+    bitcoin = data.get("bitcoin")
 
-return {
-    "ok": True,
-    "asset": "Bitcoin",
-    "symbol": "BTC",
-    "usd": float(usd),
-    "eur": float(eur),
-    "last_updated_at": updated_at,
-    "provider": "CoinGecko",
-    "source_url": url
-}
-```
+    if not isinstance(bitcoin, dict):
+        raise RuntimeError(
+            "Réponse Bitcoin absente ou invalide."
+        )
+
+    usd = bitcoin.get("usd")
+    eur = bitcoin.get("eur")
+    updated_at = bitcoin.get("last_updated_at")
+
+    if not isinstance(usd, (int, float)):
+        raise RuntimeError(
+            "Le prix USD retourné par CoinGecko n'est pas numérique."
+        )
+
+    if not isinstance(eur, (int, float)):
+        raise RuntimeError(
+            "Le prix EUR retourné par CoinGecko n'est pas numérique."
+        )
+
+    return {
+        "ok": True,
+        "asset": "Bitcoin",
+        "symbol": "BTC",
+        "usd": float(usd),
+        "eur": float(eur),
+        "last_updated_at": updated_at,
+        "provider": "CoinGecko",
+        "source_url": url
+    }
+
 
 # ============================================================
-
 # BITCOIN — COINBASE
-
 # ============================================================
 
 def obtenir_ticker_coinbase(product_id: str) -> Dict[str, Any]:
-
-```
-url = (
-    "https://api.exchange.coinbase.com/"
-    f"products/{product_id}/ticker"
-)
-
-response = requests.get(
-    url,
-    headers=SEARCH_HEADERS,
-    timeout=15
-)
-
-response.raise_for_status()
-
-data = response.json()
-
-price = data.get("price")
-
-if price is None:
-    raise RuntimeError(
-        f"Prix absent dans la réponse Coinbase pour {product_id}."
+    url = (
+        "https://api.exchange.coinbase.com/"
+        f"products/{product_id}/ticker"
     )
 
-try:
-    price = float(price)
-except (TypeError, ValueError):
-    raise RuntimeError(
-        f"Prix Coinbase invalide pour {product_id}."
+    response = requests.get(
+        url,
+        headers=SEARCH_HEADERS,
+        timeout=15
     )
 
-if price <= 0:
-    raise RuntimeError(
-        f"Prix Coinbase invalide pour {product_id}."
-    )
+    response.raise_for_status()
 
-return {
-    "price": price,
-    "url": url
-}
-```
+    data = response.json()
+
+    price = data.get("price")
+
+    if price is None:
+        raise RuntimeError(
+            f"Prix absent dans la réponse Coinbase pour {product_id}."
+        )
+
+    try:
+        price = float(price)
+    except (TypeError, ValueError):
+        raise RuntimeError(
+            f"Prix Coinbase invalide pour {product_id}."
+        )
+
+    if price <= 0:
+        raise RuntimeError(
+            f"Prix Coinbase invalide pour {product_id}."
+        )
+
+    return {
+        "price": price,
+        "url": url
+    }
+
 
 def obtenir_prix_bitcoin_coinbase() -> Dict[str, Any]:
+    usd_data = obtenir_ticker_coinbase("BTC-USD")
+    eur_data = obtenir_ticker_coinbase("BTC-EUR")
 
-```
-usd_data = obtenir_ticker_coinbase("BTC-USD")
-eur_data = obtenir_ticker_coinbase("BTC-EUR")
+    return {
+        "ok": True,
+        "asset": "Bitcoin",
+        "symbol": "BTC",
+        "usd": usd_data["price"],
+        "eur": eur_data["price"],
+        "last_updated_at": None,
+        "provider": "Coinbase",
+        "source_url": (
+            "https://api.exchange.coinbase.com/products/"
+            "BTC-USD/ticker"
+        ),
+        "source_url_eur": (
+            "https://api.exchange.coinbase.com/products/"
+            "BTC-EUR/ticker"
+        )
+    }
 
-return {
-    "ok": True,
-    "asset": "Bitcoin",
-    "symbol": "BTC",
-    "usd": usd_data["price"],
-    "eur": eur_data["price"],
-    "last_updated_at": None,
-    "provider": "Coinbase",
-    "source_url": (
-        "https://api.exchange.coinbase.com/products/"
-        "BTC-USD/ticker"
-    ),
-    "source_url_eur": (
-        "https://api.exchange.coinbase.com/products/"
-        "BTC-EUR/ticker"
-    )
-}
-```
 
 # ============================================================
-
 # PRIX BITCOIN — SYSTÈME MULTI-SOURCE
-
 # ============================================================
 
 def obtenir_prix_bitcoin() -> Dict[str, Any]:
+    erreurs = []
 
-```
-erreurs = []
+    # --------------------------------------------------------
+    # SOURCE 1 — COINGECKO
+    # --------------------------------------------------------
 
-# --------------------------------------------------------
-# SOURCE 1 — COINGECKO
-# --------------------------------------------------------
+    try:
+        result = obtenir_prix_bitcoin_coingecko()
 
-try:
+        print(
+            "ADRYNX MARKET: Bitcoin -> "
+            f"${result['usd']} / €{result['eur']} "
+            f"(source: {result['provider']})"
+        )
 
-    result = obtenir_prix_bitcoin_coingecko()
+        return result
+
+    except Exception as e:
+        erreur = (
+            f"CoinGecko: {type(e).__name__}: {e}"
+        )
+
+        erreurs.append(erreur)
+
+        print(
+            "BITCOIN SOURCE 1 ERROR:",
+            erreur
+        )
+
+    # --------------------------------------------------------
+    # SOURCE 2 — COINBASE
+    # --------------------------------------------------------
+
+    try:
+        result = obtenir_prix_bitcoin_coinbase()
+
+        print(
+            "ADRYNX MARKET: Bitcoin -> "
+            f"${result['usd']} / €{result['eur']} "
+            f"(source: {result['provider']})"
+        )
+
+        return result
+
+    except Exception as e:
+        erreur = (
+            f"Coinbase: {type(e).__name__}: {e}"
+        )
+
+        erreurs.append(erreur)
+
+        print(
+            "BITCOIN SOURCE 2 ERROR:",
+            erreur
+        )
+
+    # --------------------------------------------------------
+    # AUCUNE SOURCE DISPONIBLE
+    # --------------------------------------------------------
 
     print(
-        "ADRYNX MARKET: Bitcoin -> "
-        f"${result['usd']} / €{result['eur']} "
-        f"(source: {result['provider']})"
+        "========== BITCOIN MARKET ERROR =========="
     )
 
-    return result
-
-except Exception as e:
-
-    erreur = (
-        f"CoinGecko: {type(e).__name__}: {e}"
-    )
-
-    erreurs.append(erreur)
+    for erreur in erreurs:
+        print(erreur)
 
     print(
-        "BITCOIN SOURCE 1 ERROR:",
-        erreur
+        "==========================================="
     )
 
-# --------------------------------------------------------
-# SOURCE 2 — COINBASE
-# --------------------------------------------------------
+    return {
+        "ok": False,
+        "error": (
+            "Impossible d'obtenir actuellement le prix réel "
+            "du Bitcoin. Les sources de données de marché "
+            "disponibles n'ont pas fourni de donnée exploitable."
+        ),
+        "providers_attempted": [
+            "CoinGecko",
+            "Coinbase"
+        ],
+        "errors": erreurs
+    }
 
-try:
-
-    result = obtenir_prix_bitcoin_coinbase()
-
-    print(
-        "ADRYNX MARKET: Bitcoin -> "
-        f"${result['usd']} / €{result['eur']} "
-        f"(source: {result['provider']})"
-    )
-
-    return result
-
-except Exception as e:
-
-    erreur = (
-        f"Coinbase: {type(e).__name__}: {e}"
-    )
-
-    erreurs.append(erreur)
-
-    print(
-        "BITCOIN SOURCE 2 ERROR:",
-        erreur
-    )
-
-# --------------------------------------------------------
-# AUCUNE SOURCE DISPONIBLE
-# --------------------------------------------------------
-
-print(
-    "========== BITCOIN MARKET ERROR =========="
-)
-
-for erreur in erreurs:
-    print(erreur)
-
-print(
-    "==========================================="
-)
-
-return {
-    "ok": False,
-    "error": (
-        "Impossible d'obtenir actuellement le prix réel "
-        "du Bitcoin. Les sources de données de marché "
-        "disponibles n'ont pas fourni de donnée exploitable."
-    ),
-    "providers_attempted": [
-        "CoinGecko",
-        "Coinbase"
-    ],
-    "errors": erreurs
-}
-```
 
 # ============================================================
-
 # CONTEXTE BITCOIN
-
 # ============================================================
 
 def construire_contexte_bitcoin(
-market: Dict[str, Any]
+    market: Dict[str, Any]
 ) -> str:
 
-```
-if not market.get("ok"):
-    return (
-        "DONNÉE DE MARCHÉ BITCOIN :\n"
-        "Les sources de données n'ont pas fourni de prix exploitable.\n"
-        "Tu ne dois donc inventer aucune valeur."
+    if not market.get("ok"):
+        return (
+            "DONNÉE DE MARCHÉ BITCOIN :\n"
+            "Les sources de données n'ont pas fourni de prix exploitable.\n"
+            "Tu ne dois donc inventer aucune valeur."
+        )
+
+    usd = market["usd"]
+    eur = market["eur"]
+
+    provider = market.get(
+        "provider",
+        "source de données"
     )
 
-usd = market["usd"]
-eur = market["eur"]
-provider = market.get(
-    "provider",
-    "source de données"
-)
-
-updated_at = market.get(
-    "last_updated_at"
-)
-
-lignes = [
-    "DONNÉE DE MARCHÉ RÉELLE — BITCOIN",
-    f"Source : {provider}",
-    f"Prix BTC en USD : {usd}",
-    f"Prix BTC en EUR : {eur}",
-]
-
-if updated_at:
-    lignes.append(
-        f"Dernière mise à jour fournie par la source : {updated_at}"
+    updated_at = market.get(
+        "last_updated_at"
     )
 
-lignes.extend([
-    "",
-    "IMPORTANT :",
-    "Ces valeurs viennent directement d'une source de données réelle.",
-    "Ne les modifie pas et n'en invente pas d'autres.",
-    "Si tu expliques ces données, conserve exactement les valeurs numériques fournies."
-])
+    lignes = [
+        "DONNÉE DE MARCHÉ RÉELLE — BITCOIN",
+        f"Source : {provider}",
+        f"Prix BTC en USD : {usd}",
+        f"Prix BTC en EUR : {eur}",
+    ]
 
-return "\n".join(lignes)
-```
+    if updated_at:
+        lignes.append(
+            f"Dernière mise à jour fournie par la source : {updated_at}"
+        )
+
+    lignes.extend([
+        "",
+        "IMPORTANT :",
+        "Ces valeurs viennent directement d'une source de données réelle.",
+        "Ne les modifie pas et n'en invente pas d'autres.",
+        "Si tu expliques ces données, conserve exactement les valeurs numériques fournies."
+    ])
+
+    return "\n".join(lignes)
+
 
 # ============================================================
-
 # RÉPONSE BITCOIN
-
 # ============================================================
 
 def reponse_prix_bitcoin(
-market: Dict[str, Any]
+    market: Dict[str, Any]
 ) -> str:
 
-```
-if not market.get("ok"):
+    if not market.get("ok"):
+        return (
+            "Je n'ai pas pu obtenir le prix réel du Bitcoin "
+            "auprès de mes sources de données de marché à cet instant. "
+            "Je préfère ne pas donner une valeur qui pourrait être fausse."
+        )
 
-    return (
-        "Je n'ai pas pu obtenir le prix réel du Bitcoin "
-        "auprès de mes sources de données de marché à cet instant. "
-        "Je préfère ne pas donner une valeur qui pourrait être fausse."
+    usd = market["usd"]
+    eur = market["eur"]
+
+    provider = market.get(
+        "provider",
+        "source de données"
     )
 
-usd = market["usd"]
-eur = market["eur"]
-provider = market.get(
-    "provider",
-    "source de données"
-)
+    return (
+        "Le prix actuel du Bitcoin fourni par ma source de données "
+        "de marché est de "
+        f"{usd:,.2f} USD, soit environ {eur:,.2f} EUR.\n\n"
+        f"Source : {provider}.\n"
+        "Le prix du Bitcoin évolue en permanence."
+    )
 
-return (
-    "Le prix actuel du Bitcoin fourni par ma source de données "
-    "de marché est de "
-    f"{usd:,.2f} USD, soit environ {eur:,.2f} EUR.\n\n"
-    f"Source : {provider}.\n"
-    "Le prix du Bitcoin évolue en permanence."
-)
-```
 
 # ============================================================
-
 # PARSEUR DUCKDUCKGO HTML
-
 # ============================================================
 
 class DuckDuckGoParser(HTMLParser):
 
-```
-def __init__(self):
-    super().__init__()
+    def __init__(self):
+        super().__init__()
 
-    self.results = []
-
-    self.current_url = ""
-    self.current_title = []
-    self.current_description = []
-
-    self.in_title = False
-    self.in_description = False
-
-def handle_starttag(self, tag, attrs):
-
-    attributes = dict(attrs)
-
-    classes = attributes.get("class", "")
-    class_list = classes.split()
-
-    if tag == "a":
-
-        href = attributes.get("href", "")
-
-        if (
-            "result__a" in class_list
-            and href
-        ):
-
-            self.current_url = href
-            self.current_title = []
-            self.current_description = []
-
-            self.in_title = True
-
-    if (
-        "result__snippet" in class_list
-        or "result__body" in class_list
-    ):
-
-        self.in_description = True
-
-def handle_data(self, data):
-
-    if self.in_title:
-        self.current_title.append(data)
-
-    if self.in_description:
-        self.current_description.append(data)
-
-def handle_endtag(self, tag):
-
-    if tag == "a" and self.in_title:
-
-        title = nettoyer_texte(
-            "".join(self.current_title)
-        )
-
-        description = nettoyer_texte(
-            "".join(self.current_description)
-        )
-
-        clean_url = nettoyer_url(
-            self.current_url
-        )
-
-        if clean_url and title:
-
-            self.results.append({
-                "title": title,
-                "url": clean_url,
-                "description": description
-            })
+        self.results = []
 
         self.current_url = ""
         self.current_title = []
         self.current_description = []
 
         self.in_title = False
-```
+        self.in_description = False
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+
+        classes = attributes.get("class", "")
+        class_list = classes.split()
+
+        if tag == "a":
+            href = attributes.get("href", "")
+
+            if (
+                "result__a" in class_list
+                and href
+            ):
+                self.current_url = href
+                self.current_title = []
+                self.current_description = []
+
+                self.in_title = True
+
+        if (
+            "result__snippet" in class_list
+            or "result__body" in class_list
+        ):
+            self.in_description = True
+
+    def handle_data(self, data):
+        if self.in_title:
+            self.current_title.append(data)
+
+        if self.in_description:
+            self.current_description.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.in_title:
+            title = nettoyer_texte(
+                "".join(self.current_title)
+            )
+
+            description = nettoyer_texte(
+                "".join(self.current_description)
+            )
+
+            clean_url = nettoyer_url(
+                self.current_url
+            )
+
+            if clean_url and title:
+                self.results.append({
+                    "title": title,
+                    "url": clean_url,
+                    "description": description
+                })
+
+            self.current_url = ""
+            self.current_title = []
+            self.current_description = []
+
+            self.in_title = False
+
 
 # ============================================================
-
 # PARSEUR DUCKDUCKGO LITE
-
 # ============================================================
 
 class DuckDuckGoLiteParser(HTMLParser):
 
-```
-def __init__(self):
-    super().__init__()
+    def __init__(self):
+        super().__init__()
 
-    self.results = []
-
-    self.current_url = ""
-    self.current_title = []
-
-    self.in_result = False
-
-def handle_starttag(self, tag, attrs):
-
-    attributes = dict(attrs)
-
-    classes = attributes.get("class", "")
-    class_list = classes.split()
-
-    if tag == "a":
-
-        href = attributes.get("href", "")
-
-        if (
-            "result-link" in class_list
-            and href
-        ):
-
-            self.current_url = href
-            self.current_title = []
-            self.in_result = True
-
-def handle_data(self, data):
-
-    if self.in_result:
-        self.current_title.append(data)
-
-def handle_endtag(self, tag):
-
-    if tag == "a" and self.in_result:
-
-        title = nettoyer_texte(
-            "".join(self.current_title)
-        )
-
-        clean_url = nettoyer_url(
-            self.current_url
-        )
-
-        if clean_url and title:
-
-            self.results.append({
-                "title": title,
-                "url": clean_url,
-                "description": ""
-            })
+        self.results = []
 
         self.current_url = ""
         self.current_title = []
+
         self.in_result = False
-```
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+
+        classes = attributes.get("class", "")
+        class_list = classes.split()
+
+        if tag == "a":
+            href = attributes.get("href", "")
+
+            if (
+                "result-link" in class_list
+                and href
+            ):
+                self.current_url = href
+                self.current_title = []
+                self.in_result = True
+
+    def handle_data(self, data):
+        if self.in_result:
+            self.current_title.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.in_result:
+            title = nettoyer_texte(
+                "".join(self.current_title)
+            )
+
+            clean_url = nettoyer_url(
+                self.current_url
+            )
+
+            if clean_url and title:
+                self.results.append({
+                    "title": title,
+                    "url": clean_url,
+                    "description": ""
+                })
+
+            self.current_url = ""
+            self.current_title = []
+            self.in_result = False
+
 
 # ============================================================
-
 # PARSEUR BING
-
 # ============================================================
 
 class BingParser(HTMLParser):
 
-```
-def __init__(self):
-    super().__init__()
+    def __init__(self):
+        super().__init__()
 
-    self.results = []
-
-    self.in_result = False
-    self.in_title = False
-    self.in_description = False
-
-    self.current_url = ""
-    self.current_title = []
-    self.current_description = []
-
-def handle_starttag(self, tag, attrs):
-
-    attributes = dict(attrs)
-
-    classes = attributes.get("class", "")
-    class_list = classes.split()
-
-    if tag == "li" and "b_algo" in class_list:
-
-        self.in_result = True
-        self.current_url = ""
-        self.current_title = []
-        self.current_description = []
-
-    if not self.in_result:
-        return
-
-    if tag == "a":
-
-        href = attributes.get("href", "")
-
-        if href and not self.current_url:
-
-            self.current_url = href
-            self.in_title = True
-
-    if tag in {"p", "div"}:
-
-        if "b_caption" in class_list:
-            self.in_description = True
-
-def handle_data(self, data):
-
-    if not self.in_result:
-        return
-
-    if self.in_title:
-        self.current_title.append(data)
-
-    if self.in_description:
-        self.current_description.append(data)
-
-def handle_endtag(self, tag):
-
-    if not self.in_result:
-        return
-
-    if tag == "a" and self.in_title:
-        self.in_title = False
-
-    if tag == "li":
-
-        title = nettoyer_texte(
-            "".join(self.current_title)
-        )
-
-        description = nettoyer_texte(
-            "".join(self.current_description)
-        )
-
-        clean_url = nettoyer_url(
-            self.current_url
-        )
-
-        if clean_url and title:
-
-            self.results.append({
-                "title": title,
-                "url": clean_url,
-                "description": description
-            })
+        self.results = []
 
         self.in_result = False
         self.in_title = False
@@ -828,664 +687,671 @@ def handle_endtag(self, tag):
         self.current_url = ""
         self.current_title = []
         self.current_description = []
-```
+
+    def handle_starttag(self, tag, attrs):
+        attributes = dict(attrs)
+
+        classes = attributes.get("class", "")
+        class_list = classes.split()
+
+        if tag == "li" and "b_algo" in class_list:
+            self.in_result = True
+            self.current_url = ""
+            self.current_title = []
+            self.current_description = []
+
+        if not self.in_result:
+            return
+
+        if tag == "a":
+            href = attributes.get("href", "")
+
+            if href and not self.current_url:
+                self.current_url = href
+                self.in_title = True
+
+        if tag in {"p", "div"}:
+            if "b_caption" in class_list:
+                self.in_description = True
+
+    def handle_data(self, data):
+        if not self.in_result:
+            return
+
+        if self.in_title:
+            self.current_title.append(data)
+
+        if self.in_description:
+            self.current_description.append(data)
+
+    def handle_endtag(self, tag):
+        if not self.in_result:
+            return
+
+        if tag == "a" and self.in_title:
+            self.in_title = False
+
+        if tag == "li":
+            title = nettoyer_texte(
+                "".join(self.current_title)
+            )
+
+            description = nettoyer_texte(
+                "".join(self.current_description)
+            )
+
+            clean_url = nettoyer_url(
+                self.current_url
+            )
+
+            if clean_url and title:
+                self.results.append({
+                    "title": title,
+                    "url": clean_url,
+                    "description": description
+                })
+
+            self.in_result = False
+            self.in_title = False
+            self.in_description = False
+
+            self.current_url = ""
+            self.current_title = []
+            self.current_description = []
+
 
 # ============================================================
-
 # NORMALISATION DES RÉSULTATS
-
 # ============================================================
 
 def normaliser_resultats(
-results,
-nombre_resultats: int = 6
+    results,
+    nombre_resultats: int = 6
 ):
+    final = []
+    urls = set()
 
-```
-final = []
-urls = set()
+    for result in results:
+        url = nettoyer_url(
+            result.get("url", "")
+        )
 
-for result in results:
+        title = nettoyer_texte(
+            result.get("title", "")
+        )
 
-    url = nettoyer_url(
-        result.get("url", "")
-    )
+        description = nettoyer_texte(
+            result.get("description", "")
+        )
 
-    title = nettoyer_texte(
-        result.get("title", "")
-    )
+        if not url or not title:
+            continue
 
-    description = nettoyer_texte(
-        result.get("description", "")
-    )
+        if url in urls:
+            continue
 
-    if not url or not title:
-        continue
+        urls.add(url)
 
-    if url in urls:
-        continue
+        final.append({
+            "title": title,
+            "url": url,
+            "description": description
+        })
 
-    urls.add(url)
+        if len(final) >= nombre_resultats:
+            break
 
-    final.append({
-        "title": title,
-        "url": url,
-        "description": description
-    })
+    return final
 
-    if len(final) >= nombre_resultats:
-        break
-
-return final
-```
 
 # ============================================================
-
 # RECHERCHE DUCKDUCKGO HTML
-
 # ============================================================
 
 def rechercher_duckduckgo(
-question: str,
-nombre_resultats: int = 6
+    question: str,
+    nombre_resultats: int = 6
 ):
+    url = "https://html.duckduckgo.com/html/"
 
-```
-url = "https://html.duckduckgo.com/html/"
+    try:
+        response = requests.get(
+            url,
+            params={
+                "q": question
+            },
+            headers=SEARCH_HEADERS,
+            timeout=15
+        )
 
-try:
+        response.raise_for_status()
 
-    response = requests.get(
-        url,
-        params={
-            "q": question
-        },
-        headers=SEARCH_HEADERS,
-        timeout=15
-    )
+        parser = DuckDuckGoParser()
+        parser.feed(response.text)
 
-    response.raise_for_status()
+        results = normaliser_resultats(
+            parser.results,
+            nombre_resultats
+        )
 
-    parser = DuckDuckGoParser()
-    parser.feed(response.text)
+        return results
 
-    results = normaliser_resultats(
-        parser.results,
-        nombre_resultats
-    )
+    except Exception as e:
+        print(
+            "DUCKDUCKGO HTML ERROR:",
+            type(e).__name__,
+            str(e)
+        )
 
-    return results
+        return []
 
-except Exception as e:
-
-    print(
-        "DUCKDUCKGO HTML ERROR:",
-        type(e).__name__,
-        str(e)
-    )
-
-    return []
-```
 
 # ============================================================
-
 # RECHERCHE DUCKDUCKGO LITE
-
 # ============================================================
 
 def rechercher_duckduckgo_lite(
-question: str,
-nombre_resultats: int = 6
+    question: str,
+    nombre_resultats: int = 6
 ):
+    url = "https://lite.duckduckgo.com/lite/"
 
-```
-url = "https://lite.duckduckgo.com/lite/"
+    try:
+        response = requests.get(
+            url,
+            params={
+                "q": question
+            },
+            headers=SEARCH_HEADERS,
+            timeout=15
+        )
 
-try:
+        response.raise_for_status()
 
-    response = requests.get(
-        url,
-        params={
-            "q": question
-        },
-        headers=SEARCH_HEADERS,
-        timeout=15
-    )
+        parser = DuckDuckGoLiteParser()
+        parser.feed(response.text)
 
-    response.raise_for_status()
+        results = normaliser_resultats(
+            parser.results,
+            nombre_resultats
+        )
 
-    parser = DuckDuckGoLiteParser()
-    parser.feed(response.text)
+        return results
 
-    results = normaliser_resultats(
-        parser.results,
-        nombre_resultats
-    )
+    except Exception as e:
+        print(
+            "DUCKDUCKGO LITE ERROR:",
+            type(e).__name__,
+            str(e)
+        )
 
-    return results
+        return []
 
-except Exception as e:
-
-    print(
-        "DUCKDUCKGO LITE ERROR:",
-        type(e).__name__,
-        str(e)
-    )
-
-    return []
-```
 
 # ============================================================
-
 # RECHERCHE BING
-
 # ============================================================
 
 def rechercher_bing(
-question: str,
-nombre_resultats: int = 6
+    question: str,
+    nombre_resultats: int = 6
 ):
+    url = "https://www.bing.com/search"
 
-```
-url = "https://www.bing.com/search"
+    try:
+        response = requests.get(
+            url,
+            params={
+                "q": question
+            },
+            headers=SEARCH_HEADERS,
+            timeout=15
+        )
 
-try:
+        response.raise_for_status()
 
-    response = requests.get(
-        url,
-        params={
-            "q": question
-        },
-        headers=SEARCH_HEADERS,
-        timeout=15
-    )
+        parser = BingParser()
+        parser.feed(response.text)
 
-    response.raise_for_status()
+        results = normaliser_resultats(
+            parser.results,
+            nombre_resultats
+        )
 
-    parser = BingParser()
-    parser.feed(response.text)
+        return results
 
-    results = normaliser_resultats(
-        parser.results,
-        nombre_resultats
-    )
+    except Exception as e:
+        print(
+            "BING SEARCH ERROR:",
+            type(e).__name__,
+            str(e)
+        )
 
-    return results
+        return []
 
-except Exception as e:
-
-    print(
-        "BING SEARCH ERROR:",
-        type(e).__name__,
-        str(e)
-    )
-
-    return []
-```
 
 # ============================================================
-
 # RECHERCHE INTERNET PRINCIPALE
-
 # ============================================================
 
 def rechercher_internet(
-question: str,
-nombre_resultats: int = 6
+    question: str,
+    nombre_resultats: int = 6
 ) -> Dict[str, Any]:
 
-```
-question = (question or "").strip()
+    question = (question or "").strip()
 
-if not question:
+    if not question:
+        return {
+            "ok": False,
+            "error": "Recherche vide.",
+            "results": []
+        }
+
+    results = rechercher_duckduckgo(
+        question,
+        nombre_resultats
+    )
+
+    if results:
+        print(
+            f"ADRYNX INTERNET: DuckDuckGo HTML -> "
+            f"{len(results)} résultat(s)"
+        )
+
+        return {
+            "ok": True,
+            "provider": "duckduckgo-html",
+            "query": question,
+            "results": results
+        }
+
+    results = rechercher_duckduckgo_lite(
+        question,
+        nombre_resultats
+    )
+
+    if results:
+        print(
+            f"ADRYNX INTERNET: DuckDuckGo Lite -> "
+            f"{len(results)} résultat(s)"
+        )
+
+        return {
+            "ok": True,
+            "provider": "duckduckgo-lite",
+            "query": question,
+            "results": results
+        }
+
+    results = rechercher_bing(
+        question,
+        nombre_resultats
+    )
+
+    if results:
+        print(
+            f"ADRYNX INTERNET: Bing -> "
+            f"{len(results)} résultat(s)"
+        )
+
+        return {
+            "ok": True,
+            "provider": "bing",
+            "query": question,
+            "results": results
+        }
+
+    print(
+        "========== ADRYNX INTERNET ERROR =========="
+    )
+
+    print(
+        "Aucun moteur n'a retourné de résultat exploitable."
+    )
+
+    print(
+        "============================================"
+    )
 
     return {
         "ok": False,
-        "error": "Recherche vide.",
+        "error": (
+            "ADRYNX a essayé plusieurs méthodes de recherche "
+            "Internet, mais aucun résultat exploitable n'a été "
+            "retourné."
+        ),
         "results": []
     }
 
-results = rechercher_duckduckgo(
-    question,
-    nombre_resultats
-)
-
-if results:
-
-    print(
-        f"ADRYNX INTERNET: DuckDuckGo HTML -> "
-        f"{len(results)} résultat(s)"
-    )
-
-    return {
-        "ok": True,
-        "provider": "duckduckgo-html",
-        "query": question,
-        "results": results
-    }
-
-results = rechercher_duckduckgo_lite(
-    question,
-    nombre_resultats
-)
-
-if results:
-
-    print(
-        f"ADRYNX INTERNET: DuckDuckGo Lite -> "
-        f"{len(results)} résultat(s)"
-    )
-
-    return {
-        "ok": True,
-        "provider": "duckduckgo-lite",
-        "query": question,
-        "results": results
-    }
-
-results = rechercher_bing(
-    question,
-    nombre_resultats
-)
-
-if results:
-
-    print(
-        f"ADRYNX INTERNET: Bing -> "
-        f"{len(results)} résultat(s)"
-    )
-
-    return {
-        "ok": True,
-        "provider": "bing",
-        "query": question,
-        "results": results
-    }
-
-print(
-    "========== ADRYNX INTERNET ERROR =========="
-)
-
-print(
-    "Aucun moteur n'a retourné de résultat exploitable."
-)
-
-print(
-    "============================================"
-)
-
-return {
-    "ok": False,
-    "error": (
-        "ADRYNX a essayé plusieurs méthodes de recherche "
-        "Internet, mais aucun résultat exploitable n'a été "
-        "retourné."
-    ),
-    "results": []
-}
-```
 
 # ============================================================
-
 # DÉTECTION D'UNE DEMANDE INTERNET
-
 # ============================================================
 
 def demande_recherche_internet(question: str) -> bool:
+    low = question.lower().strip()
 
-```
-low = question.lower().strip()
+    expressions = [
+        "recherche sur internet",
+        "rechercher sur internet",
+        "cherche sur internet",
+        "recherche internet",
+        "rechercher internet",
+        "cherche internet",
 
-expressions = [
-    "recherche sur internet",
-    "rechercher sur internet",
-    "cherche sur internet",
-    "recherche internet",
-    "rechercher internet",
-    "cherche internet",
+        "cherche sur le web",
+        "recherche sur le web",
+        "rechercher sur le web",
+        "sur internet",
+        "sur le web",
 
-    "cherche sur le web",
-    "recherche sur le web",
-    "rechercher sur le web",
-    "sur internet",
-    "sur le web",
+        "en ligne",
 
-    "en ligne",
+        "actualités",
+        "actualité",
+        "actualite",
 
-    "actualités",
-    "actualité",
-    "actualite",
+        "prix actuel",
+        "prix actuelle",
+        "prix actuel maintenant",
 
-    "prix actuel",
-    "prix actuelle",
-    "prix actuel maintenant",
+        "maintenant",
+        "aujourd'hui",
+        "aujourd’hui",
+        "actuellement",
 
-    "maintenant",
-    "aujourd'hui",
-    "aujourd’hui",
-    "actuellement",
+        "cours actuel",
+        "cours actuel de",
+        "valeur actuelle",
 
-    "cours actuel",
-    "cours actuel de",
-    "valeur actuelle",
+        "dernières nouvelles",
+        "derniere nouvelle",
+        "dernière nouvelle",
+        "dernières infos",
+        "derniere info",
 
-    "dernières nouvelles",
-    "derniere nouvelle",
-    "dernière nouvelle",
-    "dernières infos",
-    "derniere info",
+        "news",
+        "latest",
 
-    "news",
-    "latest",
+        "récent",
+        "récente",
+        "récents",
+        "récentes",
 
-    "récent",
-    "récente",
-    "récents",
-    "récentes",
+        "recent",
+        "recente",
+        "recents",
+        "recentes"
+    ]
 
-    "recent",
-    "recente",
-    "recents",
-    "recentes"
-]
+    for expression in expressions:
+        if expression in low:
+            return True
 
-for expression in expressions:
+    return False
 
-    if expression in low:
-        return True
-
-return False
-```
 
 # ============================================================
-
 # CONVERSATIONS
-
 # ============================================================
 
 def new_conversation(
-owner: str = "anon",
-titre: str = "Nouvelle conversation"
+    owner: str = "anon",
+    titre: str = "Nouvelle conversation"
 ) -> str:
 
-```
-conversation_id = "conv_" + uuid.uuid4().hex
+    conversation_id = "conv_" + uuid.uuid4().hex
 
-connection = db()
+    connection = db()
 
-connection.execute(
-    """
-    INSERT INTO conversations (
-        id,
-        owner,
-        titre
+    connection.execute(
+        """
+        INSERT INTO conversations (
+            id,
+            owner,
+            titre
+        )
+        VALUES (?, ?, ?)
+        """,
+        (
+            conversation_id,
+            owner,
+            titre
+        )
     )
-    VALUES (?, ?, ?)
-    """,
-    (
-        conversation_id,
-        owner,
-        titre
-    )
-)
 
-connection.commit()
-connection.close()
+    connection.commit()
+    connection.close()
 
-return conversation_id
-```
+    return conversation_id
+
 
 def ensure_conversation(
-owner: str,
-conversation_id: Optional[str]
+    owner: str,
+    conversation_id: Optional[str]
 ) -> str:
 
-```
-if conversation_id:
+    if conversation_id:
+        connection = db()
 
+        row = connection.execute(
+            """
+            SELECT id
+            FROM conversations
+            WHERE id = ?
+            AND owner = ?
+            """,
+            (
+                conversation_id,
+                owner
+            )
+        ).fetchone()
+
+        connection.close()
+
+        if row:
+            return conversation_id
+
+    return new_conversation(
+        owner,
+        "Conversation ADRYNX"
+    )
+
+
+# ============================================================
+# MESSAGES
+# ============================================================
+
+def save_message(
+    conversation_id: str,
+    owner: str,
+    role: str,
+    content: str
+):
+    connection = db()
+
+    connection.execute(
+        """
+        INSERT INTO messages (
+            conversation_id,
+            owner,
+            role,
+            content
+        )
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            conversation_id,
+            owner,
+            role,
+            content
+        )
+    )
+
+    connection.execute(
+        """
+        UPDATE conversations
+        SET updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        """,
+        (
+            conversation_id,
+        )
+    )
+
+    connection.commit()
+    connection.close()
+
+
+def get_history(
+    conversation_id: str,
+    owner: str,
+    limit: int = 12
+):
+    connection = db()
+
+    rows = connection.execute(
+        """
+        SELECT role, content
+        FROM messages
+        WHERE conversation_id = ?
+        AND owner = ?
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (
+            conversation_id,
+            owner,
+            limit
+        )
+    ).fetchall()
+
+    connection.close()
+
+    rows = list(reversed(rows))
+
+    return [
+        {
+            "role": row["role"],
+            "content": row["content"]
+        }
+        for row in rows
+    ]
+
+
+def state(conversation_id: str):
     connection = db()
 
     row = connection.execute(
         """
-        SELECT id
+        SELECT *
         FROM conversations
         WHERE id = ?
-        AND owner = ?
         """,
         (
             conversation_id,
-            owner
         )
     ).fetchone()
 
     connection.close()
 
-    if row:
-        return conversation_id
+    if not row:
+        return {}
 
-return new_conversation(
-    owner,
-    "Conversation ADRYNX"
-)
-```
+    return dict(row)
 
-# ============================================================
-
-# MESSAGES
-
-# ============================================================
-
-def save_message(
-conversation_id: str,
-owner: str,
-role: str,
-content: str
-):
-
-```
-connection = db()
-
-connection.execute(
-    """
-    INSERT INTO messages (
-        conversation_id,
-        owner,
-        role,
-        content
-    )
-    VALUES (?, ?, ?, ?)
-    """,
-    (
-        conversation_id,
-        owner,
-        role,
-        content
-    )
-)
-
-connection.execute(
-    """
-    UPDATE conversations
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-    """,
-    (
-        conversation_id,
-    )
-)
-
-connection.commit()
-connection.close()
-```
-
-def get_history(
-conversation_id: str,
-owner: str,
-limit: int = 12
-):
-
-```
-connection = db()
-
-rows = connection.execute(
-    """
-    SELECT role, content
-    FROM messages
-    WHERE conversation_id = ?
-    AND owner = ?
-    ORDER BY id DESC
-    LIMIT ?
-    """,
-    (
-        conversation_id,
-        owner,
-        limit
-    )
-).fetchall()
-
-connection.close()
-
-rows = list(reversed(rows))
-
-return [
-    {
-        "role": row["role"],
-        "content": row["content"]
-    }
-    for row in rows
-]
-```
-
-def state(conversation_id: str):
-
-```
-connection = db()
-
-row = connection.execute(
-    """
-    SELECT *
-    FROM conversations
-    WHERE id = ?
-    """,
-    (
-        conversation_id,
-    )
-).fetchone()
-
-connection.close()
-
-if not row:
-    return {}
-
-return dict(row)
-```
 
 def messages(
-conversation_id: str,
-limit: int = 50
+    conversation_id: str,
+    limit: int = 50
 ):
+    connection = db()
 
-```
-connection = db()
+    rows = connection.execute(
+        """
+        SELECT
+            id,
+            role,
+            content,
+            created_at
+        FROM messages
+        WHERE conversation_id = ?
+        ORDER BY id ASC
+        LIMIT ?
+        """,
+        (
+            conversation_id,
+            limit
+        )
+    ).fetchall()
 
-rows = connection.execute(
-    """
-    SELECT
-        id,
-        role,
-        content,
-        created_at
-    FROM messages
-    WHERE conversation_id = ?
-    ORDER BY id ASC
-    LIMIT ?
-    """,
-    (
-        conversation_id,
-        limit
-    )
-).fetchall()
+    connection.close()
 
-connection.close()
+    return [
+        dict(row)
+        for row in rows
+    ]
 
-return [
-    dict(row)
-    for row in rows
-]
-```
 
 # ============================================================
-
 # COMPRÉHENSION DE BASE
-
 # ============================================================
 
 def detecter_intent(question: str) -> str:
+    low = question.lower().strip()
 
-```
-low = question.lower().strip()
+    if not low:
+        return "vide"
 
-if not low:
-    return "vide"
+    if low in {
+        "cc",
+        "slt",
+        "salut",
+        "yo",
+        "hey",
+        "bjr",
+        "bonjour",
+        "bonsoir",
+        "coucou"
+    }:
+        return "salutation"
 
-if low in {
-    "cc",
-    "slt",
-    "salut",
-    "yo",
-    "hey",
-    "bjr",
-    "bonjour",
-    "bonsoir",
-    "coucou"
-}:
-    return "salutation"
+    if (
+        "qui es tu" in low
+        or "qui es-tu" in low
+        or "tu es qui" in low
+        or "qui t'a créé" in low
+        or "qui ta créé" in low
+    ):
+        return "identite"
 
-if (
-    "qui es tu" in low
-    or "qui es-tu" in low
-    or "tu es qui" in low
-    or "qui t'a créé" in low
-    or "qui ta créé" in low
-):
-    return "identite"
+    if demande_prix_bitcoin(question):
+        return "marche_bitcoin"
 
-if demande_prix_bitcoin(question):
-    return "marche_bitcoin"
+    return "conversation"
 
-return "conversation"
-```
 
 # ============================================================
-
 # IDENTITÉ
-
 # ============================================================
 
 def reponse_identite():
+    return (
+        "Je suis ADRYNX, l'assistant développé par "
+        "Jonathan Dejah OBENDA. "
+        "Je suis conçu pour comprendre les conversations, "
+        "utiliser leur contexte et évoluer avec les fonctions "
+        "réellement ajoutées à mon système."
+    )
 
-```
-return (
-    "Je suis ADRYNX, l'assistant développé par "
-    "Jonathan Dejah OBENDA. "
-    "Je suis conçu pour comprendre les conversations, "
-    "utiliser leur contexte et évoluer avec les fonctions "
-    "réellement ajoutées à mon système."
-)
-```
 
 # ============================================================
-
 # CAPACITÉS RÉELLES
-
 # ============================================================
 
 def system_prompt():
-
-```
-return """
-```
-
+    return """
 Tu es ADRYNX.
 
 Tu es un assistant conversationnel réel intégré dans une
@@ -1586,116 +1452,134 @@ RÈGLES :
 
 24. Pour une donnée numérique structurée fournie directement
     par le backend, conserve exactement la valeur fournie.
-    """
+"""
+
 
 # ============================================================
-
 # CONSTRUCTION DU CONTEXTE INTERNET
-
 # ============================================================
 
 def construire_contexte_web(
-question: str,
-recherche: Dict[str, Any]
+    question: str,
+    recherche: Dict[str, Any]
 ) -> str:
 
-```
-lignes = []
+    lignes = []
 
-provider = recherche.get(
-    "provider",
-    "moteur de recherche"
-)
-
-lignes.append(
-    "RÉSULTATS D'UNE RECHERCHE INTERNET RÉELLE"
-)
-
-lignes.append(
-    f"Moteur/méthode utilisée : {provider}"
-)
-
-lignes.append(
-    f"Question recherchée : {question}"
-)
-
-lignes.append("")
-
-for index, result in enumerate(
-    recherche.get("results", []),
-    start=1
-):
-
-    lignes.append(
-        f"Résultat {index} :"
+    provider = recherche.get(
+        "provider",
+        "moteur de recherche"
     )
 
     lignes.append(
-        f"Titre : {result.get('title', '')}"
+        "RÉSULTATS D'UNE RECHERCHE INTERNET RÉELLE"
     )
 
     lignes.append(
-        f"URL : {result.get('url', '')}"
+        f"Moteur/méthode utilisée : {provider}"
     )
 
-    description = result.get(
-        "description",
-        ""
+    lignes.append(
+        f"Question recherchée : {question}"
     )
-
-    if description:
-
-        lignes.append(
-            f"Extrait : {description}"
-        )
 
     lignes.append("")
 
-return "\n".join(lignes)
-```
+    for index, result in enumerate(
+        recherche.get("results", []),
+        start=1
+    ):
+        lignes.append(
+            f"Résultat {index} :"
+        )
+
+        lignes.append(
+            f"Titre : {result.get('title', '')}"
+        )
+
+        lignes.append(
+            f"URL : {result.get('url', '')}"
+        )
+
+        description = result.get(
+            "description",
+            ""
+        )
+
+        if description:
+            lignes.append(
+                f"Extrait : {description}"
+            )
+
+        lignes.append("")
+
+    return "\n".join(lignes)
+
 
 # ============================================================
-
 # TRAITEMENT PRINCIPAL
-
 # ============================================================
 
 def traiter_question(
-question: str,
-owner: str = "anon",
-conversation_id: Optional[str] = None
+    question: str,
+    owner: str = "anon",
+    conversation_id: Optional[str] = None
 ) -> Dict[str, Any]:
 
-```
-question = (question or "").strip()
+    question = (question or "").strip()
 
-owner = (
-    (owner or "anon")
-    .strip()[:120]
-    or "anon"
-)
+    owner = (
+        (owner or "anon")
+        .strip()[:120]
+        or "anon"
+    )
 
-if not question:
+    if not question:
+        return {
+            "ok": False,
+            "error": "Message vide."
+        }
 
-    return {
-        "ok": False,
-        "error": "Message vide."
-    }
+    conversation_id = ensure_conversation(
+        owner,
+        conversation_id
+    )
 
-conversation_id = ensure_conversation(
-    owner,
-    conversation_id
-)
+    intent = detecter_intent(question)
 
-intent = detecter_intent(question)
+    # --------------------------------------------------------
+    # IDENTITÉ
+    # --------------------------------------------------------
 
-# --------------------------------------------------------
-# IDENTITÉ
-# --------------------------------------------------------
+    if intent == "identite":
+        response = reponse_identite()
 
-if intent == "identite":
+        save_message(
+            conversation_id,
+            owner,
+            "user",
+            question
+        )
 
-    response = reponse_identite()
+        save_message(
+            conversation_id,
+            owner,
+            "assistant",
+            response
+        )
+
+        return {
+            "ok": True,
+            "reponse": response,
+            "intent": intent,
+            "source": "noyau",
+            "conversation_id": conversation_id,
+            "video_core": PHOENIX_VIDEO
+        }
+
+    # --------------------------------------------------------
+    # HISTORIQUE
+    # --------------------------------------------------------
 
     save_message(
         conversation_id,
@@ -1704,65 +1588,145 @@ if intent == "identite":
         question
     )
 
-    save_message(
+    history = get_history(
         conversation_id,
         owner,
-        "assistant",
-        response
+        limit=12
     )
 
-    return {
-        "ok": True,
-        "reponse": response,
-        "intent": intent,
-        "source": "noyau",
-        "conversation_id": conversation_id,
-        "video_core": PHOENIX_VIDEO
-    }
+    # --------------------------------------------------------
+    # DONNÉE BITCOIN STRUCTURÉE
+    # --------------------------------------------------------
 
-# --------------------------------------------------------
-# HISTORIQUE
-# --------------------------------------------------------
+    if demande_prix_bitcoin(question):
+        market = obtenir_prix_bitcoin()
 
-save_message(
-    conversation_id,
-    owner,
-    "user",
-    question
-)
+        if not market.get("ok"):
+            return {
+                "ok": False,
+                "error": market.get(
+                    "error",
+                    "Impossible d'obtenir le prix réel du Bitcoin."
+                ),
+                "intent": intent,
+                "conversation_id": conversation_id,
+                "source": "bitcoin-api-error",
+                "market_data": market,
+                "video_core": PHOENIX_VIDEO
+            }
 
-history = get_history(
-    conversation_id,
-    owner,
-    limit=12
-)
+        response = reponse_prix_bitcoin(
+            market
+        )
 
-# --------------------------------------------------------
-# DONNÉE BITCOIN STRUCTURÉE
-# --------------------------------------------------------
-
-if demande_prix_bitcoin(question):
-
-    market = obtenir_prix_bitcoin()
-
-    if not market.get("ok"):
+        save_message(
+            conversation_id,
+            owner,
+            "assistant",
+            response
+        )
 
         return {
-            "ok": False,
-            "error": market.get(
-                "error",
-                "Impossible d'obtenir le prix réel du Bitcoin."
-            ),
+            "ok": True,
+            "reponse": response,
             "intent": intent,
+            "source": "bitcoin-api",
             "conversation_id": conversation_id,
-            "source": "bitcoin-api-error",
             "market_data": market,
             "video_core": PHOENIX_VIDEO
         }
 
-    response = reponse_prix_bitcoin(
-        market
-    )
+    # --------------------------------------------------------
+    # RECHERCHE INTERNET RÉELLE
+    # --------------------------------------------------------
+
+    web_results = []
+    web_context = None
+
+    if demande_recherche_internet(question):
+        recherche = rechercher_internet(
+            question,
+            nombre_resultats=6
+        )
+
+        if not recherche.get("ok"):
+            return {
+                "ok": False,
+                "error": recherche.get(
+                    "error",
+                    "La recherche Internet a échoué."
+                ),
+                "intent": intent,
+                "conversation_id": conversation_id,
+                "source": "internet-error",
+                "video_core": PHOENIX_VIDEO
+            }
+
+        web_results = recherche.get(
+            "results",
+            []
+        )
+
+        web_context = construire_contexte_web(
+            question,
+            recherche
+        )
+
+        history_for_groq = [
+            {
+                "role": "system",
+                "content": web_context
+            },
+            *history
+        ]
+
+        source = "internet+groq"
+
+    else:
+        history_for_groq = history
+        source = "groq"
+
+    # --------------------------------------------------------
+    # GROQ
+    # --------------------------------------------------------
+
+    try:
+        response = groq_chat(
+            system_prompt(),
+            history_for_groq,
+            temperature=0.4,
+            max_tokens=700
+        )
+
+    except Exception as e:
+        print(
+            "========== ADRYNX GROQ ERROR =========="
+        )
+
+        print(
+            type(e).__name__
+        )
+
+        print(
+            str(e)
+        )
+
+        print(
+            "========================================"
+        )
+
+        return {
+            "ok": False,
+            "error": f"{type(e).__name__}: {e}",
+            "intent": intent,
+            "conversation_id": conversation_id,
+            "source": "groq-error",
+            "video_core": PHOENIX_VIDEO
+        }
+
+    # --------------------------------------------------------
+    # SAUVEGARDE
+    # --------------------------------------------------------
 
     save_message(
         conversation_id,
@@ -1771,294 +1735,157 @@ if demande_prix_bitcoin(question):
         response
     )
 
-    return {
+    result = {
         "ok": True,
         "reponse": response,
         "intent": intent,
-        "source": "bitcoin-api",
+        "source": source,
         "conversation_id": conversation_id,
-        "market_data": market,
         "video_core": PHOENIX_VIDEO
     }
 
-# --------------------------------------------------------
-# RECHERCHE INTERNET RÉELLE
-# --------------------------------------------------------
+    if web_results:
+        result["web_results"] = web_results
 
-web_results = []
-web_context = None
+    return result
 
-if demande_recherche_internet(question):
-
-    recherche = rechercher_internet(
-        question,
-        nombre_resultats=6
-    )
-
-    if not recherche.get("ok"):
-
-        return {
-            "ok": False,
-            "error": recherche.get(
-                "error",
-                "La recherche Internet a échoué."
-            ),
-            "intent": intent,
-            "conversation_id": conversation_id,
-            "source": "internet-error",
-            "video_core": PHOENIX_VIDEO
-        }
-
-    web_results = recherche.get(
-        "results",
-        []
-    )
-
-    web_context = construire_contexte_web(
-        question,
-        recherche
-    )
-
-    history_for_groq = [
-        {
-            "role": "system",
-            "content": web_context
-        },
-        *history
-    ]
-
-    source = "internet+groq"
-
-else:
-
-    history_for_groq = history
-    source = "groq"
-
-# --------------------------------------------------------
-# GROQ
-# --------------------------------------------------------
-
-try:
-
-    response = groq_chat(
-        system_prompt(),
-        history_for_groq,
-        temperature=0.4,
-        max_tokens=700
-    )
-
-except Exception as e:
-
-    print(
-        "========== ADRYNX GROQ ERROR =========="
-    )
-
-    print(
-        type(e).__name__
-    )
-
-    print(
-        str(e)
-    )
-
-    print(
-        "========================================"
-    )
-
-    return {
-        "ok": False,
-        "error": f"{type(e).__name__}: {e}",
-        "intent": intent,
-        "conversation_id": conversation_id,
-        "source": "groq-error",
-        "video_core": PHOENIX_VIDEO
-    }
-
-# --------------------------------------------------------
-# SAUVEGARDE
-# --------------------------------------------------------
-
-save_message(
-    conversation_id,
-    owner,
-    "assistant",
-    response
-)
-
-result = {
-    "ok": True,
-    "reponse": response,
-    "intent": intent,
-    "source": source,
-    "conversation_id": conversation_id,
-    "video_core": PHOENIX_VIDEO
-}
-
-if web_results:
-    result["web_results"] = web_results
-
-return result
-```
 
 # ============================================================
-
 # DASHBOARD
-
 # ============================================================
 
 def dashboard(owner: str):
+    connection = db()
 
-```
-connection = db()
+    conversations = connection.execute(
+        """
+        SELECT COUNT(*)
+        FROM conversations
+        WHERE owner = ?
+        """,
+        (
+            owner,
+        )
+    ).fetchone()[0]
 
-conversations = connection.execute(
-    """
-    SELECT COUNT(*)
-    FROM conversations
-    WHERE owner = ?
-    """,
-    (
-        owner,
-    )
-).fetchone()[0]
+    total_messages = connection.execute(
+        """
+        SELECT COUNT(*)
+        FROM messages
+        WHERE owner = ?
+        """,
+        (
+            owner,
+        )
+    ).fetchone()[0]
 
-total_messages = connection.execute(
-    """
-    SELECT COUNT(*)
-    FROM messages
-    WHERE owner = ?
-    """,
-    (
-        owner,
-    )
-).fetchone()[0]
+    connection.close()
 
-connection.close()
+    return {
+        "video": PHOENIX_VIDEO,
+        "conversations": conversations,
+        "messages": total_messages,
+        "groq_configured": bool(GROQ_API_KEY),
+        "model": GROQ_MODEL,
+        "internet_search": True,
+        "bitcoin_market_data": True
+    }
 
-return {
-    "video": PHOENIX_VIDEO,
-    "conversations": conversations,
-    "messages": total_messages,
-    "groq_configured": bool(GROQ_API_KEY),
-    "model": GROQ_MODEL,
-    "internet_search": True,
-    "bitcoin_market_data": True
-}
-```
 
 # ============================================================
-
 # FONCTIONS FUTURES — PAS SIMULÉES
-
 # ============================================================
 
 def projects(owner: str):
+    return []
 
-```
-return []
-```
 
 def project(
-owner: str,
-name: str,
-obj=None
+    owner: str,
+    name: str,
+    obj=None
 ):
+    return {
+        "nom": name,
+        "owner": owner,
+        "data": obj or {}
+    }
 
-```
-return {
-    "nom": name,
-    "owner": owner,
-    "data": obj or {}
-}
-```
 
 def task(
-owner: str,
-title: str,
-project_id=None
+    owner: str,
+    title: str,
+    project_id=None
 ):
+    return {
+        "titre": title,
+        "owner": owner,
+        "project_id": project_id
+    }
 
-```
-return {
-    "titre": title,
-    "owner": owner,
-    "project_id": project_id
-}
-```
 
 def enregistrer_feedback(*args):
+    return {
+        "ok": False,
+        "error": (
+            "Le système d'apprentissage par feedback "
+            "n'est pas encore activé."
+        )
+    }
 
-```
-return {
-    "ok": False,
-    "error": (
-        "Le système d'apprentissage par feedback "
-        "n'est pas encore activé."
-    )
-}
-```
 
 def stats_apprentissage():
+    connection = db()
 
-```
-connection = db()
+    total_messages = connection.execute(
+        "SELECT COUNT(*) FROM messages"
+    ).fetchone()[0]
 
-total_messages = connection.execute(
-    "SELECT COUNT(*) FROM messages"
-).fetchone()[0]
+    total_conversations = connection.execute(
+        "SELECT COUNT(*) FROM conversations"
+    ).fetchone()[0]
 
-total_conversations = connection.execute(
-    "SELECT COUNT(*) FROM conversations"
-).fetchone()[0]
+    connection.close()
 
-connection.close()
+    return {
+        "video": PHOENIX_VIDEO,
+        "messages": total_messages,
+        "conversations": total_conversations
+    }
 
-return {
-    "video": PHOENIX_VIDEO,
-    "messages": total_messages,
-    "conversations": total_conversations
-}
-```
 
 def exporter_apprentissage():
+    connection = db()
 
-```
-connection = db()
+    rows = connection.execute(
+        """
+        SELECT phrase, intent
+        FROM intent_examples
+        ORDER BY id ASC
+        """
+    ).fetchall()
 
-rows = connection.execute(
-    """
-    SELECT phrase, intent
-    FROM intent_examples
-    ORDER BY id ASC
-    """
-).fetchall()
+    connection.close()
 
-connection.close()
+    return [
+        {
+            "phrase": row["phrase"],
+            "intent": row["intent"]
+        }
+        for row in rows
+    ]
 
-return [
-    {
-        "phrase": row["phrase"],
-        "intent": row["intent"]
-    }
-    for row in rows
-]
-```
 
 # ============================================================
-
 # ADMIN
-
 # ============================================================
 
 def verifier_admin(secret: str):
+    expected = os.getenv(
+        "ADRYNX_ADMIN_SECRET"
+    )
 
-```
-expected = os.getenv(
-    "ADRYNX_ADMIN_SECRET"
-)
+    if not expected:
+        return False
 
-if not expected:
-    return False
-
-return secret == expected
-```
+    return secret == expected
