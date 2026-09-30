@@ -366,10 +366,6 @@ def obtenir_prix_bitcoin_coinbase() -> Dict[str, Any]:
 def obtenir_prix_bitcoin() -> Dict[str, Any]:
     erreurs = []
 
-    # --------------------------------------------------------
-    # SOURCE 1 — COINGECKO
-    # --------------------------------------------------------
-
     try:
         result = obtenir_prix_bitcoin_coingecko()
 
@@ -393,10 +389,6 @@ def obtenir_prix_bitcoin() -> Dict[str, Any]:
             erreur
         )
 
-    # --------------------------------------------------------
-    # SOURCE 2 — COINBASE
-    # --------------------------------------------------------
-
     try:
         result = obtenir_prix_bitcoin_coinbase()
 
@@ -419,10 +411,6 @@ def obtenir_prix_bitcoin() -> Dict[str, Any]:
             "BITCOIN SOURCE 2 ERROR:",
             erreur
         )
-
-    # --------------------------------------------------------
-    # AUCUNE SOURCE DISPONIBLE
-    # --------------------------------------------------------
 
     print(
         "========== BITCOIN MARKET ERROR =========="
@@ -1299,10 +1287,30 @@ def messages(
 # ============================================================
 
 def detecter_intent(question: str) -> str:
-    low = question.lower().strip()
+    low = (question or "").lower().strip()
+
+    # Normalisation des apostrophes typographiques.
+    # Cela permet de traiter de la même manière :
+    # "t'a", "t’as", "t'as", etc.
+    low = (
+        low
+        .replace("’", "'")
+        .replace("`", "'")
+    )
+
+    # Réduction des espaces multiples.
+    low = re.sub(
+        r"\s+",
+        " ",
+        low
+    )
 
     if not low:
         return "vide"
+
+    # --------------------------------------------------------
+    # SALUTATIONS
+    # --------------------------------------------------------
 
     if low in {
         "cc",
@@ -1317,14 +1325,78 @@ def detecter_intent(question: str) -> str:
     }:
         return "salutation"
 
-    if (
-        "qui es tu" in low
-        or "qui es-tu" in low
-        or "tu es qui" in low
-        or "qui t'a créé" in low
-        or "qui ta créé" in low
+    # --------------------------------------------------------
+    # IDENTITÉ / CRÉATEUR D'ADRYNX
+    # --------------------------------------------------------
+    #
+    # Cette détection doit être faite AVANT Groq.
+    # Ainsi, ADRYNX répond avec son identité réelle définie
+    # dans le noyau au lieu de laisser le modèle inventer
+    # ou ignorer le créateur.
+    #
+
+    expressions_identite = [
+        "qui es tu",
+        "qui es-tu",
+        "tu es qui",
+
+        "qui t'a créé",
+        "qui t'as créé",
+        "qui ta créé",
+
+        "qui est ton créateur",
+        "qui est ton createur",
+
+        "qui t'a développé",
+        "qui t'as développé",
+        "qui ta développé",
+
+        "qui t'a developpé",
+        "qui t'as developpé",
+        "qui ta developpé",
+
+        "qui t'a developpe",
+        "qui t'as developpe",
+        "qui ta developpe",
+
+        "qui est ton développeur",
+        "qui est ton developpeur",
+
+        "qui a créé adrynx",
+        "qui a cree adrynx",
+
+        "qui a développé adrynx",
+        "qui a developpe adrynx",
+        "qui a developpé adrynx",
+
+        "qui a conçu adrynx",
+        "qui a concu adrynx",
+
+        "qui est derrière adrynx",
+        "qui est derriere adrynx",
+
+        "qui a fait adrynx",
+        "qui a fabriqué adrynx",
+        "qui a fabrique adrynx",
+
+        "qui a conçu ton système",
+        "qui a concu ton systeme",
+
+        "qui t'a conçu",
+        "qui t'as conçu",
+        "qui t'a concu",
+        "qui t'as concu"
+    ]
+
+    if any(
+        expression in low
+        for expression in expressions_identite
     ):
         return "identite"
+
+    # --------------------------------------------------------
+    # BITCOIN
+    # --------------------------------------------------------
 
     if demande_prix_bitcoin(question):
         return "marche_bitcoin"
