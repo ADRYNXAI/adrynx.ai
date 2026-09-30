@@ -919,7 +919,7 @@ def rechercher_bing(
 
 
 # ============================================================
-# RECHERCHE INTERNET PRINCIPALE
+# RECHERCHE INTERNET PRINCIPALE — MULTI-SOURCE
 # ============================================================
 
 def rechercher_internet(
@@ -936,23 +936,30 @@ def rechercher_internet(
             "results": []
         }
 
+    toutes_les_sources = []
+    fournisseurs = []
+
+    # --------------------------------------------------------
+    # SOURCE 1 — DUCKDUCKGO HTML
+    # --------------------------------------------------------
+
     results = rechercher_duckduckgo(
         question,
         nombre_resultats
     )
 
     if results:
+        toutes_les_sources.extend(results)
+        fournisseurs.append("duckduckgo-html")
+
         print(
             f"ADRYNX INTERNET: DuckDuckGo HTML -> "
             f"{len(results)} résultat(s)"
         )
 
-        return {
-            "ok": True,
-            "provider": "duckduckgo-html",
-            "query": question,
-            "results": results
-        }
+    # --------------------------------------------------------
+    # SOURCE 2 — DUCKDUCKGO LITE
+    # --------------------------------------------------------
 
     results = rechercher_duckduckgo_lite(
         question,
@@ -960,17 +967,17 @@ def rechercher_internet(
     )
 
     if results:
+        toutes_les_sources.extend(results)
+        fournisseurs.append("duckduckgo-lite")
+
         print(
             f"ADRYNX INTERNET: DuckDuckGo Lite -> "
             f"{len(results)} résultat(s)"
         )
 
-        return {
-            "ok": True,
-            "provider": "duckduckgo-lite",
-            "query": question,
-            "results": results
-        }
+    # --------------------------------------------------------
+    # SOURCE 3 — BING
+    # --------------------------------------------------------
 
     results = rechercher_bing(
         question,
@@ -978,16 +985,36 @@ def rechercher_internet(
     )
 
     if results:
+        toutes_les_sources.extend(results)
+        fournisseurs.append("bing")
+
         print(
             f"ADRYNX INTERNET: Bing -> "
             f"{len(results)} résultat(s)"
         )
 
+    # --------------------------------------------------------
+    # FUSION DES RÉSULTATS
+    # --------------------------------------------------------
+
+    results_final = normaliser_resultats(
+        toutes_les_sources,
+        nombre_resultats
+    )
+
+    if results_final:
+        provider = "+".join(fournisseurs)
+
+        print(
+            "ADRYNX INTERNET: "
+            f"{len(results_final)} résultat(s) fusionné(s)"
+        )
+
         return {
             "ok": True,
-            "provider": "bing",
+            "provider": provider,
             "query": question,
-            "results": results
+            "results": results_final
         }
 
     print(
@@ -1014,11 +1041,178 @@ def rechercher_internet(
 
 
 # ============================================================
+# NORMALISATION POUR LE PARENT
+# ============================================================
+
+def normaliser_question(question: str) -> str:
+    question = (question or "").lower().strip()
+
+    question = (
+        question
+        .replace("’", "'")
+        .replace("`", "'")
+    )
+
+    question = re.sub(
+        r"\s+",
+        " ",
+        question
+    )
+
+    return question
+
+
+# ============================================================
+# EXTRACTION DU SUJET D'UNE DEMANDE D'ENTITÉ
+# ============================================================
+
+def extraire_sujet_entite(question: str) -> str:
+    """
+    Extrait le sujet principal d'une demande telle que :
+
+    "Parle-moi de Marcien Towa"
+    "Qui est Albert Camus ?"
+    "Donne-moi des informations sur Alan Turing"
+
+    Le résultat est utilisé uniquement pour construire une
+    requête Internet plus précise.
+    """
+
+    original = (question or "").strip()
+
+    if not original:
+        return ""
+
+    low = normaliser_question(original)
+
+    prefixes = [
+        "parle moi de ",
+        "parle-moi de ",
+        "parle moi sur ",
+        "parle-moi sur ",
+
+        "qui est ",
+        "qui était ",
+        "qui etait ",
+
+        "biographie de ",
+        "la biographie de ",
+
+        "histoire de ",
+        "l'histoire de ",
+
+        "présente moi ",
+        "presente moi ",
+        "présente-moi ",
+        "presente-moi ",
+
+        "informations sur ",
+        "information sur ",
+        "informations concernant ",
+        "information concernant ",
+
+        "à propos de ",
+        "a propos de ",
+
+        "que sais tu de ",
+        "que sais-tu de ",
+
+        "donne moi des informations sur ",
+        "donne-moi des informations sur ",
+
+        "dis moi qui est ",
+        "dis-moi qui est "
+    ]
+
+    for prefix in prefixes:
+        if low.startswith(prefix):
+            sujet = original[len(prefix):].strip(
+                " ?!.,;:"
+            )
+
+            if sujet:
+                return sujet
+
+    return ""
+
+
+# ============================================================
+# DÉTECTION D'UNE DEMANDE D'INFORMATION SUR UNE ENTITÉ
+# ============================================================
+
+def demande_information_entite(question: str) -> bool:
+    """
+    Détermine si l'utilisateur demande des informations
+    vérifiables sur une personne, un lieu, une organisation,
+    une œuvre, un événement ou une autre entité nommée.
+
+    Cette détection reste volontairement prudente.
+    """
+
+    low = normaliser_question(question)
+
+    if not low:
+        return False
+
+    if demande_prix_bitcoin(question):
+        return False
+
+    expressions = [
+        "parle moi de ",
+        "parle-moi de ",
+        "parle moi sur ",
+        "parle-moi sur ",
+
+        "qui est ",
+        "qui était ",
+        "qui etait ",
+
+        "biographie de ",
+        "la biographie de ",
+
+        "histoire de ",
+        "l'histoire de ",
+
+        "présente moi ",
+        "presente moi ",
+        "présente-moi ",
+        "presente-moi ",
+
+        "informations sur ",
+        "information sur ",
+        "informations concernant ",
+        "information concernant ",
+
+        "à propos de ",
+        "a propos de ",
+
+        "que sais tu de ",
+        "que sais-tu de ",
+
+        "donne moi des informations sur ",
+        "donne-moi des informations sur ",
+
+        "dis moi qui est ",
+        "dis-moi qui est "
+    ]
+
+    if not any(
+        expression in low
+        for expression in expressions
+    ):
+        return False
+
+    sujet = extraire_sujet_entite(question)
+
+    return len(sujet.strip()) >= 2
+
+
+# ============================================================
 # DÉTECTION D'UNE DEMANDE INTERNET
 # ============================================================
 
 def demande_recherche_internet(question: str) -> bool:
-    low = question.lower().strip()
+    low = normaliser_question(question)
 
     expressions = [
         "recherche sur internet",
@@ -1076,6 +1270,15 @@ def demande_recherche_internet(question: str) -> bool:
     for expression in expressions:
         if expression in low:
             return True
+
+    # --------------------------------------------------------
+    # NOUVEAU PARENT :
+    # Une demande d'information sur une entité entraîne
+    # automatiquement une recherche réelle.
+    # --------------------------------------------------------
+
+    if demande_information_entite(question):
+        return True
 
     return False
 
@@ -1287,19 +1490,7 @@ def messages(
 # ============================================================
 
 def detecter_intent(question: str) -> str:
-    low = (question or "").lower().strip()
-
-    low = (
-        low
-        .replace("’", "'")
-        .replace("`", "'")
-    )
-
-    low = re.sub(
-        r"\s+",
-        " ",
-        low
-    )
+    low = normaliser_question(question)
 
     if not low:
         return "vide"
@@ -1408,6 +1599,13 @@ def detecter_intent(question: str) -> str:
         return "identite"
 
     # --------------------------------------------------------
+    # INFORMATION SUR UNE ENTITÉ
+    # --------------------------------------------------------
+
+    if demande_information_entite(question):
+        return "information_entite"
+
+    # --------------------------------------------------------
     # BITCOIN
     # --------------------------------------------------------
 
@@ -1443,7 +1641,7 @@ def reponse_etat():
 
 
 # ============================================================
-# CAPACITÉS RÉELLES
+# CAPACITÉS RÉELLES — PARENT ADRYNX
 # ============================================================
 
 def system_prompt():
@@ -1453,20 +1651,64 @@ Tu es ADRYNX.
 Tu es un assistant conversationnel réel intégré dans une
 application appelée ADRYNX.
 
+IMPORTANT : le backend ADRYNX possède une couche de contrôle
+appelée PARENT. Le PARENT est prioritaire sur ta formulation.
+
+IDENTITÉ :
+
+L'identité d'ADRYNX est déterminée par le noyau backend.
+
+Si une question concerne le créateur, le développeur ou
+l'identité fondamentale d'ADRYNX, utilise uniquement les
+informations explicitement fournies par le contexte backend.
+
+Ne remplace jamais l'identité d'ADRYNX par une description
+générique telle que :
+"Je suis un assistant conversationnel intégré..."
+lorsque l'utilisateur demande qui tu es ou qui t'a créé.
+
+RECHERCHE INTERNET :
+
+Lorsque le backend fournit des résultats Internet, ils
+correspondent à une recherche réelle effectuée par ADRYNX.
+
+Ces résultats peuvent être des extraits de moteurs de recherche.
+Ils peuvent donc être incomplets.
+
+Tu dois analyser les résultats fournis sans inventer ce qu'ils
+ne disent pas.
+
+IMPORTANT :
+
+L'absence de résultat Internet ne signifie PAS qu'une personne,
+un lieu, une œuvre, une organisation ou un événement n'existe pas.
+
+Tu ne dois jamais dire :
+
+"Cette personne n'existe pas."
+
+"Cette personne est inconnue."
+
+"Cette information n'existe pas."
+
+simplement parce qu'une recherche Internet a échoué.
+
+Si les résultats sont insuffisants, dis simplement que les
+sources disponibles ne permettent pas de confirmer suffisamment
+l'information.
+
 CAPACITÉS ACTUELLEMENT RÉELLES :
 
 * Tu peux converser avec l'utilisateur grâce au modèle Groq.
 * Tu peux utiliser l'historique de la conversation fourni par
   ton backend.
 * Le backend sauvegarde les messages dans une base SQLite.
-* Le backend peut effectuer une recherche Internet réelle
-  lorsque la demande de l'utilisateur nécessite une recherche.
-* Plusieurs moteurs ou méthodes de recherche peuvent être
-  utilisés par le backend.
-* Le backend peut également récupérer certaines données
-  structurées depuis des sources externes réelles.
-* Lorsque des résultats Internet sont fournis dans le contexte,
-  tu peux les analyser et les résumer.
+* Le backend peut effectuer une recherche Internet réelle.
+* Le backend utilise plusieurs méthodes de recherche Internet.
+* Le backend peut récupérer certaines données structurées depuis
+  des sources externes réelles.
+* Lorsque des résultats Internet sont fournis, tu peux les
+  analyser et les résumer.
 * Tu peux répondre en français lorsque l'utilisateur écrit
   en français.
 
@@ -1476,7 +1718,7 @@ SI ELLES NE SONT PAS FOURNIES DANS LE CONTEXTE :
 * mémoire personnelle persistante intelligente ;
 * apprentissage autonome ;
 * raisonnement spécialisé indépendant ;
-* système de parents IA ;
+* système de parents IA autonome ;
 * accès arbitraire aux services externes ;
 * exécution d'actions sur l'appareil de l'utilisateur ;
 * projets et tâches persistants si aucune fonction correspondante
@@ -1511,8 +1753,9 @@ RÈGLES :
 10. Pour une information actuelle, utilise les données externes
     réelles lorsqu'elles sont disponibles.
 
-11. Si une recherche Internet échoue, indique clairement que la
-    recherche a échoué.
+11. Si une recherche Internet échoue, ne transforme jamais cet
+    échec en preuve de non-existence d'une information ou
+    d'une entité.
 
 12. Si les résultats disponibles ne permettent pas de répondre
     précisément, dis-le clairement.
@@ -1548,6 +1791,16 @@ RÈGLES :
 
 24. Pour une donnée numérique structurée fournie directement
     par le backend, conserve exactement la valeur fournie.
+
+25. Si une demande porte sur une entité nommée et que des
+    résultats Internet sont fournis, réponds à propos de cette
+    entité en utilisant les résultats disponibles.
+
+26. Ne transforme jamais un manque de sources en affirmation
+    catégorique de non-existence.
+
+27. Ne prétends jamais qu'une recherche a confirmé un fait si
+    les résultats fournis ne le montrent pas.
 """
 
 
@@ -1577,6 +1830,15 @@ def construire_contexte_web(
 
     lignes.append(
         f"Question recherchée : {question}"
+    )
+
+    lignes.append("")
+
+    lignes.append(
+        "ATTENTION : les éléments ci-dessous sont des résultats "
+        "ou extraits de recherche. Ils peuvent être incomplets. "
+        "Ils ne constituent pas automatiquement une preuve "
+        "absolue de chaque affirmation."
     )
 
     lignes.append("")
@@ -1731,13 +1993,6 @@ def analyser_pertinence(
     question: str,
     response: str
 ) -> Dict[str, Any]:
-    """
-    Contrôle lexical déterministe.
-
-    Ce n'est PAS présenté comme une compréhension sémantique
-    parfaite. Il cherche des indices objectifs permettant de
-    détecter certaines réponses manifestement hors sujet.
-    """
 
     question = (question or "").strip()
     response = (response or "").strip()
@@ -1772,8 +2027,6 @@ def analyser_pertinence(
         / len(question_words)
     )
 
-    # Pour les questions très courtes, un seul mot commun
-    # suffit généralement comme indice.
     if len(question_words) <= 2:
         pertinent = len(correspondances) >= 1
     elif len(question_words) <= 4:
@@ -1800,11 +2053,6 @@ def analyser_pertinence(
 # ============================================================
 
 def question_exigeant_actualite(question: str) -> bool:
-    """
-    Détecte les formulations indiquant qu'une information doit
-    être actuelle ou récente.
-    """
-
     return demande_recherche_internet(question)
 
 
@@ -1916,9 +2164,14 @@ RÈGLES :
 5. Si des données Internet sont fournies, utilise-les.
 6. Si les données Internet ne permettent pas d'établir un fait,
    indique-le.
-7. Ne parle pas du processus de correction.
-8. Ne dis pas que tu as été corrigé.
-9. Réponds dans la langue de l'utilisateur.
+7. L'absence de résultat Internet ne constitue pas une preuve
+   qu'une personne, une organisation, un lieu ou une information
+   n'existe pas.
+8. Ne dis pas qu'une entité n'existe pas uniquement parce que
+   la recherche a échoué.
+9. Ne parle pas du processus de correction.
+10. Ne dis pas que tu as été corrigé.
+11. Réponds dans la langue de l'utilisateur.
 """
 
     messages = [
@@ -1934,7 +2187,6 @@ RÈGLES :
         }
     ]
 
-    # L'historique n'est ajouté que s'il existe.
     if history:
         messages.insert(
             0,
@@ -2040,8 +2292,6 @@ def executer_response_controller(
                 "corrected": True
             }
 
-        # On ne renvoie pas une deuxième réponse arbitraire
-        # comme si elle était validée.
         return {
             "ok": False,
             "error": (
@@ -2240,12 +2490,147 @@ def traiter_question(
     web_context = None
 
     if demande_recherche_internet(question):
+
+        # ----------------------------------------------------
+        # LE PARENT EXTRAIT LE SUJET SI C'EST UNE ENTITÉ
+        # ----------------------------------------------------
+
+        sujet_entite = extraire_sujet_entite(
+            question
+        )
+
+        if sujet_entite:
+            requete_recherche = sujet_entite
+
+            print(
+                "ADRYNX PARENT: "
+                f"entité détectée -> {sujet_entite}"
+            )
+
+        else:
+            requete_recherche = question
+
         recherche = rechercher_internet(
-            question,
-            nombre_resultats=6
+            requete_recherche,
+            nombre_resultats=8
         )
 
         if not recherche.get("ok"):
+
+            # ------------------------------------------------
+            # CAS IMPORTANT :
+            # un échec de recherche ne devient PAS une
+            # affirmation de non-existence.
+            # ------------------------------------------------
+
+            if intent == "information_entite":
+
+                print(
+                    "ADRYNX PARENT: recherche d'entité échouée."
+                )
+
+                fallback_system = system_prompt() + """
+
+MODE DE REPLI — RECHERCHE INTERNET INDISPONIBLE :
+
+La recherche Internet n'a retourné aucun résultat exploitable.
+
+Tu peux répondre uniquement à partir de tes connaissances
+générales si tu peux produire une réponse prudente.
+
+IMPORTANT :
+
+- N'affirme jamais que l'entité n'existe pas.
+- Ne prétends pas avoir vérifié l'information sur Internet.
+- Ne fabrique aucune source.
+- Si tes connaissances ne suffisent pas, indique clairement
+  que tu ne peux pas confirmer suffisamment l'information.
+- Ne transforme pas l'échec de recherche en preuve d'absence.
+"""
+
+                try:
+                    response = groq_chat(
+                        fallback_system,
+                        history,
+                        temperature=0.3,
+                        max_tokens=700
+                    )
+
+                except Exception as e:
+                    print(
+                        "ADRYNX ENTITY FALLBACK ERROR:",
+                        type(e).__name__,
+                        str(e)
+                    )
+
+                    return {
+                        "ok": False,
+                        "error": (
+                            "La recherche Internet a échoué et "
+                            "le traitement de repli n'a pas pu "
+                            "être exécuté."
+                        ),
+                        "intent": intent,
+                        "conversation_id": conversation_id,
+                        "source": "internet-error",
+                        "video_core": PHOENIX_VIDEO
+                    }
+
+                controller = executer_response_controller(
+                    question,
+                    response,
+                    "groq-sans-web",
+                    history,
+                    [],
+                    None
+                )
+
+                if not controller.get("ok"):
+                    return {
+                        "ok": False,
+                        "error": controller.get(
+                            "error",
+                            "ADRYNX n'a pas validé la réponse."
+                        ),
+                        "intent": intent,
+                        "conversation_id": conversation_id,
+                        "source": "response-controller-error",
+                        "controller": controller.get(
+                            "controller",
+                            {}
+                        ),
+                        "video_core": PHOENIX_VIDEO
+                    }
+
+                response = controller["response"]
+
+                save_message(
+                    conversation_id,
+                    owner,
+                    "assistant",
+                    response
+                )
+
+                return {
+                    "ok": True,
+                    "reponse": response,
+                    "intent": intent,
+                    "source": "groq-sans-web",
+                    "conversation_id": conversation_id,
+                    "video_core": PHOENIX_VIDEO,
+                    "controller": {
+                        "ok": True,
+                        "corrected": controller.get(
+                            "corrected",
+                            False
+                        ),
+                        "web_search": {
+                            "attempted": True,
+                            "success": False
+                        }
+                    }
+                }
+
             return {
                 "ok": False,
                 "error": recherche.get(
@@ -2264,7 +2649,7 @@ def traiter_question(
         )
 
         web_context = construire_contexte_web(
-            question,
+            requete_recherche,
             recherche
         )
 
@@ -2424,7 +2809,10 @@ def dashboard(owner: str):
         "model": GROQ_MODEL,
         "internet_search": True,
         "bitcoin_market_data": True,
-        "response_controller": True
+        "response_controller": True,
+        "parent_controller": True,
+        "entity_search": True,
+        "multi_source_search": True
     }
 
 
