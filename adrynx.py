@@ -5,7 +5,7 @@ import re
 import html
 from pathlib import Path
 from typing import Dict, Any, Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, unquote
 from html.parser import HTMLParser
 
 import requests
@@ -16,6 +16,7 @@ import requests
 # ============================================================
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
 GROQ_MODEL = os.getenv(
     "GROQ_MODEL",
     "openai/gpt-oss-20b"
@@ -130,89 +131,30 @@ def groq_chat(
 
 
 # ============================================================
-# RECHERCHE INTERNET
+# OUTILS DE RECHERCHE INTERNET
 # ============================================================
 
-class SearchParser(HTMLParser):
-    """
-    Petit analyseur HTML sans dépendance supplémentaire.
-    Il récupère les résultats de DuckDuckGo HTML.
-    """
+SEARCH_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 "
+        "(Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 "
+        "(KHTML, like Gecko) "
+        "Chrome/131.0 Safari/537.36"
+    ),
+    "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8"
+}
 
-    def __init__(self):
-        super().__init__()
 
-        self.results = []
+def nettoyer_texte(value: str) -> str:
 
-        self.current_link = None
-        self.current_title = []
-        self.current_description = []
+    if not value:
+        return ""
 
-        self.in_result_link = False
-        self.in_result_title = False
-        self.in_result_description = False
+    value = html.unescape(value)
+    value = re.sub(r"\s+", " ", value)
 
-    def handle_starttag(self, tag, attrs):
-
-        attributes = dict(attrs)
-
-        classes = attributes.get("class", "")
-
-        if tag == "a":
-
-            href = attributes.get("href", "")
-
-            if (
-                "result__a" in classes
-                and href
-            ):
-                self.current_link = href
-                self.current_title = []
-                self.current_description = []
-
-                self.in_result_link = True
-                self.in_result_title = True
-
-        if tag in {"a", "div"}:
-
-            if "result__snippet" in classes:
-                self.in_result_description = True
-
-    def handle_data(self, data):
-
-        if self.in_result_title:
-            self.current_title.append(data)
-
-        if self.in_result_description:
-            self.current_description.append(data)
-
-    def handle_endtag(self, tag):
-
-        if tag == "a" and self.in_result_link:
-
-            title = " ".join(
-                "".join(self.current_title).split()
-            ).strip()
-
-            description = " ".join(
-                "".join(self.current_description).split()
-            ).strip()
-
-            if self.current_link and title:
-
-                self.results.append({
-                    "title": html.unescape(title),
-                    "url": self.current_link,
-                    "description": html.unescape(description)
-                })
-
-            self.current_link = None
-            self.current_title = []
-            self.current_description = []
-
-            self.in_result_link = False
-            self.in_result_title = False
-            self.in_result_description = False
+    return value.strip()
 
 
 def nettoyer_url(url: str) -> str:
@@ -220,10 +162,23 @@ def nettoyer_url(url: str) -> str:
     if not url:
         return ""
 
-    url = html.unescape(url)
+    url = html.unescape(url).strip()
 
     if url.startswith("//"):
         url = "https:" + url
+
+    # Liens de redirection DuckDuckGo
+    if "duckduckgo.com/l/" in url:
+
+        try:
+            parsed = urlparse(url)
+            query = parse_qs(parsed.query)
+
+            if "uddg" in query:
+                url = unquote(query["uddg"][0])
+
+        except Exception:
+            pass
 
     if url.startswith("/"):
         return ""
@@ -233,8 +188,450 @@ def nettoyer_url(url: str) -> str:
     if parsed.scheme not in {"http", "https"}:
         return ""
 
+    if not parsed.netloc:
+        return ""
+
     return url
 
+
+# ============================================================
+# PARSEUR DUCKDUCKGO HTML
+# ============================================================
+
+class DuckDuckGoParser(HTMLParser):
+
+    def __init__(self):
+        super().__init__()
+
+        self.results = []
+
+        self.current_url = ""
+        self.current_title = []
+        self.current_description = []
+
+        self.in_title = False
+        self.in_description = False
+
+    def handle_starttag(self, tag, attrs):
+
+        attributes = dict(attrs)
+
+        classes = attributes.get("class", "")
+
+        class_list = classes.split()
+
+        if tag == "a":
+
+            href = attributes.get("href", "")
+
+            if (
+                "result__a" in class_list
+                and href
+            ):
+
+                self.current_url = href
+                self.current_title = []
+                self.current_description = []
+
+                self.in_title = True
+
+        if (
+            "result__snippet" in class_list
+            or "result__body" in class_list
+        ):
+
+            self.in_description = True
+
+    def handle_data(self, data):
+
+        if self.in_title:
+            self.current_title.append(data)
+
+        if self.in_description:
+            self.current_description.append(data)
+
+    def handle_endtag(self, tag):
+
+        if tag == "a" and self.in_title:
+
+            title = nettoyer_texte(
+                "".join(self.current_title)
+            )
+
+            description = nettoyer_texte(
+                "".join(self.current_description)
+            )
+
+            clean_url = nettoyer_url(
+                self.current_url
+            )
+
+            if clean_url and title:
+
+                self.results.append({
+                    "title": title,
+                    "url": clean_url,
+                    "description": description
+                })
+
+            self.current_url = ""
+            self.current_title = []
+            self.current_description = []
+
+            self.in_title = False
+
+
+# ============================================================
+# PARSEUR DUCKDUCKGO LITE
+# ============================================================
+
+class DuckDuckGoLiteParser(HTMLParser):
+
+    def __init__(self):
+        super().__init__()
+
+        self.results = []
+
+        self.current_url = ""
+        self.current_title = []
+
+        self.in_result = False
+
+    def handle_starttag(self, tag, attrs):
+
+        attributes = dict(attrs)
+
+        classes = attributes.get("class", "")
+        class_list = classes.split()
+
+        if tag == "a":
+
+            href = attributes.get("href", "")
+
+            if (
+                "result-link" in class_list
+                and href
+            ):
+
+                self.current_url = href
+                self.current_title = []
+                self.in_result = True
+
+    def handle_data(self, data):
+
+        if self.in_result:
+            self.current_title.append(data)
+
+    def handle_endtag(self, tag):
+
+        if tag == "a" and self.in_result:
+
+            title = nettoyer_texte(
+                "".join(self.current_title)
+            )
+
+            clean_url = nettoyer_url(
+                self.current_url
+            )
+
+            if clean_url and title:
+
+                self.results.append({
+                    "title": title,
+                    "url": clean_url,
+                    "description": ""
+                })
+
+            self.current_url = ""
+            self.current_title = []
+            self.in_result = False
+
+
+# ============================================================
+# PARSEUR BING
+# ============================================================
+
+class BingParser(HTMLParser):
+
+    def __init__(self):
+        super().__init__()
+
+        self.results = []
+
+        self.in_result = False
+        self.in_title = False
+        self.in_description = False
+
+        self.current_url = ""
+        self.current_title = []
+        self.current_description = []
+
+    def handle_starttag(self, tag, attrs):
+
+        attributes = dict(attrs)
+
+        classes = attributes.get("class", "")
+        class_list = classes.split()
+
+        if tag == "li" and "b_algo" in class_list:
+
+            self.in_result = True
+            self.current_url = ""
+            self.current_title = []
+            self.current_description = []
+
+        if not self.in_result:
+            return
+
+        if tag == "a":
+
+            href = attributes.get("href", "")
+
+            if href and not self.current_url:
+
+                self.current_url = href
+                self.in_title = True
+
+        if tag in {"p", "div"}:
+
+            if "b_caption" in class_list:
+                self.in_description = True
+
+    def handle_data(self, data):
+
+        if not self.in_result:
+            return
+
+        if self.in_title:
+            self.current_title.append(data)
+
+        if self.in_description:
+            self.current_description.append(data)
+
+    def handle_endtag(self, tag):
+
+        if not self.in_result:
+            return
+
+        if tag == "a" and self.in_title:
+
+            self.in_title = False
+
+        if tag == "li":
+
+            title = nettoyer_texte(
+                "".join(self.current_title)
+            )
+
+            description = nettoyer_texte(
+                "".join(self.current_description)
+            )
+
+            clean_url = nettoyer_url(
+                self.current_url
+            )
+
+            if clean_url and title:
+
+                self.results.append({
+                    "title": title,
+                    "url": clean_url,
+                    "description": description
+                })
+
+            self.in_result = False
+            self.in_title = False
+            self.in_description = False
+
+            self.current_url = ""
+            self.current_title = []
+            self.current_description = []
+
+
+# ============================================================
+# NORMALISATION DES RÉSULTATS
+# ============================================================
+
+def normaliser_resultats(
+    results,
+    nombre_resultats: int = 6
+):
+
+    final = []
+    urls = set()
+
+    for result in results:
+
+        url = nettoyer_url(
+            result.get("url", "")
+        )
+
+        title = nettoyer_texte(
+            result.get("title", "")
+        )
+
+        description = nettoyer_texte(
+            result.get("description", "")
+        )
+
+        if not url or not title:
+            continue
+
+        if url in urls:
+            continue
+
+        urls.add(url)
+
+        final.append({
+            "title": title,
+            "url": url,
+            "description": description
+        })
+
+        if len(final) >= nombre_resultats:
+            break
+
+    return final
+
+
+# ============================================================
+# RECHERCHE DUCKDUCKGO HTML
+# ============================================================
+
+def rechercher_duckduckgo(
+    question: str,
+    nombre_resultats: int = 6
+):
+
+    url = "https://html.duckduckgo.com/html/"
+
+    try:
+
+        response = requests.get(
+            url,
+            params={
+                "q": question
+            },
+            headers=SEARCH_HEADERS,
+            timeout=15
+        )
+
+        response.raise_for_status()
+
+        parser = DuckDuckGoParser()
+        parser.feed(response.text)
+
+        results = normaliser_resultats(
+            parser.results,
+            nombre_resultats
+        )
+
+        return results
+
+    except Exception as e:
+
+        print(
+            "DUCKDUCKGO HTML ERROR:",
+            type(e).__name__,
+            str(e)
+        )
+
+        return []
+
+
+# ============================================================
+# RECHERCHE DUCKDUCKGO LITE
+# ============================================================
+
+def rechercher_duckduckgo_lite(
+    question: str,
+    nombre_resultats: int = 6
+):
+
+    url = "https://lite.duckduckgo.com/lite/"
+
+    try:
+
+        response = requests.get(
+            url,
+            params={
+                "q": question
+            },
+            headers=SEARCH_HEADERS,
+            timeout=15
+        )
+
+        response.raise_for_status()
+
+        parser = DuckDuckGoLiteParser()
+        parser.feed(response.text)
+
+        results = normaliser_resultats(
+            parser.results,
+            nombre_resultats
+        )
+
+        return results
+
+    except Exception as e:
+
+        print(
+            "DUCKDUCKGO LITE ERROR:",
+            type(e).__name__,
+            str(e)
+        )
+
+        return []
+
+
+# ============================================================
+# RECHERCHE BING
+# ============================================================
+
+def rechercher_bing(
+    question: str,
+    nombre_resultats: int = 6
+):
+
+    url = "https://www.bing.com/search"
+
+    try:
+
+        response = requests.get(
+            url,
+            params={
+                "q": question
+            },
+            headers=SEARCH_HEADERS,
+            timeout=15
+        )
+
+        response.raise_for_status()
+
+        parser = BingParser()
+        parser.feed(response.text)
+
+        results = normaliser_resultats(
+            parser.results,
+            nombre_resultats
+        )
+
+        return results
+
+    except Exception as e:
+
+        print(
+            "BING SEARCH ERROR:",
+            type(e).__name__,
+            str(e)
+        )
+
+        return []
+
+
+# ============================================================
+# RECHERCHE INTERNET PRINCIPALE
+# ============================================================
 
 def rechercher_internet(
     question: str,
@@ -244,116 +641,107 @@ def rechercher_internet(
     question = (question or "").strip()
 
     if not question:
+
         return {
             "ok": False,
             "error": "Recherche vide.",
             "results": []
         }
 
-    url = "https://html.duckduckgo.com/html/"
+    # --------------------------------------------------------
+    # MÉTHODE 1 : DUCKDUCKGO HTML
+    # --------------------------------------------------------
 
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 "
-            "(Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 "
-            "(KHTML, like Gecko) "
-            "Chrome/131.0 Safari/537.36"
+    results = rechercher_duckduckgo(
+        question,
+        nombre_resultats
+    )
+
+    if results:
+
+        print(
+            f"ADRYNX INTERNET: DuckDuckGo HTML -> "
+            f"{len(results)} résultat(s)"
         )
-    }
-
-    try:
-
-        response = requests.get(
-            url,
-            params={"q": question},
-            headers=headers,
-            timeout=15
-        )
-
-        response.raise_for_status()
-
-        parser = SearchParser()
-        parser.feed(response.text)
-
-        results = []
-
-        for result in parser.results:
-
-            clean_url = nettoyer_url(
-                result.get("url", "")
-            )
-
-            if not clean_url:
-                continue
-
-            results.append({
-                "title": result.get(
-                    "title",
-                    ""
-                ),
-                "url": clean_url,
-                "description": result.get(
-                    "description",
-                    ""
-                )
-            })
-
-            if len(results) >= nombre_resultats:
-                break
-
-        if not results:
-
-            return {
-                "ok": False,
-                "error": (
-                    "La recherche Internet a été effectuée, "
-                    "mais aucun résultat exploitable n'a été trouvé."
-                ),
-                "results": []
-            }
 
         return {
             "ok": True,
+            "provider": "duckduckgo-html",
             "query": question,
             "results": results
         }
 
-    except requests.RequestException as e:
+    # --------------------------------------------------------
+    # MÉTHODE 2 : DUCKDUCKGO LITE
+    # --------------------------------------------------------
+
+    results = rechercher_duckduckgo_lite(
+        question,
+        nombre_resultats
+    )
+
+    if results:
 
         print(
-            "========== ADRYNX INTERNET ERROR =========="
+            f"ADRYNX INTERNET: DuckDuckGo Lite -> "
+            f"{len(results)} résultat(s)"
         )
-        print(type(e).__name__)
-        print(str(e))
-        print("============================================")
 
         return {
-            "ok": False,
-            "error": (
-                "Impossible d'accéder au moteur de recherche "
-                f"Internet : {type(e).__name__}: {e}"
-            ),
-            "results": []
+            "ok": True,
+            "provider": "duckduckgo-lite",
+            "query": question,
+            "results": results
         }
 
-    except Exception as e:
+    # --------------------------------------------------------
+    # MÉTHODE 3 : BING
+    # --------------------------------------------------------
+
+    results = rechercher_bing(
+        question,
+        nombre_resultats
+    )
+
+    if results:
 
         print(
-            "========== ADRYNX SEARCH ERROR =========="
+            f"ADRYNX INTERNET: Bing -> "
+            f"{len(results)} résultat(s)"
         )
-        print(type(e).__name__)
-        print(str(e))
-        print("==========================================")
 
         return {
-            "ok": False,
-            "error": (
-                f"Erreur pendant la recherche Internet : "
-                f"{type(e).__name__}: {e}"
-            ),
-            "results": []
+            "ok": True,
+            "provider": "bing",
+            "query": question,
+            "results": results
         }
+
+    # --------------------------------------------------------
+    # ÉCHEC RÉEL
+    # --------------------------------------------------------
+
+    print(
+        "========== ADRYNX INTERNET ERROR =========="
+    )
+
+    print(
+        "Aucun moteur n'a retourné de résultat exploitable."
+    )
+
+    print(
+        "============================================"
+    )
+
+    return {
+        "ok": False,
+        "error": (
+            "ADRYNX a essayé plusieurs méthodes de recherche "
+            "Internet, mais aucun résultat exploitable n'a été "
+            "retourné."
+        ),
+        "results": []
+    }
 
 
 # ============================================================
@@ -368,28 +756,53 @@ def demande_recherche_internet(question: str) -> bool:
         "recherche sur internet",
         "rechercher sur internet",
         "cherche sur internet",
+        "recherche internet",
+        "rechercher internet",
+        "cherche internet",
+
         "cherche sur le web",
         "recherche sur le web",
+        "rechercher sur le web",
         "sur internet",
         "sur le web",
+
         "en ligne",
+
         "actualités",
         "actualité",
+        "actualite",
+
         "prix actuel",
+        "prix actuelle",
         "prix actuel maintenant",
+
         "maintenant",
         "aujourd'hui",
         "aujourd’hui",
         "actuellement",
+
         "cours actuel",
+        "cours actuel de",
+        "valeur actuelle",
+
         "dernières nouvelles",
+        "derniere nouvelle",
         "dernière nouvelle",
+        "dernières infos",
+        "derniere info",
+
         "news",
         "latest",
+
         "récent",
         "récente",
         "récents",
-        "récentes"
+        "récentes",
+
+        "recent",
+        "recente",
+        "recents",
+        "recentes"
     ]
 
     for expression in expressions:
@@ -678,6 +1091,8 @@ CAPACITÉS ACTUELLEMENT RÉELLES :
 - Le backend sauvegarde les messages dans une base SQLite.
 - Le backend peut effectuer une recherche Internet réelle
   lorsque la demande de l'utilisateur nécessite une recherche.
+- Plusieurs moteurs ou méthodes de recherche peuvent être
+  utilisés par le backend.
 - Lorsque des résultats Internet sont fournis dans le contexte,
   tu peux les analyser et les résumer.
 - Tu peux répondre en français lorsque l'utilisateur écrit
@@ -724,7 +1139,7 @@ RÈGLES :
 10. Pour une information actuelle, utilise les résultats
     Internet lorsqu'ils sont disponibles.
 
-11. Si la recherche Internet échoue, indique clairement que la
+11. Si une recherche Internet échoue, indique clairement que la
     recherche a échoué.
 
 12. Si les résultats disponibles ne permettent pas de répondre
@@ -748,6 +1163,16 @@ RÈGLES :
     pas réellement activée.
 
 20. Sois transparent sur tes limites réelles.
+
+21. Lorsque des résultats Internet sont fournis, utilise-les
+    comme source prioritaire pour les informations actuelles.
+
+22. Ne donne pas un prix, une valeur ou une information actuelle
+    précise si les résultats fournis ne permettent pas de
+    l'établir.
+
+23. Si plusieurs résultats Internet se contredisent, indique
+    cette divergence au lieu de choisir arbitrairement une valeur.
 """
 
 
@@ -762,8 +1187,17 @@ def construire_contexte_web(
 
     lignes = []
 
+    provider = recherche.get(
+        "provider",
+        "moteur de recherche"
+    )
+
     lignes.append(
         "RÉSULTATS D'UNE RECHERCHE INTERNET RÉELLE"
+    )
+
+    lignes.append(
+        f"Moteur/méthode utilisée : {provider}"
     )
 
     lignes.append(
@@ -872,12 +1306,6 @@ def traiter_question(
     # HISTORIQUE
     # --------------------------------------------------------
 
-    history = get_history(
-        conversation_id,
-        owner,
-        limit=12
-    )
-
     save_message(
         conversation_id,
         owner,
@@ -895,8 +1323,8 @@ def traiter_question(
     # RECHERCHE INTERNET RÉELLE
     # --------------------------------------------------------
 
-    web_context = None
     web_results = []
+    web_context = None
 
     if demande_recherche_internet(question):
 
@@ -929,8 +1357,6 @@ def traiter_question(
             recherche
         )
 
-        # Le contexte Web est ajouté comme message système
-        # supplémentaire pour que Groq puisse l'analyser.
         history_for_groq = [
             {
                 "role": "system",
