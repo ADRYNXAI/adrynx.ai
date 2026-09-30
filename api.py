@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
@@ -16,8 +16,14 @@ version="7.0"
 
 app.add_middleware(
 CORSMiddleware,
-allow_origins=[""],
-allow_methods=[""],
+allow_origins=[
+"https://adrynx-ai.onrender.com",
+"https://www.adrynx-ai.onrender.com",
+"https://adrynx.ai",
+"https://www.adrynx.ai",
+],
+allow_credentials=True,
+allow_methods=["GET", "POST"],
 allow_headers=["*"],
 )
 
@@ -46,11 +52,9 @@ if index_file.is_file():
     )
 
 return HTMLResponse(
-    """
-    <h1>ADRYNX</h1>
-    <p>API active.</p>
-    <p><a href="/api/health">Vérifier l'état de l'API</a></p>
-    """
+    "<h1>ADRYNX</h1>"
+    "<p>API active.</p>"
+    "<p><a href='/api/health'>Health</a></p>"
 )
 
 @app.get("/health")
@@ -96,46 +100,46 @@ return FileResponse(
 
 @app.get("/robots.txt")
 def serve_robots():
-robots_file = BASE_DIR / "robots.txt"
+f = BASE_DIR / "robots.txt"
 
-if not robots_file.is_file():
+if not f.is_file():
     raise HTTPException(
         status_code=404,
         detail="robots.txt introuvable."
     )
 
 return FileResponse(
-    str(robots_file),
+    str(f),
     media_type="text/plain"
 )
 
 @app.get("/sitemap.xml")
 def serve_sitemap():
-sitemap_file = BASE_DIR / "sitemap.xml"
+f = BASE_DIR / "sitemap.xml"
 
-if not sitemap_file.is_file():
+if not f.is_file():
     raise HTTPException(
         status_code=404,
         detail="sitemap.xml introuvable."
     )
 
 return FileResponse(
-    str(sitemap_file),
+    str(f),
     media_type="application/xml"
 )
 
 @app.get("/favicon.ico")
 def serve_favicon():
-favicon_file = BASE_DIR / "favicon.ico"
+f = BASE_DIR / "favicon.ico"
 
-if not favicon_file.is_file():
+if not f.is_file():
     raise HTTPException(
         status_code=404,
         detail="favicon.ico introuvable."
     )
 
 return FileResponse(
-    str(favicon_file),
+    str(f),
     media_type="image/x-icon"
 )
 
@@ -181,10 +185,10 @@ except HTTPException:
     raise
 
 except Exception as e:
-    print("========== ADRYNX API ERROR ==========")
-    print(type(e).__name__)
-    print(str(e))
-    print("=======================================")
+    print(
+        f"ADRYNX API ERROR: "
+        f"{type(e).__name__}: {e}"
+    )
 
     raise HTTPException(
         status_code=500,
@@ -204,7 +208,9 @@ owner(telephone)
     }
 
 except Exception as e:
-    print("DASHBOARD ERROR:", e)
+    print(
+        f"DASHBOARD ERROR: {e}"
+    )
 
     raise HTTPException(
         status_code=500,
@@ -212,23 +218,32 @@ except Exception as e:
     )
 
 @app.get("/api/admin/clean")
-def emergency_clean():
-"""
-Endpoint conservé temporairement pour ne pas casser
-l'application existante.
+def emergency_clean(
+x_admin_token: Optional[str] = Header(default=None)
+):
+expected = os.getenv("ADMIN_SECRET")
 
-Il ne sert pas encore au fonctionnement principal
-d'ADRYNX.
-"""
+if not expected:
+    raise HTTPException(
+        status_code=503,
+        detail="ADMIN_SECRET non configure."
+    )
+
+if x_admin_token != expected:
+    raise HTTPException(
+        status_code=403,
+        detail="Acces admin refuse."
+    )
 
 import sqlite3
 
+database = BASE_DIR / "adrynx.db"
+conn = None
+
 try:
-    database = BASE_DIR / "adrynx.db"
+    conn = sqlite3.connect(database)
 
-    connection = sqlite3.connect(database)
-
-    connection.execute(
+    conn.execute(
         """
         CREATE TABLE IF NOT EXISTS intent_examples (
             id INTEGER PRIMARY KEY,
@@ -238,30 +253,37 @@ try:
         """
     )
 
-    connection.execute(
+    conn.execute(
         """
         DELETE FROM intent_examples
         WHERE length(phrase) < 4
         """
     )
 
-    connection.commit()
+    conn.commit()
 
-    count = connection.execute(
+    count = conn.execute(
         "SELECT COUNT(*) FROM intent_examples"
     ).fetchone()[0]
 
-    connection.close()
-
     return {
         "ok": True,
-        "message": f"Nettoyage terminé. {count} exemples conservés."
+        "message": (
+            f"Nettoyage termine. "
+            f"{count} exemples conserves."
+        )
     }
 
 except Exception as e:
-    print("CLEAN ERROR:", e)
+    print(
+        f"CLEAN ERROR: {e}"
+    )
 
     raise HTTPException(
         status_code=500,
         detail=f"Erreur nettoyage : {e}"
     )
+
+finally:
+    if conn:
+        conn.close()
