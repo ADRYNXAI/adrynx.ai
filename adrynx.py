@@ -167,7 +167,6 @@ def nettoyer_url(url: str) -> str:
     if url.startswith("//"):
         url = "https:" + url
 
-    # Liens de redirection DuckDuckGo
     if "duckduckgo.com/l/" in url:
 
         try:
@@ -195,6 +194,205 @@ def nettoyer_url(url: str) -> str:
 
 
 # ============================================================
+# PRIX BITCOIN — SOURCE DE DONNÉES STRUCTURÉE
+# ============================================================
+
+def demande_prix_bitcoin(question: str) -> bool:
+
+    low = (question or "").lower().strip()
+
+    mots_bitcoin = [
+        "bitcoin",
+        "btc"
+    ]
+
+    expressions_prix = [
+        "prix",
+        "cours",
+        "valeur",
+        "combien vaut",
+        "combien coûte",
+        "combien coute",
+        "price",
+        "cours actuel",
+        "prix actuel",
+        "prix maintenant",
+        "valeur actuelle",
+        "valeur actuelle du",
+        "prix du"
+    ]
+
+    contient_bitcoin = any(
+        mot in low
+        for mot in mots_bitcoin
+    )
+
+    contient_prix = any(
+        expression in low
+        for expression in expressions_prix
+    )
+
+    if not contient_bitcoin:
+        return False
+
+    return contient_prix
+
+
+def obtenir_prix_bitcoin() -> Dict[str, Any]:
+
+    """
+    Récupère le prix réel du Bitcoin depuis une API
+    de données de marché.
+
+    Aucune valeur de secours n'est inventée.
+    """
+
+    url = "https://api.coingecko.com/api/v3/simple/price"
+
+    params = {
+        "ids": "bitcoin",
+        "vs_currencies": "usd,eur",
+        "include_last_updated_at": "true"
+    }
+
+    try:
+
+        response = requests.get(
+            url,
+            params=params,
+            headers=SEARCH_HEADERS,
+            timeout=15
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        bitcoin = data.get("bitcoin")
+
+        if not isinstance(bitcoin, dict):
+            raise RuntimeError(
+                "Réponse Bitcoin absente ou invalide."
+            )
+
+        usd = bitcoin.get("usd")
+        eur = bitcoin.get("eur")
+        updated_at = bitcoin.get("last_updated_at")
+
+        if not isinstance(usd, (int, float)):
+            raise RuntimeError(
+                "Le prix USD retourné n'est pas numérique."
+            )
+
+        if not isinstance(eur, (int, float)):
+            raise RuntimeError(
+                "Le prix EUR retourné n'est pas numérique."
+            )
+
+        result = {
+            "ok": True,
+            "asset": "Bitcoin",
+            "symbol": "BTC",
+            "usd": float(usd),
+            "eur": float(eur),
+            "last_updated_at": updated_at,
+            "provider": "CoinGecko",
+            "source_url": (
+                "https://api.coingecko.com/api/v3/simple/price"
+            )
+        }
+
+        print(
+            "ADRYNX MARKET: Bitcoin -> "
+            f"${usd} / €{eur}"
+        )
+
+        return result
+
+    except Exception as e:
+
+        print(
+            "BITCOIN MARKET ERROR:",
+            type(e).__name__,
+            str(e)
+        )
+
+        return {
+            "ok": False,
+            "error": (
+                "Impossible d'obtenir actuellement "
+                "le prix réel du Bitcoin depuis la "
+                "source de données de marché."
+            ),
+            "provider": "CoinGecko",
+            "source_url": (
+                "https://api.coingecko.com/api/v3/simple/price"
+            )
+        }
+
+
+def construire_contexte_bitcoin(
+    market: Dict[str, Any]
+) -> str:
+
+    if not market.get("ok"):
+        return (
+            "DONNÉE DE MARCHÉ BITCOIN :\n"
+            "La source de données n'a pas fourni de prix exploitable.\n"
+            "Tu ne dois donc inventer aucune valeur."
+        )
+
+    usd = market["usd"]
+    eur = market["eur"]
+    updated_at = market.get("last_updated_at")
+
+    lignes = [
+        "DONNÉE DE MARCHÉ RÉELLE — BITCOIN",
+        "Source : CoinGecko",
+        f"Prix BTC en USD : {usd}",
+        f"Prix BTC en EUR : {eur}",
+    ]
+
+    if updated_at:
+        lignes.append(
+            f"Dernière mise à jour fournie par la source : {updated_at}"
+        )
+
+    lignes.extend([
+        "",
+        "IMPORTANT :",
+        "Ces valeurs viennent directement de la source de données.",
+        "Ne les modifie pas et n'en invente pas d'autres.",
+        "Si tu expliques ces données, conserve exactement les "
+        "valeurs numériques fournies."
+    ])
+
+    return "\n".join(lignes)
+
+
+def reponse_prix_bitcoin(market: Dict[str, Any]) -> str:
+
+    if not market.get("ok"):
+
+        return (
+            "Je n'ai pas pu obtenir le prix réel du Bitcoin "
+            "auprès de ma source de données de marché à cet instant. "
+            "Je préfère ne pas donner une valeur qui pourrait être fausse."
+        )
+
+    usd = market["usd"]
+    eur = market["eur"]
+
+    return (
+        "Le prix actuel du Bitcoin fourni par ma source de données "
+        "de marché est de "
+        f"{usd:,.2f} USD, soit environ {eur:,.2f} EUR.\n\n"
+        "Source : CoinGecko.\n"
+        "Le prix du Bitcoin évolue en permanence."
+    )
+
+
+# ============================================================
 # PARSEUR DUCKDUCKGO HTML
 # ============================================================
 
@@ -217,7 +415,6 @@ class DuckDuckGoParser(HTMLParser):
         attributes = dict(attrs)
 
         classes = attributes.get("class", "")
-
         class_list = classes.split()
 
         if tag == "a":
@@ -414,7 +611,6 @@ class BingParser(HTMLParser):
             return
 
         if tag == "a" and self.in_title:
-
             self.in_title = False
 
         if tag == "li":
@@ -648,10 +844,6 @@ def rechercher_internet(
             "results": []
         }
 
-    # --------------------------------------------------------
-    # MÉTHODE 1 : DUCKDUCKGO HTML
-    # --------------------------------------------------------
-
     results = rechercher_duckduckgo(
         question,
         nombre_resultats
@@ -670,10 +862,6 @@ def rechercher_internet(
             "query": question,
             "results": results
         }
-
-    # --------------------------------------------------------
-    # MÉTHODE 2 : DUCKDUCKGO LITE
-    # --------------------------------------------------------
 
     results = rechercher_duckduckgo_lite(
         question,
@@ -694,10 +882,6 @@ def rechercher_internet(
             "results": results
         }
 
-    # --------------------------------------------------------
-    # MÉTHODE 3 : BING
-    # --------------------------------------------------------
-
     results = rechercher_bing(
         question,
         nombre_resultats
@@ -716,10 +900,6 @@ def rechercher_internet(
             "query": question,
             "results": results
         }
-
-    # --------------------------------------------------------
-    # ÉCHEC RÉEL
-    # --------------------------------------------------------
 
     print(
         "========== ADRYNX INTERNET ERROR =========="
@@ -1053,6 +1233,9 @@ def detecter_intent(question: str) -> str:
     ):
         return "identite"
 
+    if demande_prix_bitcoin(question):
+        return "marche_bitcoin"
+
     return "conversation"
 
 
@@ -1093,6 +1276,8 @@ CAPACITÉS ACTUELLEMENT RÉELLES :
   lorsque la demande de l'utilisateur nécessite une recherche.
 - Plusieurs moteurs ou méthodes de recherche peuvent être
   utilisés par le backend.
+- Le backend peut également récupérer certaines données
+  structurées depuis des sources externes réelles.
 - Lorsque des résultats Internet sont fournis dans le contexte,
   tu peux les analyser et les résumer.
 - Tu peux répondre en français lorsque l'utilisateur écrit
@@ -1136,8 +1321,8 @@ RÈGLES :
    les informations trouvées sur Internet de tes connaissances
    générales.
 
-10. Pour une information actuelle, utilise les résultats
-    Internet lorsqu'ils sont disponibles.
+10. Pour une information actuelle, utilise les données externes
+    réelles lorsqu'elles sont disponibles.
 
 11. Si une recherche Internet échoue, indique clairement que la
     recherche a échoué.
@@ -1168,11 +1353,14 @@ RÈGLES :
     comme source prioritaire pour les informations actuelles.
 
 22. Ne donne pas un prix, une valeur ou une information actuelle
-    précise si les résultats fournis ne permettent pas de
+    précise si les données fournies ne permettent pas de
     l'établir.
 
 23. Si plusieurs résultats Internet se contredisent, indique
     cette divergence au lieu de choisir arbitrairement une valeur.
+
+24. Pour une donnée numérique structurée fournie directement
+    par le backend, conserve exactement la valeur fournie.
 """
 
 
@@ -1320,6 +1508,50 @@ def traiter_question(
     )
 
     # --------------------------------------------------------
+    # DONNÉE BITCOIN STRUCTURÉE
+    # --------------------------------------------------------
+
+    if demande_prix_bitcoin(question):
+
+        market = obtenir_prix_bitcoin()
+
+        if not market.get("ok"):
+
+            return {
+                "ok": False,
+                "error": market.get(
+                    "error",
+                    "Impossible d'obtenir le prix réel du Bitcoin."
+                ),
+                "intent": intent,
+                "conversation_id": conversation_id,
+                "source": "bitcoin-api-error",
+                "market_data": market,
+                "video_core": PHOENIX_VIDEO
+            }
+
+        response = reponse_prix_bitcoin(
+            market
+        )
+
+        save_message(
+            conversation_id,
+            owner,
+            "assistant",
+            response
+        )
+
+        return {
+            "ok": True,
+            "reponse": response,
+            "intent": intent,
+            "source": "bitcoin-api",
+            "conversation_id": conversation_id,
+            "market_data": market,
+            "video_core": PHOENIX_VIDEO
+        }
+
+    # --------------------------------------------------------
     # RECHERCHE INTERNET RÉELLE
     # --------------------------------------------------------
 
@@ -1433,7 +1665,6 @@ def traiter_question(
     }
 
     if web_results:
-
         result["web_results"] = web_results
 
     return result
@@ -1477,7 +1708,8 @@ def dashboard(owner: str):
         "messages": total_messages,
         "groq_configured": bool(GROQ_API_KEY),
         "model": GROQ_MODEL,
-        "internet_search": True
+        "internet_search": True,
+        "bitcoin_market_data": True
     }
 
 
