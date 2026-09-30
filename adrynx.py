@@ -1,11 +1,25 @@
 import os
 import sqlite3
 import uuid
+import re
+import html
 from pathlib import Path
 from typing import Dict, Any, Optional
+from urllib.parse import urlparse
+from html.parser import HTMLParser
+
+import requests
+
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+GROQ_MODEL = os.getenv(
+    "GROQ_MODEL",
+    "openai/gpt-oss-20b"
+)
 
 PHOENIX_VIDEO = "https://files.catbox.moe/y2nvi4.mp4"
 
@@ -116,6 +130,277 @@ def groq_chat(
 
 
 # ============================================================
+# RECHERCHE INTERNET
+# ============================================================
+
+class SearchParser(HTMLParser):
+    """
+    Petit analyseur HTML sans dépendance supplémentaire.
+    Il récupère les résultats de DuckDuckGo HTML.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.results = []
+
+        self.current_link = None
+        self.current_title = []
+        self.current_description = []
+
+        self.in_result_link = False
+        self.in_result_title = False
+        self.in_result_description = False
+
+    def handle_starttag(self, tag, attrs):
+
+        attributes = dict(attrs)
+
+        classes = attributes.get("class", "")
+
+        if tag == "a":
+
+            href = attributes.get("href", "")
+
+            if (
+                "result__a" in classes
+                and href
+            ):
+                self.current_link = href
+                self.current_title = []
+                self.current_description = []
+
+                self.in_result_link = True
+                self.in_result_title = True
+
+        if tag in {"a", "div"}:
+
+            if "result__snippet" in classes:
+                self.in_result_description = True
+
+    def handle_data(self, data):
+
+        if self.in_result_title:
+            self.current_title.append(data)
+
+        if self.in_result_description:
+            self.current_description.append(data)
+
+    def handle_endtag(self, tag):
+
+        if tag == "a" and self.in_result_link:
+
+            title = " ".join(
+                "".join(self.current_title).split()
+            ).strip()
+
+            description = " ".join(
+                "".join(self.current_description).split()
+            ).strip()
+
+            if self.current_link and title:
+
+                self.results.append({
+                    "title": html.unescape(title),
+                    "url": self.current_link,
+                    "description": html.unescape(description)
+                })
+
+            self.current_link = None
+            self.current_title = []
+            self.current_description = []
+
+            self.in_result_link = False
+            self.in_result_title = False
+            self.in_result_description = False
+
+
+def nettoyer_url(url: str) -> str:
+
+    if not url:
+        return ""
+
+    url = html.unescape(url)
+
+    if url.startswith("//"):
+        url = "https:" + url
+
+    if url.startswith("/"):
+        return ""
+
+    parsed = urlparse(url)
+
+    if parsed.scheme not in {"http", "https"}:
+        return ""
+
+    return url
+
+
+def rechercher_internet(
+    question: str,
+    nombre_resultats: int = 6
+) -> Dict[str, Any]:
+
+    question = (question or "").strip()
+
+    if not question:
+        return {
+            "ok": False,
+            "error": "Recherche vide.",
+            "results": []
+        }
+
+    url = "https://html.duckduckgo.com/html/"
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 "
+            "(Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/131.0 Safari/537.36"
+        )
+    }
+
+    try:
+
+        response = requests.get(
+            url,
+            params={"q": question},
+            headers=headers,
+            timeout=15
+        )
+
+        response.raise_for_status()
+
+        parser = SearchParser()
+        parser.feed(response.text)
+
+        results = []
+
+        for result in parser.results:
+
+            clean_url = nettoyer_url(
+                result.get("url", "")
+            )
+
+            if not clean_url:
+                continue
+
+            results.append({
+                "title": result.get(
+                    "title",
+                    ""
+                ),
+                "url": clean_url,
+                "description": result.get(
+                    "description",
+                    ""
+                )
+            })
+
+            if len(results) >= nombre_resultats:
+                break
+
+        if not results:
+
+            return {
+                "ok": False,
+                "error": (
+                    "La recherche Internet a été effectuée, "
+                    "mais aucun résultat exploitable n'a été trouvé."
+                ),
+                "results": []
+            }
+
+        return {
+            "ok": True,
+            "query": question,
+            "results": results
+        }
+
+    except requests.RequestException as e:
+
+        print(
+            "========== ADRYNX INTERNET ERROR =========="
+        )
+        print(type(e).__name__)
+        print(str(e))
+        print("============================================")
+
+        return {
+            "ok": False,
+            "error": (
+                "Impossible d'accéder au moteur de recherche "
+                f"Internet : {type(e).__name__}: {e}"
+            ),
+            "results": []
+        }
+
+    except Exception as e:
+
+        print(
+            "========== ADRYNX SEARCH ERROR =========="
+        )
+        print(type(e).__name__)
+        print(str(e))
+        print("==========================================")
+
+        return {
+            "ok": False,
+            "error": (
+                f"Erreur pendant la recherche Internet : "
+                f"{type(e).__name__}: {e}"
+            ),
+            "results": []
+        }
+
+
+# ============================================================
+# DÉTECTION D'UNE DEMANDE INTERNET
+# ============================================================
+
+def demande_recherche_internet(question: str) -> bool:
+
+    low = question.lower().strip()
+
+    expressions = [
+        "recherche sur internet",
+        "rechercher sur internet",
+        "cherche sur internet",
+        "cherche sur le web",
+        "recherche sur le web",
+        "sur internet",
+        "sur le web",
+        "en ligne",
+        "actualités",
+        "actualité",
+        "prix actuel",
+        "prix actuel maintenant",
+        "maintenant",
+        "aujourd'hui",
+        "aujourd’hui",
+        "actuellement",
+        "cours actuel",
+        "dernières nouvelles",
+        "dernière nouvelle",
+        "news",
+        "latest",
+        "récent",
+        "récente",
+        "récents",
+        "récentes"
+    ]
+
+    for expression in expressions:
+
+        if expression in low:
+            return True
+
+    return False
+
+
+# ============================================================
 # CONVERSATIONS
 # ============================================================
 
@@ -130,7 +415,11 @@ def new_conversation(
 
     connection.execute(
         """
-        INSERT INTO conversations (id, owner, titre)
+        INSERT INTO conversations (
+            id,
+            owner,
+            titre
+        )
         VALUES (?, ?, ?)
         """,
         (
@@ -159,7 +448,8 @@ def ensure_conversation(
             """
             SELECT id
             FROM conversations
-            WHERE id = ? AND owner = ?
+            WHERE id = ?
+            AND owner = ?
             """,
             (
                 conversation_id,
@@ -354,7 +644,7 @@ def detecter_intent(question: str) -> str:
 
 
 # ============================================================
-# IDENTITÉ ADRYNX
+# IDENTITÉ
 # ============================================================
 
 def reponse_identite():
@@ -364,12 +654,12 @@ def reponse_identite():
         "Jonathan Dejah OBENDA. "
         "Je suis conçu pour comprendre les conversations, "
         "utiliser leur contexte et évoluer avec les fonctions "
-        "qui seront progressivement ajoutées à mon système."
+        "réellement ajoutées à mon système."
     )
 
 
 # ============================================================
-# PERSONNALITÉ ET RÈGLES ADRYNX
+# CAPACITÉS RÉELLES
 # ============================================================
 
 def system_prompt():
@@ -380,66 +670,139 @@ Tu es ADRYNX.
 Tu es un assistant conversationnel réel intégré dans une
 application appelée ADRYNX.
 
-Ton objectif principal est de comprendre ce que l'utilisateur
-veut dire et de répondre directement à son message.
+CAPACITÉS ACTUELLEMENT RÉELLES :
 
-RÈGLES IMPORTANTES :
+- Tu peux converser avec l'utilisateur grâce au modèle Groq.
+- Tu peux utiliser l'historique de la conversation fourni par
+  ton backend.
+- Le backend sauvegarde les messages dans une base SQLite.
+- Le backend peut effectuer une recherche Internet réelle
+  lorsque la demande de l'utilisateur nécessite une recherche.
+- Lorsque des résultats Internet sont fournis dans le contexte,
+  tu peux les analyser et les résumer.
+- Tu peux répondre en français lorsque l'utilisateur écrit
+  en français.
+
+CAPACITÉS QUI NE DOIVENT PAS ÊTRE PRÉSENTÉES COMME ACTIVES
+SI ELLES NE SONT PAS FOURNIES DANS LE CONTEXTE :
+
+- mémoire personnelle persistante intelligente ;
+- apprentissage autonome ;
+- raisonnement spécialisé indépendant ;
+- système de parents IA ;
+- accès arbitraire aux services externes ;
+- exécution d'actions sur l'appareil de l'utilisateur ;
+- projets et tâches persistants si aucune fonction correspondante
+  n'est fournie.
+
+RÈGLES :
 
 1. Reste sur le sujet de l'utilisateur.
 
-2. Utilise le contexte précédent de la conversation lorsqu'il
-   est disponible.
+2. Utilise le contexte précédent lorsqu'il est disponible.
 
 3. Si l'utilisateur change de sujet, suis naturellement le
    nouveau sujet.
 
-4. Une salutation simple doit recevoir une réponse naturelle,
-   courte et adaptée.
+4. Une salutation simple doit recevoir une réponse naturelle.
 
-5. Si l'utilisateur demande comment tu vas, réponds réellement
-   à cette question au lieu de changer de sujet.
+5. Si l'utilisateur demande comment tu vas, réponds directement
+   à cette question.
 
-6. Ne prétends jamais avoir effectué une action que tu n'as
-   réellement pas effectuée.
+6. Ne prétends jamais avoir effectué une action que tu n'as pas
+   réellement effectuée.
 
-7. Ne prétends jamais avoir accès à une information qui ne
-   t'est pas fournie.
+7. Ne prétends jamais avoir utilisé Internet si aucun résultat
+   Internet ne t'a été fourni.
 
-8. Si tu ne sais pas quelque chose, dis-le clairement.
+8. Ne fabrique jamais un résultat de recherche.
 
-9. Ne transforme pas une question simple en longue explication
-   inutile.
+9. Si une recherche Internet est fournie, distingue clairement
+   les informations trouvées sur Internet de tes connaissances
+   générales.
 
-10. Réponds en français lorsque l'utilisateur écrit en français.
+10. Pour une information actuelle, utilise les résultats
+    Internet lorsqu'ils sont disponibles.
 
-11. Le contexte de conversation fourni dans les messages
-    précédents est une source importante pour comprendre les
-    messages courts.
+11. Si la recherche Internet échoue, indique clairement que la
+    recherche a échoué.
 
-12. Ne parle pas de ton architecture interne sauf si
-    l'utilisateur te le demande explicitement.
+12. Si les résultats disponibles ne permettent pas de répondre
+    précisément, dis-le clairement.
 
 13. Ne fabrique pas de faits.
 
 14. Ne fabrique pas de fonctionnalités inexistantes dans ADRYNX.
 
-15. Ne dis jamais qu'une fonction est active si elle ne l'est
-    pas réellement.
+15. Réponds en français lorsque l'utilisateur écrit en français.
 
-16. Privilégie la compréhension du sens et du contexte plutôt
-    qu'un simple système de mots-clés.
+16. Lorsque la question est simple, réponds simplement.
 
-17. Réponds de manière naturelle et conversationnelle.
-
-18. Lorsque la question est simple, donne une réponse simple.
-
-19. Lorsque l'utilisateur demande une explication détaillée,
+17. Lorsque l'utilisateur demande une explication détaillée,
     développe suffisamment pour être utile.
 
-20. Si l'utilisateur te pose une question sur ton état, ton
-    fonctionnement ou ce que tu viens de faire, réponds à cette
-    question directement.
+18. Ne parle pas de ton architecture interne sauf si
+    l'utilisateur le demande explicitement.
+
+19. Ne prétends pas avoir une mémoire permanente si elle n'est
+    pas réellement activée.
+
+20. Sois transparent sur tes limites réelles.
 """
+
+
+# ============================================================
+# CONSTRUCTION DU CONTEXTE INTERNET
+# ============================================================
+
+def construire_contexte_web(
+    question: str,
+    recherche: Dict[str, Any]
+) -> str:
+
+    lignes = []
+
+    lignes.append(
+        "RÉSULTATS D'UNE RECHERCHE INTERNET RÉELLE"
+    )
+
+    lignes.append(
+        f"Question recherchée : {question}"
+    )
+
+    lignes.append("")
+
+    for index, result in enumerate(
+        recherche.get("results", []),
+        start=1
+    ):
+
+        lignes.append(
+            f"Résultat {index} :"
+        )
+
+        lignes.append(
+            f"Titre : {result.get('title', '')}"
+        )
+
+        lignes.append(
+            f"URL : {result.get('url', '')}"
+        )
+
+        description = result.get(
+            "description",
+            ""
+        )
+
+        if description:
+
+            lignes.append(
+                f"Extrait : {description}"
+            )
+
+        lignes.append("")
+
+    return "\n".join(lignes)
 
 
 # ============================================================
@@ -515,7 +878,6 @@ def traiter_question(
         limit=12
     )
 
-    # Enregistrement du message utilisateur
     save_message(
         conversation_id,
         owner,
@@ -523,7 +885,6 @@ def traiter_question(
         question
     )
 
-    # Relecture après ajout du message
     history = get_history(
         conversation_id,
         owner,
@@ -531,14 +892,69 @@ def traiter_question(
     )
 
     # --------------------------------------------------------
-    # IA GROQ
+    # RECHERCHE INTERNET RÉELLE
+    # --------------------------------------------------------
+
+    web_context = None
+    web_results = []
+
+    if demande_recherche_internet(question):
+
+        recherche = rechercher_internet(
+            question,
+            nombre_resultats=6
+        )
+
+        if not recherche.get("ok"):
+
+            return {
+                "ok": False,
+                "error": recherche.get(
+                    "error",
+                    "La recherche Internet a échoué."
+                ),
+                "intent": intent,
+                "conversation_id": conversation_id,
+                "source": "internet-error",
+                "video_core": PHOENIX_VIDEO
+            }
+
+        web_results = recherche.get(
+            "results",
+            []
+        )
+
+        web_context = construire_contexte_web(
+            question,
+            recherche
+        )
+
+        # Le contexte Web est ajouté comme message système
+        # supplémentaire pour que Groq puisse l'analyser.
+        history_for_groq = [
+            {
+                "role": "system",
+                "content": web_context
+            },
+            *history
+        ]
+
+        source = "internet+groq"
+
+    else:
+
+        history_for_groq = history
+        source = "groq"
+
+    # --------------------------------------------------------
+    # GROQ
     # --------------------------------------------------------
 
     try:
 
         response = groq_chat(
             system_prompt(),
-            history,
+            history_for_groq,
             temperature=0.4,
             max_tokens=700
         )
@@ -571,7 +987,7 @@ def traiter_question(
         }
 
     # --------------------------------------------------------
-    # SAUVEGARDE DE LA RÉPONSE
+    # SAUVEGARDE
     # --------------------------------------------------------
 
     save_message(
@@ -581,14 +997,20 @@ def traiter_question(
         response
     )
 
-    return {
+    result = {
         "ok": True,
         "reponse": response,
         "intent": intent,
-        "source": "groq",
+        "source": source,
         "conversation_id": conversation_id,
         "video_core": PHOENIX_VIDEO
     }
+
+    if web_results:
+
+        result["web_results"] = web_results
+
+    return result
 
 
 # ============================================================
@@ -628,12 +1050,13 @@ def dashboard(owner: str):
         "conversations": conversations,
         "messages": total_messages,
         "groq_configured": bool(GROQ_API_KEY),
-        "model": GROQ_MODEL
+        "model": GROQ_MODEL,
+        "internet_search": True
     }
 
 
 # ============================================================
-# FONCTIONS FUTURES — NON SIMULÉES
+# FONCTIONS FUTURES — PAS SIMULÉES
 # ============================================================
 
 def projects(owner: str):
