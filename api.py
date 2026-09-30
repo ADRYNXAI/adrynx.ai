@@ -16,12 +16,12 @@ version="7.0"
 
 app.add_middleware(
 CORSMiddleware,
-allow_origins=["*"],
-allow_methods=["*"],
+allow_origins=[""],
+allow_methods=[""],
 allow_headers=["*"],
 )
 
-BASE_DIR = Path(**file**).resolve().parent
+BASE_DIR = Path(file).resolve().parent
 PHOENIX_VIDEO = "https://files.catbox.moe/y2nvi4.mp4"
 
 class Ask(BaseModel):
@@ -39,7 +39,6 @@ return value[:120] or "anon"
 def root():
 index_file = BASE_DIR / "index.html"
 
-```
 if index_file.is_file():
     return FileResponse(
         str(index_file),
@@ -53,7 +52,6 @@ return HTMLResponse(
     <p><a href="/api/health">Vérifier l'état de l'API</a></p>
     """
 )
-```
 
 @app.get("/health")
 @app.get("/api/health")
@@ -70,7 +68,6 @@ return {
 def serve_app_js():
 app_file = BASE_DIR / "app.js"
 
-```
 if not app_file.is_file():
     raise HTTPException(
         status_code=404,
@@ -81,13 +78,11 @@ return FileResponse(
     str(app_file),
     media_type="application/javascript"
 )
-```
 
 @app.get("/style.css")
 def serve_style_css():
 style_file = BASE_DIR / "style.css"
 
-```
 if not style_file.is_file():
     raise HTTPException(
         status_code=404,
@@ -98,13 +93,11 @@ return FileResponse(
     str(style_file),
     media_type="text/css"
 )
-```
 
 @app.get("/robots.txt")
 def serve_robots():
 robots_file = BASE_DIR / "robots.txt"
 
-```
 if not robots_file.is_file():
     raise HTTPException(
         status_code=404,
@@ -115,13 +108,11 @@ return FileResponse(
     str(robots_file),
     media_type="text/plain"
 )
-```
 
 @app.get("/sitemap.xml")
 def serve_sitemap():
 sitemap_file = BASE_DIR / "sitemap.xml"
 
-```
 if not sitemap_file.is_file():
     raise HTTPException(
         status_code=404,
@@ -132,13 +123,11 @@ return FileResponse(
     str(sitemap_file),
     media_type="application/xml"
 )
-```
 
 @app.get("/favicon.ico")
 def serve_favicon():
 favicon_file = BASE_DIR / "favicon.ico"
 
-```
 if not favicon_file.is_file():
     raise HTTPException(
         status_code=404,
@@ -149,14 +138,12 @@ return FileResponse(
     str(favicon_file),
     media_type="image/x-icon"
 )
-```
 
 @app.post("/ask")
 @app.post("/api/ask")
 def ask(req: Ask):
 message = (req.message or req.q or "").strip()
 
-```
 if not message:
     raise HTTPException(
         status_code=400,
@@ -203,7 +190,6 @@ except Exception as e:
         status_code=500,
         detail=f"Erreur ADRYNX : {type(e).__name__}: {e}"
     )
-```
 
 @app.get("/api/dashboard")
 def dashboard(telephone: str = "anon"):
@@ -212,7 +198,6 @@ result = adrynx.dashboard(
 owner(telephone)
 )
 
-```
     return {
         "ok": True,
         "dashboard": result
@@ -225,7 +210,6 @@ except Exception as e:
         status_code=500,
         detail=f"Erreur dashboard : {e}"
     )
-```
 
 @app.get("/api/admin/clean")
 def emergency_clean():
@@ -233,7 +217,6 @@ def emergency_clean():
 Endpoint conservé temporairement pour ne pas casser
 l'application existante.
 
-```
 Il ne sert pas encore au fonctionnement principal
 d'ADRYNX.
 """
@@ -282,4 +265,3 @@ except Exception as e:
         status_code=500,
         detail=f"Erreur nettoyage : {e}"
     )
-```
