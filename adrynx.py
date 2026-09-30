@@ -4,16 +4,8 @@ import uuid
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-
-# ============================================================
-# CONFIGURATION
-# ============================================================
-
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv(
-    "GROQ_MODEL",
-    "llama-3.1-8b-instant"
-)
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 
 PHOENIX_VIDEO = "https://files.catbox.moe/y2nvi4.mp4"
 
@@ -76,7 +68,7 @@ init_db()
 
 
 # ============================================================
-# MOTEUR GROQ
+# GROQ
 # ============================================================
 
 def groq_chat(
@@ -138,8 +130,7 @@ def new_conversation(
 
     connection.execute(
         """
-        INSERT INTO conversations
-        (id, owner, titre)
+        INSERT INTO conversations (id, owner, titre)
         VALUES (?, ?, ?)
         """,
         (
@@ -161,6 +152,7 @@ def ensure_conversation(
 ) -> str:
 
     if conversation_id:
+
         connection = db()
 
         row = connection.execute(
@@ -186,6 +178,10 @@ def ensure_conversation(
     )
 
 
+# ============================================================
+# MESSAGES
+# ============================================================
+
 def save_message(
     conversation_id: str,
     owner: str,
@@ -197,8 +193,12 @@ def save_message(
 
     connection.execute(
         """
-        INSERT INTO messages
-        (conversation_id, owner, role, content)
+        INSERT INTO messages (
+            conversation_id,
+            owner,
+            role,
+            content
+        )
         VALUES (?, ?, ?, ?)
         """,
         (
@@ -215,7 +215,9 @@ def save_message(
         SET updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
         """,
-        (conversation_id,)
+        (
+            conversation_id,
+        )
     )
 
     connection.commit()
@@ -269,7 +271,9 @@ def state(conversation_id: str):
         FROM conversations
         WHERE id = ?
         """,
-        (conversation_id,)
+        (
+            conversation_id,
+        )
     ).fetchone()
 
     connection.close()
@@ -314,7 +318,7 @@ def messages(
 
 
 # ============================================================
-# COMPRÉHENSION LÉGÈRE
+# COMPRÉHENSION DE BASE
 # ============================================================
 
 def detecter_intent(question: str) -> str:
@@ -324,21 +328,17 @@ def detecter_intent(question: str) -> str:
     if not low:
         return "vide"
 
-    # On garde uniquement quelques protections
-    # déterministes très simples.
-    if (
-        low in {
-            "cc",
-            "slt",
-            "salut",
-            "yo",
-            "hey",
-            "bjr",
-            "bonjour",
-            "bonsoir",
-            "coucou"
-        }
-    ):
+    if low in {
+        "cc",
+        "slt",
+        "salut",
+        "yo",
+        "hey",
+        "bjr",
+        "bonjour",
+        "bonsoir",
+        "coucou"
+    }:
         return "salutation"
 
     if (
@@ -354,7 +354,7 @@ def detecter_intent(question: str) -> str:
 
 
 # ============================================================
-# IDENTITÉ
+# IDENTITÉ ADRYNX
 # ============================================================
 
 def reponse_identite():
@@ -369,7 +369,7 @@ def reponse_identite():
 
 
 # ============================================================
-# PROMPT PRINCIPAL
+# PERSONNALITÉ ET RÈGLES ADRYNX
 # ============================================================
 
 def system_prompt():
@@ -394,11 +394,10 @@ RÈGLES IMPORTANTES :
    nouveau sujet.
 
 4. Une salutation simple doit recevoir une réponse naturelle,
-   courte et adaptée. Ne répète pas toujours exactement la
-   même phrase.
+   courte et adaptée.
 
-5. Si l'utilisateur demande comment tu vas, réponds à cette
-   question au lieu de changer de sujet.
+5. Si l'utilisateur demande comment tu vas, réponds réellement
+   à cette question au lieu de changer de sujet.
 
 6. Ne prétends jamais avoir effectué une action que tu n'as
    réellement pas effectuée.
@@ -420,8 +419,26 @@ RÈGLES IMPORTANTES :
 12. Ne parle pas de ton architecture interne sauf si
     l'utilisateur te le demande explicitement.
 
-Tu dois privilégier la compréhension sémantique et le contexte
-plutôt qu'un système composé uniquement de mots-clés.
+13. Ne fabrique pas de faits.
+
+14. Ne fabrique pas de fonctionnalités inexistantes dans ADRYNX.
+
+15. Ne dis jamais qu'une fonction est active si elle ne l'est
+    pas réellement.
+
+16. Privilégie la compréhension du sens et du contexte plutôt
+    qu'un simple système de mots-clés.
+
+17. Réponds de manière naturelle et conversationnelle.
+
+18. Lorsque la question est simple, donne une réponse simple.
+
+19. Lorsque l'utilisateur demande une explication détaillée,
+    développe suffisamment pour être utile.
+
+20. Si l'utilisateur te pose une question sur ton état, ton
+    fonctionnement ou ce que tu viens de faire, réponds à cette
+    question directement.
 """
 
 
@@ -436,9 +453,15 @@ def traiter_question(
 ) -> Dict[str, Any]:
 
     question = (question or "").strip()
-    owner = (owner or "anon").strip()[:120] or "anon"
+
+    owner = (
+        (owner or "anon")
+        .strip()[:120]
+        or "anon"
+    )
 
     if not question:
+
         return {
             "ok": False,
             "error": "Message vide."
@@ -452,7 +475,7 @@ def traiter_question(
     intent = detecter_intent(question)
 
     # --------------------------------------------------------
-    # IDENTITÉ : réponse déterministe
+    # IDENTITÉ
     # --------------------------------------------------------
 
     if intent == "identite":
@@ -483,7 +506,7 @@ def traiter_question(
         }
 
     # --------------------------------------------------------
-    # CONVERSATION NORMALE
+    # HISTORIQUE
     # --------------------------------------------------------
 
     history = get_history(
@@ -492,7 +515,7 @@ def traiter_question(
         limit=12
     )
 
-    # On enregistre le nouveau message utilisateur
+    # Enregistrement du message utilisateur
     save_message(
         conversation_id,
         owner,
@@ -500,12 +523,16 @@ def traiter_question(
         question
     )
 
-    # On reconstruit l'historique après l'enregistrement.
+    # Relecture après ajout du message
     history = get_history(
         conversation_id,
         owner,
         limit=12
     )
+
+    # --------------------------------------------------------
+    # IA GROQ
+    # --------------------------------------------------------
 
     try:
 
@@ -518,12 +545,21 @@ def traiter_question(
 
     except Exception as e:
 
-        # IMPORTANT :
-        # aucune fausse réponse n'est envoyée.
-        print("========== ADRYNX GROQ ERROR ==========")
-        print(type(e).__name__)
-        print(str(e))
-        print("========================================")
+        print(
+            "========== ADRYNX GROQ ERROR =========="
+        )
+
+        print(
+            type(e).__name__
+        )
+
+        print(
+            str(e)
+        )
+
+        print(
+            "========================================"
+        )
 
         return {
             "ok": False,
@@ -535,7 +571,7 @@ def traiter_question(
         }
 
     # --------------------------------------------------------
-    # ENREGISTREMENT DE LA RÉPONSE
+    # SAUVEGARDE DE LA RÉPONSE
     # --------------------------------------------------------
 
     save_message(
@@ -569,7 +605,9 @@ def dashboard(owner: str):
         FROM conversations
         WHERE owner = ?
         """,
-        (owner,)
+        (
+            owner,
+        )
     ).fetchone()[0]
 
     total_messages = connection.execute(
@@ -578,7 +616,9 @@ def dashboard(owner: str):
         FROM messages
         WHERE owner = ?
         """,
-        (owner,)
+        (
+            owner,
+        )
     ).fetchone()[0]
 
     connection.close()
@@ -587,12 +627,13 @@ def dashboard(owner: str):
         "video": PHOENIX_VIDEO,
         "conversations": conversations,
         "messages": total_messages,
-        "groq_configured": bool(GROQ_API_KEY)
+        "groq_configured": bool(GROQ_API_KEY),
+        "model": GROQ_MODEL
     }
 
 
 # ============================================================
-# PROJETS / TÂCHES
+# FONCTIONS FUTURES — NON SIMULÉES
 # ============================================================
 
 def projects(owner: str):
@@ -625,10 +666,6 @@ def task(
         "project_id": project_id
     }
 
-
-# ============================================================
-# FEEDBACK
-# ============================================================
 
 def enregistrer_feedback(*args):
 
