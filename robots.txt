@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://adrynx-ai.onrender.com/sitemap.xml
