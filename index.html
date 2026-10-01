@@ -8,16 +8,15 @@
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/4712/4712109.png">
+<link rel="apple-touch-icon" href="/icon-512.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
 </head>
 <body class="phoenix-idle">
-
 <video id="phoenix-video" autoplay muted loop playsinline>
 <source src="https://files.catbox.moe/y2nvi4.mp4" type="video/mp4">
 </video>
-
 <div class="overlay"></div>
-
 <div class="core">
 <h1>ADRYNX</h1>
 <div id="status">État : ADRYNX en ligne</div>
@@ -28,7 +27,6 @@
 </div>
 <div id="log">> Système prêt</div>
 </div>
-
 <script src="/app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
