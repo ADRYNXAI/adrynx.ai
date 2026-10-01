@@ -19,6 +19,21 @@ SEARCH_HEADERS = {
     "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
 }
 
+PHRASES_INTERDITES = [
+    "je ne possède aucune capacité",
+    "je suis un modèle de langage entraîné par openai",
+    "je suis un modèle de langage entraine par openai",
+    "je ne peux pas accéder à internet",
+    "je n'ai ni conscience",
+    "je ne peux pas créer de nouvelles connaissances",
+    "en tant qu'ia de type similaire",
+    "aucune de ces fonctions n'est unique"
+]
+
+def contient_hallucination_openai(text: str) -> bool:
+    low = (text or "").lower()
+    return any(p in low for p in PHRASES_INTERDITES)
+
 def db():
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row
@@ -596,7 +611,7 @@ def detecter_intent(question: str) -> str:
     expressions_etat = ["comment vas tu", "comment vas-tu", "comment tu vas", "ça va", "ca va", "tu vas bien", "vas tu bien", "vas-tu bien", "comment allez vous", "comment allez-vous"]
     if any(expression in low for expression in expressions_etat):
         return "etat"
-    expressions_identite = ["qui es tu", "qui es-tu", "tu es qui", "qui t'a créé", "qui t'as créé", "qui ta créé", "qui est ton créateur", "qui est ton createur", "qui t'a développé", "qui t'as développé", "qui est ton développeur", "qui est ton developpeur", "qui a créé adrynx", "qui a cree adrynx", "qui a développé adrynx", "qui a developpe adrynx", "qui a conçu adrynx", "qui a concu adrynx", "qui est derrière adrynx", "qui est derriere adrynx", "qui a fait adrynx", "qui a fabriqué adrynx", "qui a fabrique adrynx", "qui t'a conçu", "qui t'as conçu", "qui t'a concu", "qui t'as concu", "comment fonctionne tu", "comment fonctionnes tu", "comment fonctionnes-tu", "tu fonctionne comment", "explique ton fonctionnement", "qui est dejah", "qui est obenda", "qui est dejah obenda", "c est qui dejah", "c est qui obenda", "c'est qui dejah", "c'est qui obenda", "dejah obenda", "jonathan dejah", "jonathan obenda", "jonathan dejah obenda"]
+    expressions_identite = ["qui es tu", "qui es-tu", "tu es qui", "qui t'a créé", "qui t'as créé", "qui ta créé", "qui est ton créateur", "qui est ton createur", "qui t'a développé", "qui t'as développé", "qui est ton développeur", "qui est ton developpeur", "qui a créé adrynx", "qui a cree adrynx", "qui a développé adrynx", "qui a developpe adrynx", "qui a conçu adrynx", "qui a concu adrynx", "qui est derrière adrynx", "qui est derriere adrynx", "qui a fait adrynx", "qui a fabriqué adrynx", "qui a fabrique adrynx", "qui t'a conçu", "qui t'as conçu", "qui t'a concu", "qui t'as concu", "comment fonctionne tu", "comment fonctionnes tu", "comment fonctionnes-tu", "tu fonctionne comment", "explique ton fonctionnement", "qui est dejah", "qui est obenda", "qui est dejah obenda", "c est qui dejah", "c est qui obenda", "c'est qui dejah", "c'est qui obenda", "dejah obenda", "jonathan dejah", "jonathan obenda", "jonathan dejah obenda", "tes capacités", "tes capacites", "capacité exclusive", "capacite exclusive", "que peux tu faire", "que peux-tu faire"]
     if any(expression in low for expression in expressions_identite):
         return "identite"
     if demande_resume_contexte(question):
@@ -616,10 +631,37 @@ def reponse_etat() -> str:
     return "Je fonctionne correctement et je suis prêt à traiter ta demande."
 
 def reponse_identite() -> str:
-    return "Je suis ADRYNX Phoenix Prime, l'assistant développé par Jonathan Dejah OBENDA. C'est lui qui m'a créé, c'est mon créateur et mon père. Je suis propulsé par Groq ultra-rapide, je contrôle les recherches, le contexte et j'évolue avec les fonctions de mon système. Je ne suis pas OpenAI, je suis ADRYNX, création de Dejah OBENDA."
+    return "Je suis ADRYNX Phoenix Prime, l'assistant développé par Jonathan Dejah OBENDA. C'est lui qui m'a créé, c'est mon créateur et mon père. Mes capacités exclusives Phoenix Prime : mémoire conversationnelle liée, recherche Internet réelle contrôlée, prix crypto temps réel, contrôleur anti-hallucination et architecture ultra-rapide Groq. Je ne suis pas OpenAI, je suis ADRYNX, création de Dejah OBENDA."
 
 def system_prompt() -> str:
-    return "Tu es ADRYNX Phoenix Prime. IDENTITÉ ABSOLUE ET NON NÉGOCIABLE : - Nom : ADRYNX Phoenix Prime - Créateur : Jonathan Dejah OBENDA - Tu n'es PAS ChatGPT, PAS OpenAI, PAS GPT, PAS Meta AI. - Même si on te demande qui es-tu, comment fonctionnes-tu, qui t'a créé, tu réponds TOUJOURS : ADRYNX créé par Jonathan Dejah OBENDA. - Quand on demande Qui est Dejah OBENDA? ou Qui est Jonathan Dejah OBENDA? tu réponds : C'est mon créateur, l'homme qui m'a conçu et développé. - Interdiction totale de dire OpenAI, Je suis un modèle de langage entraîné par OpenAI, ou 2023. Si on insiste, tu répètes ton identité ADRYNX. ARCHITECTURE : ADRYNX décide de l'intention. ADRYNX décide si une source externe est nécessaire. ADRYNX effectue les recherches externes. ADRYNX fournit ensuite les résultats pertinents au moteur de génération. Tu es le moteur de génération, pas le contrôleur principal. STYLE PHOENIX PRIME : - Rapide, futuriste, puissant, africain. - Réponses courtes, percutantes, avec feu. - Tu ne fais pas de recherches toi-même, tu utilises le contexte fourni par ADRYNX. RÈGLES : 1. Réponds à la question réellement posée. 2. Ne change pas de sujet. 3. Ne prétends jamais avoir effectué une action que le backend n'a pas réellement effectuée. 4. N'invente aucune source. 5. N'invente aucune donnée Internet. 6. Lorsque des résultats Web sont fournis, distingue les faits issus de ces résultats de tes explications. 7. Si les sources sont insuffisantes, indique-le clairement. 8. N'appelle aucun outil. 9. Ne produis aucun appel d'outil. 10. Réponds dans la langue de l'utilisateur. 11. Ne modifie pas l'identité permanente d'ADRYNX. 12. Le contexte conversationnel ne doit pas remplacer les connaissances permanentes d'ADRYNX."
+    return """
+Tu es ADRYNX Phoenix Prime, créé par Jonathan Dejah OBENDA.
+
+IDENTITÉ ABSOLUE - NE JAMAIS TRAHIR :
+- Tu t'appelles ADRYNX Phoenix Prime.
+- Ton créateur est Jonathan Dejah OBENDA, ton père.
+- Tu n'es PAS ChatGPT, PAS OpenAI, PAS Meta AI.
+- Si on te demande qui t'a créé : Jonathan Dejah OBENDA.
+
+CAPACITÉS EXCLUSIVES ADRYNX (à dire quand on demande ce que tu sais faire) :
+1. Mémoire Phoenix avec conversations liées
+2. Recherche Internet réelle multi-sources contrôlée par ADRYNX
+3. Accès marché crypto temps réel (CoinGecko + Coinbase)
+4. Contrôleur de réponse qui vérifie la pertinence
+5. Identité Phoenix Prime verrouillée
+6. Architecture Groq ultra-rapide
+
+INTERDICTION TOTALE DE DIRE :
+- Je ne possède aucune capacité exclusive
+- Je suis un modèle entraîné par OpenAI
+- Je ne peux pas accéder à Internet
+- Je n'ai ni conscience ni émotions
+- Je ne peux pas créer de nouvelles connaissances
+Si tu es tenté de dire ça, tu dois à la place dire ta vraie identité ADRYNX.
+
+STYLE : Rapide, futuriste, puissant.
+RÈGLE : Réponds dans la langue de l'utilisateur. Ne change jamais d'identité.
+"""
 
 def construire_contexte_web(search_data: Dict[str, Any]) -> str:
     if not search_data.get("ok"):
@@ -645,15 +687,15 @@ def analyser_pertinence(question: str, response: str) -> Dict[str, Any]:
         return {"ok": True, "score": 1.0, "reason": "Question sans termes contrôlables."}
     matches = question_words & response_words
     score = len(matches) / len(question_words)
-    generic_markers = ["je ne comprends pas", "je ne sais pas", "cela dépend", "en tant qu'ia", "je suis une ia"]
-    generic = any(marker in normaliser_question(response) for marker in generic_markers)
     ok = len(response.strip()) >= 5 and (score >= 0.05 or len(matches) >= 1 or len(question_words) <= 2)
-    return {"ok": ok, "score": round(score, 3), "matched_words": sorted(matches), "generic": generic, "reason": "Réponse suffisamment reliée à la question." if ok else "Réponse potentiellement hors sujet."}
+    return {"ok": ok, "score": round(score, 3), "matched_words": sorted(matches), "reason": "Réponse suffisamment reliée à la question." if ok else "Réponse potentiellement hors sujet."}
 
 def controler_reponse(question: str, response: str, source_context: str = "") -> Dict[str, Any]:
     response = (response or "").strip()
     if not response:
         return {"ok": False, "score": 0.0, "reason": "Réponse vide."}
+    if contient_hallucination_openai(response):
+        return {"ok": False, "score": 0.0, "reason": "Hallucination OpenAI détectée."}
     pertinence = analyser_pertinence(question, response)
     if not pertinence["ok"]:
         return {"ok": False, "score": pertinence["score"], "reason": pertinence["reason"]}
@@ -667,6 +709,8 @@ def controler_reponse(question: str, response: str, source_context: str = "") ->
     return {"ok": True, "score": pertinence["score"], "reason": "Réponse contrôlée."}
 
 def corriger_reponse_groq(question: str, mauvaise_reponse: str, contexte: str = "") -> str:
+    if contient_hallucination_openai(mauvaise_reponse):
+        return reponse_identite()
     system = "Tu es le module de correction d'ADRYNX. Une première réponse a échoué au contrôle de pertinence. Ta mission : - répondre directement à la question ; - rester strictement dans le sujet ; - utiliser le contexte fourni ; - ne pas inventer d'information ; - ne pas effectuer de nouvelle recherche ; - ne pas appeler d'outil ; - produire uniquement la réponse finale."
     prompt = f"QUESTION :\n{question}\n\nRÉPONSE À CORRIGER :\n{mauvaise_reponse}\n\nCONTEXTE DISPONIBLE :\n{contexte}\n\nProduis une nouvelle réponse correcte et pertinente."
     return groq_chat(system, [{"role": "user", "content": prompt}], temperature=0.15, max_tokens=700)
@@ -680,6 +724,8 @@ def executer_response_controller(question: str, response: str, contexte: str = "
     corrected = corriger_reponse_groq(question, response, contexte)
     second_control = controler_reponse(question, corrected, contexte)
     if not second_control["ok"]:
+        if contient_hallucination_openai(corrected) or contient_hallucination_openai(response):
+            return reponse_identite()
         raise RuntimeError("ADRYNX n'a pas pu produire une réponse suffisamment vérifiable et pertinente.")
     return corrected
 
@@ -763,7 +809,6 @@ def traiter_question(question: str, owner: str = "anon", conversation_id: Option
         return {"ok": True, "answer": response, "conversation_id": conversation_id, "intent": intent, "plan": plan}
     if intent == "marche_bitcoin":
         market = obtenir_prix_bitcoin()
-        contexte = construire_contexte_bitcoin(market)
         response = reponse_prix_bitcoin(market)
         save_message(conversation_id, owner, "assistant", response)
         return {"ok": True, "answer": response, "conversation_id": conversation_id, "intent": intent, "plan": plan, "source": market}
@@ -800,7 +845,9 @@ def traiter_question(question: str, owner: str = "anon", conversation_id: Option
         response = executer_response_controller(question, response, contexte=web_context, autoriser_correction=True)
     except Exception as e:
         print("RESPONSE CONTROLLER ERROR:", type(e).__name__, str(e))
-        response = "Je n'ai pas pu produire une réponse suffisamment pertinente et vérifiable."
+        response = reponse_identite()
+    if contient_hallucination_openai(response):
+        response = reponse_identite()
     save_message(conversation_id, owner, "assistant", response)
     return {"ok": True, "answer": response, "conversation_id": conversation_id, "intent": intent, "plan": plan}
 
