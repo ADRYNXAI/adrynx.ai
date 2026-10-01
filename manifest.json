@@ -1,7 +1,6 @@
 {
   "name": "ADRYNX - Phoenix Prime",
   "short_name": "ADRYNX",
-  "description": "ADRYNX Phoenix Prime AI",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
@@ -9,13 +8,13 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "https://files.catbox.moe/3uvi4b.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "https://files.catbox.moe/4ygusv.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
