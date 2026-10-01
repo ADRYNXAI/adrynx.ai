@@ -1,62 +1,52 @@
 import os
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+import urllib.parse
 from adrynx import PhoenixPrime
-import requests
 
-app = Flask(__name__, static_folder='.')
-CORS(app)
-brain = PhoenixPrime()
+app = FastAPI()
+ai = PhoenixPrime()
 
-@app.route("/")
-def home(): 
-    # Landing en page d'accueil pour vendre 1000F
+# Servir fichiers statiques
+@app.get("/")
+async def landing():
     if os.path.exists("landing.html"):
-        return send_from_directory('.', 'landing.html')
-    return send_from_directory('.', 'index.html')
+        return FileResponse("landing.html")
+    return FileResponse("index.html")
 
-@app.route("/app")
-def app_page():
-    return send_from_directory('.', 'index.html')
+@app.get("/app")
+async def app_page():
+    return FileResponse("index.html")
 
-@app.route("/<path:path>")
-def static_files(path): 
-    # Empêche de bloquer /api
-    if path.startswith("api/"):
-        return jsonify({"error":"use POST"}), 404
-    return send_from_directory('.', path)
+@app.get("/manifest.json")
+async def manifest():
+    return FileResponse("manifest.json")
 
-@app.route("/api/chat", methods=["POST"])
-def chat():
+@app.get("/health")
+async def health():
+    return {"status":"online","model": os.environ.get("GROQ_MODEL","openai/gpt-oss-120b"), "creator":"Jonathan Obenda"}
+
+@app.post("/api/chat")
+async def chat(req: Request):
     try:
-        data = request.get_json(force=True)
-        msg = data.get("message","").strip()
-        hist = data.get("history",[]) or []
-        img = data.get("image")
-        if not msg and not img: 
-            return jsonify({"reply":"Envoie un message ou une photo de ton cours"}), 400
-        reply = brain.ask(msg, hist, image_base64=img)
-        return jsonify({"reply": reply})
-    except Exception as e:
-        print(f"CHAT ERROR: {e}")
-        return jsonify({"reply": f"Phoenix Prime est en ligne. Redémarre. Erreur: {str(e)[:150]}"}), 200
+        data = await req.json()
+        message = data.get("message","")
+        history = data.get("history",[])
+        image = data.get("image")  # base64
 
-@app.route("/api/image", methods=["POST"])
-def image_gen():
+        if not message and not image:
+            return JSONResponse({"reply":"Dis quelque chose Jonathan 🔥"})
+
+        reply = ai.ask(message, history, image_base64=image)
+        return {"reply": reply}
+    except Exception as e:
+        print(f"API CHAT ERROR: {e}")
+        return JSONResponse({"reply": f"Phoenix Prime est là même en erreur: {str(e)[:200]}"}, status_code=200)
+
+@app.post("/api/image")
+async def gen_image(req: Request):
+    """Génération gratuite via Pollinations - pas besoin de clé"""
     try:
-        data = request.get_json(force=True)
-        prompt = data.get("prompt","").strip()
-        if not prompt: return jsonify({"error":"prompt vide"}), 400
-        # 100% GRATUIT via Pollinations - pas de clé
-        encoded = requests.utils.quote(prompt)
-        url = f"https://image.pollinations.ai/prompt/{encoded}?model=flux&width=1024&height=1024&nologo=true&seed={os.urandom(2).hex()}"
-        return jsonify({"image_url": url})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/health")
-def health(): 
-    return jsonify({"status":"ADRYNX Phoenix Prime ONLINE", "model": os.environ.get("GROQ_MODEL","llama-3.1-8b-instant")})
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT",10000)))
+        data = await req.json()
+        prompt = data.get("prompt","").replace("génère","").replace("genere","").replace("une
