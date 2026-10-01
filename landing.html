@@ -7,17 +7,46 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui}
 body{background:#0a0a0a;color:#fff}
-.hero{min-height:100vh;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;padding:40px 20px;gap:40px}
-.hero img{width:340px;height:340px;border-radius:30px;object-fit:cover;border:3px solid #ff7a00;box-shadow:0 0 60px #ff3c0033}
-h1{font-size:48px;font-weight:800;line-height:1.1}
+.hero{min-height:100vh;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;padding:20px;gap:30px}
+.hero-img-wrap{
+  width:100%;
+  max-width:380px;
+  aspect-ratio: 1/1;
+  border-radius:30px;
+  border:3px solid #ff7a00;
+  box-shadow:0 0 60px #ff3c0033;
+  overflow:hidden;
+  background:#000;
+  flex-shrink:0;
+}
+.hero-img-wrap img{
+  width:100%;
+  height:100%;
+  object-fit:contain; /* FIX: ne coupe plus */
+  display:block;
+}
+h1{font-size:clamp(36px,8vw,52px);font-weight:800;line-height:1.1}
 h1 span{background:linear-gradient(90deg,#ff7a00,#ff3c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .btn{display:inline-block;background:linear-gradient(90deg,#ff7a00,#ff3c00);color:#fff;padding:16px 32px;border-radius:30px;font-weight:800;text-decoration:none;margin-top:20px;font-size:18px}
 .card{background:#111113;border:1px solid #222;border-radius:20px;padding:20px;margin-top:20px}
+@media(max-width:600px){
+  .hero{padding:16px;gap:20px;align-items:flex-start}
+  .hero-img-wrap{max-width:100%}
+  h1{font-size:36px}
+}
 </style>
 </head>
 <body>
 <div class="hero">
-  <img src="https://i.ibb.co/wh5qVgSz/IMG-20261002-WA2315.jpg" alt="ADRYNX Phoenix Prime">
-  <div style="max-width:500px">
-    <h1>ADRYNX <span>Phoenix Prime</span></h1>
-    <p style="margin-top:16px;color:#aaa;line-height:1.6">L'IA la plus vivante du Congo. Créée par <b>Jonathan Obenda</b> à Brazzaville.<br>Elle explique tes cours, analyse tes PDF/photos, génère des images, parle en vocal.<br><br>🔥 100% Congolaise, 0% Chat
+  <div class="hero-img-wrap">
+    <img src="https://i.ibb.co/wh5qVgSz/IMG-20261002-WA2315.jpg" alt="ADRYNX Phoenix Prime">
+  </div>
+  <div style="max-width:500px;width:100%">
+    <h1>ADRYNX <br><span>Phoenix Prime</span></h1>
+    <p style="margin-top:16px;color:#aaa;line-height:1.6">L'IA la plus vivante du Congo. Créée par <b>Jonathan Obenda</b> à Brazzaville.<br>Elle explique tes cours, analyse tes PDF/photos, génère des images, parle en vocal.<br><br>🔥 100% Congolaise, 0% ChatGPT - faite pour les étudiants congolais.</p>
+    <a class="btn" href="/chat">🚀 Lancer ADRYNX</a>
+    <div class="card">🇨🇬 <b>DU CONGO POUR LE MONDE</b> • APPRENDRE • CREER • REUSSIR</div>
+  </div>
+</div>
+</body>
+</html>
