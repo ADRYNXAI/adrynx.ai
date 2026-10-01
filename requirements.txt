@@ -1,6 +1,5 @@
-flask
-flask-cors
+fastapi
+uvicorn
 groq
 openai
-requests
-gunicorn
+python-multipart
