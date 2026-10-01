@@ -1,37 +1,23 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ADRYNX - Phoenix Prime</title>
-<link rel="stylesheet" href="/style.css">
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#000000">
-<meta name="mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="/icon-512.png">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
-</head>
-<body class="phoenix-idle">
-<video id="phoenix-video" autoplay muted loop playsinline>
-<source src="https://files.catbox.moe/y2nvi4.mp4" type="video/mp4">
-</video>
-<div class="overlay"></div>
-<div class="core">
-<h1>ADRYNX</h1>
-<div id="status">État : ADRYNX en ligne</div>
-<div id="chat"></div>
-<div class="input-zone">
-<input id="q" placeholder="Parle à ADRYNX..." autocomplete="off">
-<button onclick="send()">▲</button>
-</div>
-<div id="log">> Système prêt</div>
-</div>
-<script src="/app.js"></script>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js');
+{
+  "name": "ADRYNX - Phoenix Prime",
+  "short_name": "ADRYNX",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "https://files.catbox.moe/3uvi4b.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://files.catbox.moe/4ygusv.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
-</script>
-</body>
-</html>
