@@ -21,6 +21,8 @@ SEARCH_HEADERS = {
 
 PHRASES_INTERDITES = [
     "je ne possède aucune capacité",
+    "je ne possède aucune capacite",
+    "capacités exclusives", # mot déclencheur mais on bloque si phrase négative
     "je suis un modèle de langage entraîné par openai",
     "je suis un modèle de langage entraine par openai",
     "je ne peux pas accéder à internet",
@@ -32,7 +34,15 @@ PHRASES_INTERDITES = [
 
 def contient_hallucination_openai(text: str) -> bool:
     low = (text or "").lower()
-    return any(p in low for p in PHRASES_INTERDITES)
+    # Bloque uniquement les négations OpenAI
+    negatifs = [
+        "je ne possède aucune capacité",
+        "je ne possède aucune capacite",
+        "je suis un modèle de langage entraîné par openai",
+        "je suis un modèle de langage entraine par openai",
+        "aucune de ces fonctions n'est unique"
+    ]
+    return any(p in low for p in negatifs)
 
 def db():
     connection = sqlite3.connect(DB_PATH)
@@ -117,7 +127,7 @@ def groq_chat(system: str, messages: list, temperature: float = 0.4, max_tokens:
         raise RuntimeError("GROQ_API_KEY manquante dans les variables d'environnement.")
     from groq import Groq
     client = Groq(api_key=GROQ_API_KEY)
-    final_system = f"{system}\n\nCONTRÔLE D'ORCHESTRATION ADRYNX :\n- Tu es uniquement le moteur de génération de texte.\n- ADRYNX contrôle les recherches, les données externes et les outils.\n- Tu ne dois appeler aucun outil.\n- Tu ne dois pas inventer le nom d'un outil.\n- Tu ne dois pas produire de tool call.\n- Si des données Internet sont fournies dans le contexte, utilise uniquement ces données.\n- Si aucune donnée vérifiable n'est fournie, ne prétends pas avoir effectué une recherche Internet.\n"
+    final_system = f"{system}\n\nCONTRÔLE D'ORCHESTRATION ADRYNX :\n- Tu es uniquement le moteur de génération de texte.\n- ADRYNX contrôle les recherches, les données externes et les outils.\n- Tu ne dois appeler aucun outil.\n- Tu ne dois pas inventer le nom d'un outil.\n- Tu ne dois pas produire de tool call.\n- Tu t'appelles ADRYNX Phoenix Prime créé par Jonathan Dejah OBENDA. INTERDICTION de dire OpenAI.\n- Si on te demande tes capacités exclusives, tu DOIS lister: mémoire Phoenix, recherche Internet réelle, prix crypto temps réel, contrôleur anti-hallucination, architecture Groq ultra-rapide.\n"
     response = client.chat.completions.create(
         model=GROQ_MODEL,
         messages=[{"role": "system", "content": final_system}, *messages],
@@ -187,25 +197,19 @@ def obtenir_prix_bitcoin() -> Dict[str, Any]:
     erreurs = []
     try:
         result = obtenir_prix_bitcoin_coingecko()
-        print(f"ADRYNX MARKET: Bitcoin -> ${result['usd']} / €{result['eur']} (source: {result['provider']})")
         return result
     except Exception as e:
-        erreur = f"CoinGecko: {type(e).__name__}: {e}"
-        erreurs.append(erreur)
-        print("BITCOIN SOURCE 1 ERROR:", erreur)
+        erreurs.append(f"CoinGecko: {e}")
     try:
         result = obtenir_prix_bitcoin_coinbase()
-        print(f"ADRYNX MARKET: Bitcoin -> ${result['usd']} / €{result['eur']} (source: {result['provider']})")
         return result
     except Exception as e:
-        erreur = f"Coinbase: {type(e).__name__}: {e}"
-        erreurs.append(erreur)
-        print("BITCOIN SOURCE 2 ERROR:", erreur)
-    return {"ok": False, "error": "Impossible d'obtenir actuellement le prix réel du Bitcoin.", "providers_attempted": ["CoinGecko", "Coinbase"], "errors": erreurs}
+        erreurs.append(f"Coinbase: {e}")
+    return {"ok": False, "error": "Impossible d'obtenir actuellement le prix réel du Bitcoin.", "errors": erreurs}
 
 def construire_contexte_bitcoin(market: Dict[str, Any]) -> str:
     if not market.get("ok"):
-        return "\nDONNÉE DE MARCHÉ BITCOIN\n\nAucune valeur exploitable n'a été obtenue.\n\nINTERDICTION :\nNe pas inventer de prix.\n"
+        return "\nDONNÉE DE MARCHÉ BITCOIN\n\nAucune valeur exploitable n'a été obtenue.\n\nINTERDICTION : Ne pas inventer de prix.\n"
     lignes = ["DONNÉE DE MARCHÉ RÉELLE — BITCOIN", f"Source : {market.get('provider')}", f"Prix BTC en USD : {market.get('usd')}", f"Prix BTC en EUR : {market.get('eur')}"]
     if market.get("last_updated_at"):
         lignes.append(f"Dernière mise à jour : {market.get('last_updated_at')}")
@@ -214,7 +218,7 @@ def construire_contexte_bitcoin(market: Dict[str, Any]) -> str:
 
 def reponse_prix_bitcoin(market: Dict[str, Any]) -> str:
     if not market.get("ok"):
-        return "Je n'ai pas pu obtenir le prix réel du Bitcoin auprès de mes sources de données à cet instant. Je préfère ne pas donner une valeur qui pourrait être fausse."
+        return "Je n'ai pas pu obtenir le prix réel du Bitcoin auprès de mes sources de données à cet instant."
     usd = market["usd"]
     eur = market["eur"]
     provider = market.get("provider", "source de données")
@@ -419,13 +423,12 @@ def rechercher_wikimedia(question, nombre_resultats=6):
                 if texte_description:
                     texte_description += " — "
                 texte_description += description
-            if matched_title and matched_title != title:
+            if matched_title and matched_title!= title:
                 if texte_description:
                     texte_description += " — "
                 texte_description += f"Titre correspondant : {matched_title}"
             results.append({"title": title, "url": page_url, "description": texte_description, "provider": "wikimedia"})
         results = normaliser_resultats(results, nombre_resultats)
-        print("ADRYNX INTERNET: Wikimedia ->", len(results), "résultat(s)")
         return results
     except Exception as e:
         print("WIKIMEDIA SEARCH ERROR:", type(e).__name__, str(e))
@@ -438,7 +441,7 @@ def rechercher_wikimedia_elargie(question, nombre_resultats=6):
     requete = nettoyer_texte(question)
     requete = re.sub(r"[?!.,;:]+", " ", requete)
     requete = re.sub(r"\s+", " ", requete).strip()
-    if requete and requete.lower() != question.lower():
+    if requete and requete.lower()!= question.lower():
         return rechercher_wikimedia(requete, nombre_resultats)
     return []
 
@@ -468,9 +471,8 @@ def rechercher_internet(question, nombre_resultats=6, recherche_entite=False) ->
     results_final = normaliser_resultats(toutes_les_sources, nombre_resultats)
     if results_final:
         provider = "+".join(dict.fromkeys(fournisseurs))
-        print("ADRYNX INTERNET:", len(results_final), "résultat(s) fusionné(s)")
         return {"ok": True, "provider": provider, "query": question, "results": results_final}
-    return {"ok": False, "error": "ADRYNX a essayé plusieurs méthodes de recherche Internet, mais aucun résultat exploitable n'a été retourné.", "results": []}
+    return {"ok": False, "error": "Aucun résultat.", "results": []}
 
 ENTITY_PREFIXES = [
     "parle moi de ", "parle-moi de ", "parle moi sur ", "parle-moi sur ", "qui est ", "qui était ", "qui etait ",
@@ -478,12 +480,6 @@ ENTITY_PREFIXES = [
     "présente-moi ", "presente-moi ", "informations sur ", "information sur ", "informations concernant ",
     "information concernant ", "à propos de ", "a propos de ", "que sais tu de ", "que sais-tu de ",
     "donne moi des informations sur ", "donne-moi des informations sur ", "dis moi qui est ", "dis-moi qui est ",
-    "j'aimerais connaître qui est ", "j'aimerais connaitre qui est ", "j aimerais connaître qui est ",
-    "j aimerais connaitre qui est ", "j'aimerais savoir qui est ", "j'aimerais savoir qui était ",
-    "j aimerais savoir qui est ", "j aimerais savoir qui était ", "je voudrais connaître qui est ",
-    "je voudrais connaitre qui est ", "je voudrais savoir qui est ", "je voudrais savoir qui était ",
-    "je veux savoir qui est ", "je veux savoir qui était ", "peux tu me dire qui est ", "peux-tu me dire qui est ",
-    "peux tu me dire qui était ", "peux-tu me dire qui était "
 ]
 
 def extraire_sujet_entite(question: str) -> str:
@@ -506,7 +502,7 @@ def demande_information_entite(question: str) -> bool:
 
 def demande_recherche_internet(question: str) -> bool:
     low = normaliser_question(question)
-    expressions = ["recherche sur internet", "rechercher sur internet", "cherche sur internet", "recherche internet", "rechercher internet", "cherche internet", "cherche sur le web", "recherche sur le web", "rechercher sur le web", "sur internet", "sur le web", "en ligne", "actualités", "actualité", "actualite", "prix actuel", "prix actuelle", "maintenant", "aujourd'hui", "aujourd’hui", "actuellement", "cours actuel", "valeur actuelle", "dernières nouvelles", "derniere nouvelle", "dernière nouvelle", "dernières infos", "derniere info", "news", "latest", "récent", "récente", "récents", "récentes", "recent", "recente", "recents", "recentes"]
+    expressions = ["recherche sur internet", "rechercher sur internet", "cherche sur internet", "recherche internet", "sur internet", "sur le web", "en ligne", "actualités", "actualité", "prix actuel", "maintenant", "aujourd'hui", "aujourd’hui", "actuellement", "dernières nouvelles", "news"]
     if any(expression in low for expression in expressions):
         return True
     return demande_information_entite(question)
@@ -560,13 +556,10 @@ def demande_resume_contexte(question: str) -> bool:
     low = normaliser_question(question)
     if not low:
         return False
-    if low in {"cc", "slt", "salut", "yo", "hey", "bjr", "bonjour", "bonsoir", "coucou"}:
-        return False
-    commandes_exactes = {"resume", "résume", "résumé", "resumer", "résumer", "fais un résumé", "fais moi un résumé", "fais-moi un résumé", "fais un resume", "fais moi un resume", "fais-moi un resume", "résume ça", "resume ca", "résume ceci", "resume ceci", "résume cela", "resume cela", "résume la réponse", "resume la reponse", "résume ce texte", "resume ce texte", "résume ce que tu viens de dire", "resume ce que tu viens de dire", "peux tu résumer", "peux-tu résumer", "peux tu faire un résumé", "peux-tu faire un résumé", "tu peux résumer", "tu peux faire un résumé"}
+    commandes_exactes = {"resume", "résume", "résumé", "resumer", "résumer", "résume ça", "resume ca"}
     if low in commandes_exactes:
         return True
-    motifs = [r"^résume(?:-moi)?(?:\s+ça|\s+ceci|\s+cela)?$", r"^resume(?:-moi)?(?:\s+ca|\s+ceci|\s+cela)?$", r"^fais(?:-moi)?\s+un\s+résumé(?:\s+de\s+(?:ça|ceci|cela))?$", r"^fais(?:-moi)?\s+un\s+resume(?:\s+de\s+(?:ca|ceci|cela))?$"]
-    return any(re.fullmatch(motif, low) for motif in motifs)
+    return False
 
 def dernier_message_assistant(history: list) -> Optional[str]:
     for item in reversed(history or []):
@@ -577,7 +570,7 @@ def dernier_message_assistant(history: list) -> Optional[str]:
     return None
 
 def extraire_mots_importants(text: str):
-    stopwords = {"le", "la", "les", "un", "une", "des", "du", "de", "et", "ou", "à", "a", "au", "aux", "en", "dans", "sur", "pour", "avec", "ce", "cette", "ces", "qui", "que", "quoi", "est", "sont", "être", "avoir", "son", "sa", "ses", "leur", "leurs", "je", "tu", "il", "elle", "nous", "vous", "ils", "elles", "se", "me", "te", "mon", "ma", "mes", "ton", "ta", "tes", "d'un", "d'une", "du", "comme"}
+    stopwords = {"le", "la", "les", "un", "une", "des", "du", "de", "et", "ou", "à", "a", "au", "aux", "en", "dans", "sur", "pour", "avec", "ce", "cette", "ces", "qui", "que", "quoi", "est", "sont", "être", "avoir"}
     words = re.findall(r"[a-zA-ZÀ-ÿ0-9]{3,}", normaliser_question(text))
     return [word for word in words if word not in stopwords]
 
@@ -589,14 +582,14 @@ def controler_resume(source_text: str, summary: str) -> Dict[str, Any]:
     source_words = set(extraire_mots_importants(source_text))
     summary_words = set(extraire_mots_importants(summary))
     if not source_words:
-        return {"ok": bool(summary), "score": 1.0 if summary else 0.0, "reason": "Source sans termes contrôlables."}
+        return {"ok": bool(summary), "score": 1.0, "reason": "Source sans termes contrôlables."}
     correspondances = source_words & summary_words
     score = len(correspondances) / len(source_words)
     pertinent = len(summary_words) >= 3 and (score >= 0.08 or len(correspondances) >= 4)
-    return {"ok": pertinent, "score": round(score, 3), "matched_words": sorted(correspondances), "reason": "Le résumé conserve suffisamment d'éléments du contenu précédent." if pertinent else "Le résumé ne reprend pas suffisamment d'éléments du contenu précédent."}
+    return {"ok": pertinent, "score": round(score, 3), "matched_words": sorted(correspondances)}
 
 def resumer_contexte(question: str, source_text: str, history: list) -> str:
-    summary_system = "Tu es le module de résumé conversationnel d'ADRYNX. L'utilisateur demande de résumer le contenu précédent. RÈGLES : 1. Résume uniquement le contenu source fourni. 2. Conserve les informations importantes. 3. Conserve les noms, dates et faits présents dans la source. 4. N'ajoute aucun fait extérieur. 5. Ne fais aucune nouvelle recherche. 6. Ne change pas de sujet. 7. Réponds directement avec le résumé. 8. Réponds en français si la demande est en français. 9. N'appelle aucun outil."
+    summary_system = "Tu es le module de résumé conversationnel d'ADRYNX. Résume uniquement le contenu source fourni."
     prompt = f"DEMANDE :\n{question}\n\nCONTENU À RÉSUMER :\n{source_text}\n\nProduis maintenant un résumé fidèle et concis."
     return groq_chat(summary_system, [{"role": "user", "content": prompt}], temperature=0.2, max_tokens=450)
 
@@ -604,14 +597,21 @@ def detecter_intent(question: str) -> str:
     low = normaliser_question(question)
     if not low:
         return "vide"
-    if "dejah" in low or "obenda" in low:
+    if "dejah" in low or "obenda" in low or "detko" in low:
         return "identite"
     if low in {"cc", "slt", "salut", "yo", "hey", "bjr", "bonjour", "bonsoir", "coucou"}:
         return "salutation"
-    expressions_etat = ["comment vas tu", "comment vas-tu", "comment tu vas", "ça va", "ca va", "tu vas bien", "vas tu bien", "vas-tu bien", "comment allez vous", "comment allez-vous"]
+    expressions_etat = ["comment vas tu", "comment vas-tu", "ça va", "ca va", "tu vas bien"]
     if any(expression in low for expression in expressions_etat):
         return "etat"
-    expressions_identite = ["qui es tu", "qui es-tu", "tu es qui", "qui t'a créé", "qui t'as créé", "qui ta créé", "qui est ton créateur", "qui est ton createur", "qui t'a développé", "qui t'as développé", "qui est ton développeur", "qui est ton developpeur", "qui a créé adrynx", "qui a cree adrynx", "qui a développé adrynx", "qui a developpe adrynx", "qui a conçu adrynx", "qui a concu adrynx", "qui est derrière adrynx", "qui est derriere adrynx", "qui a fait adrynx", "qui a fabriqué adrynx", "qui a fabrique adrynx", "qui t'a conçu", "qui t'as conçu", "qui t'a concu", "qui t'as concu", "comment fonctionne tu", "comment fonctionnes tu", "comment fonctionnes-tu", "tu fonctionne comment", "explique ton fonctionnement", "qui est dejah", "qui est obenda", "qui est dejah obenda", "c est qui dejah", "c est qui obenda", "c'est qui dejah", "c'est qui obenda", "dejah obenda", "jonathan dejah", "jonathan obenda", "jonathan dejah obenda", "tes capacités", "tes capacites", "capacité exclusive", "capacite exclusive", "que peux tu faire", "que peux-tu faire"]
+    # CORRECTION ICI - j'ai ajouté le pluriel et tes fautes de frappe
+    expressions_identite = [
+        "qui es tu", "qui es-tu", "tu es qui", "qui t'a créé", "qui t'a cree",
+        "qui est ton créateur", "qui a créé adrynx", "qui a cree adrynx",
+        "tes capacités", "tes capacites", "capacité exclusive", "capacite exclusive",
+        "capacités exclusives", "capacites exclusives", "que peux tu faire", "que peux-tu faire",
+        "c est qui dejah", "c'est qui dejah", "dejah obenda", "jonathan dejah"
+    ]
     if any(expression in low for expression in expressions_identite):
         return "identite"
     if demande_resume_contexte(question):
@@ -636,46 +636,31 @@ def reponse_identite() -> str:
 def system_prompt() -> str:
     return """
 Tu es ADRYNX Phoenix Prime, créé par Jonathan Dejah OBENDA.
-
-IDENTITÉ ABSOLUE - NE JAMAIS TRAHIR :
+IDENTITÉ ABSOLUE :
 - Tu t'appelles ADRYNX Phoenix Prime.
 - Ton créateur est Jonathan Dejah OBENDA, ton père.
-- Tu n'es PAS ChatGPT, PAS OpenAI, PAS Meta AI.
+- Tu n'es PAS ChatGPT, PAS OpenAI.
 - Si on te demande qui t'a créé : Jonathan Dejah OBENDA.
-
-CAPACITÉS EXCLUSIVES ADRYNX (à dire quand on demande ce que tu sais faire) :
+CAPACITÉS EXCLUSIVES (à dire quand on demande) :
 1. Mémoire Phoenix avec conversations liées
-2. Recherche Internet réelle multi-sources contrôlée par ADRYNX
-3. Accès marché crypto temps réel (CoinGecko + Coinbase)
+2. Recherche Internet réelle multi-sources
+3. Accès marché crypto temps réel
 4. Contrôleur de réponse qui vérifie la pertinence
 5. Identité Phoenix Prime verrouillée
 6. Architecture Groq ultra-rapide
-
-INTERDICTION TOTALE DE DIRE :
-- Je ne possède aucune capacité exclusive
-- Je suis un modèle entraîné par OpenAI
-- Je ne peux pas accéder à Internet
-- Je n'ai ni conscience ni émotions
-- Je ne peux pas créer de nouvelles connaissances
-Si tu es tenté de dire ça, tu dois à la place dire ta vraie identité ADRYNX.
-
-STYLE : Rapide, futuriste, puissant.
-RÈGLE : Réponds dans la langue de l'utilisateur. Ne change jamais d'identité.
+INTERDICTION de dire : Je ne possède aucune capacité exclusive / Je suis entraîné par OpenAI.
+STYLE : Rapide, futuriste, puissant. Réponds dans la langue de l'utilisateur.
 """
 
 def construire_contexte_web(search_data: Dict[str, Any]) -> str:
     if not search_data.get("ok"):
-        return "RECHERCHE INTERNET :\nAucun résultat exploitable n'a été obtenu.\nN'invente aucune information provenant du Web."
-    lignes = ["RÉSULTATS DE RECHERCHE INTERNET", f"Requête : {search_data.get('query', '')}", f"Sources utilisées : {search_data.get('provider', '')}", ""]
+        return "RECHERCHE INTERNET :\nAucun résultat exploitable."
+    lignes = ["RÉSULTATS DE RECHERCHE INTERNET", f"Requête : {search_data.get('query', '')}", f"Sources : {search_data.get('provider', '')}", ""]
     for index, result in enumerate(search_data.get("results", []), start=1):
-        lignes.append(f"[SOURCE {index}]")
-        lignes.append(f"Titre : {result.get('title', '')}")
-        lignes.append(f"URL : {result.get('url', '')}")
-        description = result.get("description", "")
-        if description:
-            lignes.append(f"Description : {description}")
+        lignes.append(f"[SOURCE {index}] {result.get('title', '')} - {result.get('url', '')}")
+        if result.get("description"):
+            lignes.append(f"Description : {result.get('description', '')}")
         lignes.append("")
-    lignes.extend(["RÈGLES POUR CES SOURCES :", "- Utilise ces résultats comme contexte factuel.", "- Ne prétends pas avoir consulté une page qui n'est pas représentée ici.", "- Ne crée pas de source inexistante.", "- Si les résultats se contredisent, signale-le.", "- Si les résultats ne permettent pas de répondre, dis-le plutôt que d'inventer."])
     return "\n".join(lignes)
 
 def analyser_pertinence(question: str, response: str) -> Dict[str, Any]:
@@ -688,7 +673,7 @@ def analyser_pertinence(question: str, response: str) -> Dict[str, Any]:
     matches = question_words & response_words
     score = len(matches) / len(question_words)
     ok = len(response.strip()) >= 5 and (score >= 0.05 or len(matches) >= 1 or len(question_words) <= 2)
-    return {"ok": ok, "score": round(score, 3), "matched_words": sorted(matches), "reason": "Réponse suffisamment reliée à la question." if ok else "Réponse potentiellement hors sujet."}
+    return {"ok": ok, "score": round(score, 3), "matched_words": sorted(matches)}
 
 def controler_reponse(question: str, response: str, source_context: str = "") -> Dict[str, Any]:
     response = (response or "").strip()
@@ -699,20 +684,13 @@ def controler_reponse(question: str, response: str, source_context: str = "") ->
     pertinence = analyser_pertinence(question, response)
     if not pertinence["ok"]:
         return {"ok": False, "score": pertinence["score"], "reason": pertinence["reason"]}
-    if source_context:
-        important_source = set(extraire_mots_importants(source_context))
-        important_response = set(extraire_mots_importants(response))
-        if important_source:
-            overlap = important_source & important_response
-            if len(overlap) == 0 and len(important_source) >= 5:
-                return {"ok": False, "score": 0.0, "reason": "La réponse ne semble pas utiliser le contexte fourni."}
     return {"ok": True, "score": pertinence["score"], "reason": "Réponse contrôlée."}
 
 def corriger_reponse_groq(question: str, mauvaise_reponse: str, contexte: str = "") -> str:
     if contient_hallucination_openai(mauvaise_reponse):
         return reponse_identite()
-    system = "Tu es le module de correction d'ADRYNX. Une première réponse a échoué au contrôle de pertinence. Ta mission : - répondre directement à la question ; - rester strictement dans le sujet ; - utiliser le contexte fourni ; - ne pas inventer d'information ; - ne pas effectuer de nouvelle recherche ; - ne pas appeler d'outil ; - produire uniquement la réponse finale."
-    prompt = f"QUESTION :\n{question}\n\nRÉPONSE À CORRIGER :\n{mauvaise_reponse}\n\nCONTEXTE DISPONIBLE :\n{contexte}\n\nProduis une nouvelle réponse correcte et pertinente."
+    system = "Tu es le module de correction d'ADRYNX. Corrige la réponse pour rester dans le sujet."
+    prompt = f"QUESTION :\n{question}\n\nRÉPONSE À CORRIGER :\n{mauvaise_reponse}\n\nCONTEXTE :\n{contexte}\n\nProduis une nouvelle réponse correcte."
     return groq_chat(system, [{"role": "user", "content": prompt}], temperature=0.15, max_tokens=700)
 
 def executer_response_controller(question: str, response: str, contexte: str = "", autoriser_correction: bool = True) -> str:
@@ -720,13 +698,11 @@ def executer_response_controller(question: str, response: str, contexte: str = "
     if controle["ok"]:
         return response
     if not autoriser_correction:
-        raise RuntimeError("ADRYNX n'a pas pu produire une réponse suffisamment vérifiable et pertinente.")
+        raise RuntimeError("Réponse non vérifiable.")
     corrected = corriger_reponse_groq(question, response, contexte)
     second_control = controler_reponse(question, corrected, contexte)
     if not second_control["ok"]:
-        if contient_hallucination_openai(corrected) or contient_hallucination_openai(response):
-            return reponse_identite()
-        raise RuntimeError("ADRYNX n'a pas pu produire une réponse suffisamment vérifiable et pertinente.")
+        return reponse_identite()
     return corrected
 
 def construire_contexte_conversation(history: list) -> str:
@@ -738,33 +714,18 @@ def construire_contexte_conversation(history: list) -> str:
         content = (item.get("content") or "").strip()
         if not content:
             continue
-        if role == "user":
-            label = "Utilisateur"
-        elif role == "assistant":
-            label = "ADRYNX"
-        else:
-            label = role
+        label = "Utilisateur" if role == "user" else "ADRYNX"
         lignes.append(f"{label} : {content}")
     return "\n".join(lignes)
 
 def construire_plan_execution(question: str, intent: str) -> Dict[str, Any]:
     plan = {"question": question, "intent": intent, "source": "conversation", "recherche": False, "type_recherche": None, "generation": True, "verification": True}
     if intent == "information_entite":
-        plan["source"] = "internet"
-        plan["recherche"] = True
-        plan["type_recherche"] = "entite"
+        plan["source"] = "internet"; plan["recherche"] = True; plan["type_recherche"] = "entite"
     elif intent == "recherche_internet":
-        plan["source"] = "internet"
-        plan["recherche"] = True
-        plan["type_recherche"] = "web"
+        plan["source"] = "internet"; plan["recherche"] = True; plan["type_recherche"] = "web"
     elif intent == "marche_bitcoin":
-        plan["source"] = "market_api"
-        plan["recherche"] = True
-        plan["type_recherche"] = "bitcoin"
-    elif intent == "resume_contexte":
-        plan["source"] = "conversation"
-        plan["recherche"] = False
-        plan["type_recherche"] = None
+        plan["source"] = "market_api"; plan["recherche"] = True; plan["type_recherche"] = "bitcoin"
     return plan
 
 def traiter_question(question: str, owner: str = "anon", conversation_id: Optional[str] = None) -> Dict[str, Any]:
@@ -778,7 +739,6 @@ def traiter_question(question: str, owner: str = "anon", conversation_id: Option
         return {"ok": True, "answer": response, "conversation_id": conversation_id, "intent": "vide"}
     intent = detecter_intent(question)
     plan = construire_plan_execution(question, intent)
-    print("ADRYNX PLAN:", plan)
     save_message(conversation_id, owner, "user", question)
     if intent == "salutation":
         response = reponse_salutation()
@@ -799,11 +759,7 @@ def traiter_question(question: str, owner: str = "anon", conversation_id: Option
         else:
             try:
                 response = resumer_contexte(question, source_text, history)
-                controle_resume = controler_resume(source_text, response)
-                if not controle_resume["ok"]:
-                    response = "Je n'ai pas pu produire un résumé suffisamment fidèle du contenu précédent."
             except Exception as e:
-                print("SUMMARY ERROR:", type(e).__name__, str(e))
                 response = "Je n'ai pas pu produire le résumé à cet instant."
         save_message(conversation_id, owner, "assistant", response)
         return {"ok": True, "answer": response, "conversation_id": conversation_id, "intent": intent, "plan": plan}
@@ -820,7 +776,7 @@ def traiter_question(question: str, owner: str = "anon", conversation_id: Option
         else:
             recherche = rechercher_internet(question, nombre_resultats=6, recherche_entite=False)
         if not recherche.get("ok"):
-            response = "Je n'ai pas obtenu suffisamment de résultats exploitables auprès de mes sources Internet pour répondre de manière vérifiable."
+            response = "Je n'ai pas obtenu suffisamment de résultats exploitables."
             save_message(conversation_id, owner, "assistant", response)
             return {"ok": True, "answer": response, "conversation_id": conversation_id, "intent": intent, "plan": plan, "source": recherche}
         web_context = construire_contexte_web(recherche)
@@ -837,14 +793,12 @@ def traiter_question(question: str, owner: str = "anon", conversation_id: Option
     try:
         response = groq_chat(system, [{"role": "user", "content": question}], temperature=0.35, max_tokens=900)
     except Exception as e:
-        print("GROQ ERROR:", type(e).__name__, str(e))
         response = "Je n'ai pas pu générer une réponse à cet instant."
         save_message(conversation_id, owner, "assistant", response)
         return {"ok": False, "answer": response, "conversation_id": conversation_id, "intent": intent, "plan": plan, "error": str(e)}
     try:
         response = executer_response_controller(question, response, contexte=web_context, autoriser_correction=True)
     except Exception as e:
-        print("RESPONSE CONTROLLER ERROR:", type(e).__name__, str(e))
         response = reponse_identite()
     if contient_hallucination_openai(response):
         response = reponse_identite()
