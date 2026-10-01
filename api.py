@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-BASE_DIR = Path(".").resolve()
+BASE_DIR = Path(__file__).resolve().parent
 PHOENIX_VIDEO = "https://files.catbox.moe/y2nvi4.mp4"
 
 class Ask(BaseModel):
@@ -39,6 +39,7 @@ def owner(value):
     value = (value or "anon").strip()
     return value[:120] or "anon"
 
+# FICHIER HTML PRINCIPAL
 @app.get("/", response_class=HTMLResponse)
 def root():
     f = BASE_DIR / "index.html"
@@ -46,6 +47,7 @@ def root():
         return FileResponse(str(f), media_type="text/html")
     return HTMLResponse('<h1>ADRYNX</h1><p>API active.</p><a href="/api/health">health</a>')
 
+# FICHIERS STATIQUES
 @app.get("/app.js")
 def serve_app_js():
     f = BASE_DIR / "app.js"
@@ -57,6 +59,22 @@ def serve_style_css():
     f = BASE_DIR / "style.css"
     if not f.is_file(): raise HTTPException(status_code=404, detail="style.css introuvable.")
     return FileResponse(str(f), media_type="text/css")
+
+# --- ETAPE 2 : APP MOBILE - AJOUT SANS CASSER ---
+@app.get("/manifest.json")
+def serve_manifest():
+    f = BASE_DIR / "manifest.json"
+    if not f.is_file():
+        # Ne bloque pas Render si le fichier n'existe pas encore
+        raise HTTPException(status_code=404, detail="manifest.json pas encore créé - fais étape 3")
+    return FileResponse(str(f), media_type="application/manifest+json")
+
+@app.get("/sw.js")
+def serve_sw():
+    f = BASE_DIR / "sw.js"
+    if not f.is_file():
+        raise HTTPException(status_code=404, detail="sw.js pas encore créé - fais étape 3")
+    return FileResponse(str(f), media_type="application/javascript", headers={"Cache-Control": "no-cache"})
 
 @app.get("/robots.txt")
 def serve_robots():
