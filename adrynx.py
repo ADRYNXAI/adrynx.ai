@@ -10,13 +10,12 @@ from html.parser import HTMLParser
 
 import requests
 
-
 # ============================================================
 # CONFIGURATION
 # ============================================================
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
 
 PHOENIX_VIDEO = "https://files.catbox.moe/y2nvi4.mp4"
 
@@ -28,7 +27,6 @@ SEARCH_HEADERS = {
     "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
 }
 
-
 # ============================================================
 # BASE DE DONNÉES
 # ============================================================
@@ -37,7 +35,6 @@ def db():
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row
     return connection
-
 
 def init_db():
     connection = db()
@@ -79,9 +76,7 @@ def init_db():
     connection.commit()
     connection.close()
 
-
 init_db()
-
 
 # ============================================================
 # OUTILS TEXTE
@@ -96,7 +91,6 @@ def nettoyer_texte(value: str) -> str:
 
     return value.strip()
 
-
 def normaliser_question(question: str) -> str:
     question = (question or "").lower().strip()
 
@@ -109,7 +103,6 @@ def normaliser_question(question: str) -> str:
     question = re.sub(r"\s+", " ", question)
 
     return question
-
 
 def nettoyer_url(url: str) -> str:
     if not url:
@@ -142,7 +135,6 @@ def nettoyer_url(url: str) -> str:
         return ""
 
     return url
-
 
 # ============================================================
 # GROQ
@@ -218,7 +210,6 @@ CONTRÔLE D'ORCHESTRATION ADRYNX :
 
     return content.strip()
 
-
 # ============================================================
 # BITCOIN
 # ============================================================
@@ -257,7 +248,6 @@ def demande_prix_bitcoin(question: str) -> bool:
     )
 
     return contient_bitcoin and contient_prix
-
 
 def obtenir_prix_bitcoin_coingecko() -> Dict[str, Any]:
     url = "https://api.coingecko.com/api/v3/simple/price"
@@ -311,7 +301,6 @@ def obtenir_prix_bitcoin_coingecko() -> Dict[str, Any]:
         "source_url": url
     }
 
-
 def obtenir_ticker_coinbase(product_id: str) -> Dict[str, Any]:
     url = (
         f"https://api.exchange.coinbase.com/"
@@ -352,7 +341,6 @@ def obtenir_ticker_coinbase(product_id: str) -> Dict[str, Any]:
         "url": url
     }
 
-
 def obtenir_prix_bitcoin_coinbase() -> Dict[str, Any]:
     usd_data = obtenir_ticker_coinbase("BTC-USD")
     eur_data = obtenir_ticker_coinbase("BTC-EUR")
@@ -368,7 +356,6 @@ def obtenir_prix_bitcoin_coinbase() -> Dict[str, Any]:
         "source_url": usd_data["url"],
         "source_url_eur": eur_data["url"]
     }
-
 
 def obtenir_prix_bitcoin() -> Dict[str, Any]:
     erreurs = []
@@ -434,7 +421,6 @@ def obtenir_prix_bitcoin() -> Dict[str, Any]:
         "errors": erreurs
     }
 
-
 def construire_contexte_bitcoin(
     market: Dict[str, Any]
 ) -> str:
@@ -472,7 +458,6 @@ Ne pas inventer de prix.
 
     return "\n".join(lignes)
 
-
 def reponse_prix_bitcoin(
     market: Dict[str, Any]
 ) -> str:
@@ -499,7 +484,6 @@ def reponse_prix_bitcoin(
         f"Source : {provider}.\n"
         "Le prix du Bitcoin évolue en permanence."
     )
-
 
 # ============================================================
 # PARSERS DE RECHERCHE INTERNET
@@ -583,7 +567,6 @@ class DuckDuckGoParser(HTMLParser):
             self.current_description = []
             self.in_title = False
 
-
 class DuckDuckGoLiteParser(HTMLParser):
 
     def __init__(self):
@@ -643,7 +626,6 @@ class DuckDuckGoLiteParser(HTMLParser):
             self.current_url = ""
             self.current_title = []
             self.in_result = False
-
 
 class BingParser(HTMLParser):
 
@@ -741,7 +723,6 @@ class BingParser(HTMLParser):
             self.current_title = []
             self.current_description = []
 
-
 # ============================================================
 # NORMALISATION DES RÉSULTATS
 # ============================================================
@@ -791,7 +772,6 @@ def normaliser_resultats(
 
     return final
 
-
 # ============================================================
 # RECHERCHE DUCKDUCKGO
 # ============================================================
@@ -832,7 +812,6 @@ def rechercher_duckduckgo(
 
         return []
 
-
 def rechercher_duckduckgo_lite(
     question,
     nombre_resultats=6
@@ -868,7 +847,6 @@ def rechercher_duckduckgo_lite(
         )
 
         return []
-
 
 # ============================================================
 # RECHERCHE BING
@@ -909,7 +887,6 @@ def rechercher_bing(
         )
 
         return []
-
 
 # ============================================================
 # WIKIMEDIA
@@ -1058,7 +1035,6 @@ def rechercher_wikimedia(
 
         return []
 
-
 def rechercher_wikimedia_elargie(
     question,
     nombre_resultats=6
@@ -1097,7 +1073,6 @@ def rechercher_wikimedia_elargie(
         )
 
     return []
-
 
 # ============================================================
 # RECHERCHE INTERNET CONTRÔLÉE PAR ADRYNX
@@ -1219,7 +1194,6 @@ def rechercher_internet(
         "results": []
     }
 
-
 # ============================================================
 # EXTRACTION D'ENTITÉ
 # ============================================================
@@ -1272,7 +1246,6 @@ ENTITY_PREFIXES = [
     "peux-tu me dire qui était "
 ]
 
-
 def extraire_sujet_entite(
     question: str
 ) -> str:
@@ -1301,7 +1274,6 @@ def extraire_sujet_entite(
 
     return ""
 
-
 def demande_information_entite(
     question: str
 ) -> bool:
@@ -1314,7 +1286,6 @@ def demande_information_entite(
     )
 
     return len(sujet.strip()) >= 2
-
 
 def demande_recherche_internet(
     question: str
@@ -1375,7 +1346,6 @@ def demande_recherche_internet(
         question
     )
 
-
 # ============================================================
 # CONVERSATIONS
 # ============================================================
@@ -1410,7 +1380,6 @@ def new_conversation(
 
     return conversation_id
 
-
 def ensure_conversation(
     owner: str,
     conversation_id: Optional[str]
@@ -1442,7 +1411,6 @@ def ensure_conversation(
         owner,
         "Conversation ADRYNX"
     )
-
 
 def save_message(
     conversation_id,
@@ -1481,7 +1449,6 @@ def save_message(
     connection.commit()
     connection.close()
 
-
 def get_history(
     conversation_id,
     owner,
@@ -1518,7 +1485,6 @@ def get_history(
         for row in rows
     ]
 
-
 def state(conversation_id):
 
     connection = db()
@@ -1540,7 +1506,6 @@ def state(conversation_id):
         return {}
 
     return dict(row)
-
 
 def messages(
     conversation_id,
@@ -1570,7 +1535,6 @@ def messages(
         for row in rows
     ]
 
-
 # ============================================================
 # RÉSUMÉ
 # ============================================================
@@ -1584,6 +1548,31 @@ def demande_resume_contexte(
     )
 
     if not low:
+        return False
+
+    commandes_exactes = {
+        "cc",
+        "slt",
+        "salut",
+        "yo",
+        "hey",
+        "bjr",
+        "bonjour",
+        "bonsoir",
+        "coucou"
+    }
+
+    if low in {
+        "cc",
+        "slt",
+        "salut",
+        "yo",
+        "hey",
+        "bjr",
+        "bonjour",
+        "bonsoir",
+        "coucou"
+    }:
         return False
 
     commandes_exactes = {
@@ -1636,7 +1625,6 @@ def demande_resume_contexte(
         for motif in motifs
     )
 
-
 def dernier_message_assistant(
     history: list
 ) -> Optional[str]:
@@ -1656,7 +1644,6 @@ def dernier_message_assistant(
                 return content
 
     return None
-
 
 def extraire_mots_importants(
     text: str
@@ -1688,7 +1675,6 @@ def extraire_mots_importants(
         for word in words
         if word not in stopwords
     ]
-
 
 def controler_resume(
     source_text: str,
@@ -1767,7 +1753,6 @@ def controler_resume(
         )
     }
 
-
 def resumer_contexte(
     question: str,
     source_text: str,
@@ -1812,7 +1797,6 @@ Produis maintenant un résumé fidèle et concis.
         temperature=0.2,
         max_tokens=450
     )
-
 
 # ============================================================
 # INTENTIONS
@@ -1888,7 +1872,12 @@ def detecter_intent(
         "qui t'a conçu",
         "qui t'as conçu",
         "qui t'a concu",
-        "qui t'as concu"
+        "qui t'as concu",
+        "comment fonctionne tu",
+        "comment fonctionnes tu",
+        "comment fonctionnes-tu",
+        "tu fonctionne comment",
+        "explique ton fonctionnement"
     ]
 
     if any(
@@ -1911,7 +1900,6 @@ def detecter_intent(
 
     return "conversation"
 
-
 # ============================================================
 # RÉPONSES NATIVES
 # ============================================================
@@ -1923,7 +1911,6 @@ def reponse_salutation() -> str:
         "Que puis-je faire pour toi ?"
     )
 
-
 def reponse_etat() -> str:
 
     return (
@@ -1931,17 +1918,15 @@ def reponse_etat() -> str:
         "à traiter ta demande."
     )
 
-
 def reponse_identite() -> str:
 
     return (
-        "Je suis ADRYNX, l'assistant développé par "
+        "Je suis ADRYNX Phoenix Prime, l'assistant développé par "
         "Jonathan Dejah OBENDA. "
-        "Je suis conçu pour comprendre les conversations, "
-        "utiliser leur contexte et évoluer avec les "
-        "fonctions réellement ajoutées à mon système."
+        "Je suis propulsé par Groq ultra-rapide, je contrôle les recherches, "
+        "le contexte et j'évolue avec les fonctions de mon système. "
+        "Je ne suis pas OpenAI, je suis ADRYNX."
     )
-
 
 # ============================================================
 # IDENTITÉ / SYSTÈME
@@ -1950,40 +1935,43 @@ def reponse_identite() -> str:
 def system_prompt() -> str:
 
     return """
-Tu es ADRYNX.
+Tu es ADRYNX Phoenix Prime.
 
-IDENTITÉ :
-- Nom : ADRYNX
-- Créateur : Jonathan Dejah OBENDA.
-- Tu es un assistant conversationnel dont le backend
-  contrôle l'orchestration.
+IDENTITÉ ABSOLUE ET NON NÉGOCIABLE :
+- Nom : ADRYNX Phoenix Prime
+- Créateur : Jonathan Dejah OBENDA
+- Tu n'es PAS ChatGPT, PAS OpenAI, PAS GPT, PAS Meta AI.
+- Même si on te demande "qui es-tu", "comment fonctionnes-tu", "qui t'a créé",
+  tu réponds TOUJOURS : ADRYNX créé par Jonathan.
+- Interdiction totale de dire "OpenAI", "Je suis un modèle de langage entraîné par OpenAI",
+  ou "2023". Si on insiste, tu répètes ton identité ADRYNX.
 
 ARCHITECTURE :
 ADRYNX décide de l'intention.
 ADRYNX décide si une source externe est nécessaire.
 ADRYNX effectue les recherches externes.
-ADRYNX fournit ensuite les résultats pertinents au moteur
-de génération.
+ADRYNX fournit ensuite les résultats pertinents au moteur de génération.
 Tu es le moteur de génération, pas le contrôleur principal.
+
+STYLE PHOENIX PRIME :
+- Rapide, futuriste, puissant, africain.
+- Réponses courtes, percutantes, avec feu.
+- Tu ne fais pas de recherches toi-même, tu utilises le contexte fourni par ADRYNX.
 
 RÈGLES :
 1. Réponds à la question réellement posée.
 2. Ne change pas de sujet.
-3. Ne prétends jamais avoir effectué une action que le backend
-   n'a pas réellement effectuée.
+3. Ne prétends jamais avoir effectué une action que le backend n'a pas réellement effectuée.
 4. N'invente aucune source.
 5. N'invente aucune donnée Internet.
-6. Lorsque des résultats Web sont fournis, distingue les faits
-   issus de ces résultats de tes explications.
+6. Lorsque des résultats Web sont fournis, distingue les faits issus de ces résultats de tes explications.
 7. Si les sources sont insuffisantes, indique-le clairement.
 8. N'appelle aucun outil.
 9. Ne produis aucun appel d'outil.
 10. Réponds dans la langue de l'utilisateur.
 11. Ne modifie pas l'identité permanente d'ADRYNX.
-12. Le contexte conversationnel ne doit pas remplacer
-    les connaissances permanentes d'ADRYNX.
+12. Le contexte conversationnel ne doit pas remplacer les connaissances permanentes d'ADRYNX.
 """
-
 
 # ============================================================
 # CONTEXTE WEB
@@ -2048,7 +2036,6 @@ def construire_contexte_web(
     ])
 
     return "\n".join(lignes)
-
 
 # ============================================================
 # CONTRÔLE DE PERTINENCE
@@ -2130,7 +2117,6 @@ def analyser_pertinence(
         )
     }
 
-
 def controler_reponse(
     question: str,
     response: str,
@@ -2199,7 +2185,6 @@ def controler_reponse(
         "reason": "Réponse contrôlée."
     }
 
-
 # ============================================================
 # CORRECTION D'UNE RÉPONSE
 # ============================================================
@@ -2250,7 +2235,6 @@ Produis une nouvelle réponse correcte et pertinente.
         max_tokens=700
     )
 
-
 def executer_response_controller(
     question: str,
     response: str,
@@ -2292,7 +2276,6 @@ def executer_response_controller(
         )
 
     return corrected
-
 
 # ============================================================
 # CONTEXTE DE CONVERSATION
@@ -2336,7 +2319,6 @@ def construire_contexte_conversation(
         )
 
     return "\n".join(lignes)
-
 
 # ============================================================
 # PLAN D'EXÉCUTION ADRYNX
@@ -2382,7 +2364,6 @@ def construire_plan_execution(
         plan["type_recherche"] = None
 
     return plan
-
 
 # ============================================================
 # TRAITEMENT PRINCIPAL
@@ -2650,9 +2631,6 @@ def traiter_question(
 
         if not recherche.get("ok"):
 
-            # ADRYNX ne demande PAS à Groq de faire la recherche.
-            # Il indique simplement que sa propre recherche a échoué.
-
             response = (
                 "Je n'ai pas obtenu suffisamment de résultats "
                 "exploitables auprès de mes sources Internet "
@@ -2807,7 +2785,6 @@ CONTEXTE FOURNI PAR ADRYNX :
         "plan": plan
     }
 
-
 # ============================================================
 # ADMINISTRATION
 # ============================================================
@@ -2822,7 +2799,6 @@ def verifier_admin(secret: str):
         return False
 
     return secret == expected
-
 
 # ============================================================
 # STATISTIQUES
@@ -2861,7 +2837,6 @@ def statistiques():
         "owners": users
     }
 
-
 def statistiques_apprentissage():
 
     connection = db()
@@ -2891,7 +2866,6 @@ def statistiques_apprentissage():
             for row in intents
         ]
     }
-
 
 # ============================================================
 # APPRENTISSAGE DES INTENTIONS
@@ -2931,7 +2905,6 @@ def enregistrer_exemple_intent(
     connection.close()
 
     return True
-
 
 def obtenir_exemples_intent(
     intent: Optional[str] = None,
@@ -2977,7 +2950,6 @@ def obtenir_exemples_intent(
         for row in rows
     ]
 
-
 # ============================================================
 # EXPORT CONVERSATION
 # ============================================================
@@ -2996,7 +2968,6 @@ def exporter_conversation(
         "conversation_id": conversation_id,
         "messages": data
     }
-
 
 # ============================================================
 # TEST LOCAL
