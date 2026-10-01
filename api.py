@@ -1,14 +1,11 @@
-import os
+import os, urllib.parse
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
-import urllib.parse
 from adrynx import PhoenixPrime
 
 app = FastAPI()
 ai = PhoenixPrime()
 
-# Servir fichiers statiques
 @app.get("/")
 async def landing():
     if os.path.exists("landing.html"):
@@ -33,20 +30,27 @@ async def chat(req: Request):
         data = await req.json()
         message = data.get("message","")
         history = data.get("history",[])
-        image = data.get("image")  # base64
-
+        image = data.get("image")
         if not message and not image:
-            return JSONResponse({"reply":"Dis quelque chose Jonathan 🔥"})
-
+            return JSONResponse({"reply":"Dis quelque chose Jonathan"})
         reply = ai.ask(message, history, image_base64=image)
         return {"reply": reply}
     except Exception as e:
         print(f"API CHAT ERROR: {e}")
-        return JSONResponse({"reply": f"Phoenix Prime est là même en erreur: {str(e)[:200]}"}, status_code=200)
+        return {"reply": f"Phoenix Prime est la: {str(e)[:200]}"}
 
 @app.post("/api/image")
 async def gen_image(req: Request):
-    """Génération gratuite via Pollinations - pas besoin de clé"""
     try:
         data = await req.json()
-        prompt = data.get("prompt","").replace("génère","").replace("genere","").replace("une
+        prompt_raw = data.get("prompt","ADRYNX Phoenix Prime")
+        # Nettoie sans accents pour eviter SyntaxError
+        prompt = prompt_raw.lower().replace("genere","").replace("une image de","").replace("cree","").strip()
+        if not prompt:
+            prompt = "ADRYNX Phoenix Prime logo fire"
+        encoded = urllib.parse.quote(prompt)
+        image_url = f"https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&nologo=true&model=flux"
+        return {"image_url": image_url, "prompt": prompt}
+    except Exception as e:
+        print(f"IMAGE ERROR: {e}")
+        return {"image_url":"https://image.pollinations.ai/prompt/ADRYNX%20Phoenix%20Prime%20logo%20fire?width=1024","prompt":"ADRYNX"}
