@@ -15,7 +15,7 @@ import requests
 # ============================================================
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 PHOENIX_VIDEO = "https://files.catbox.moe/y2nvi4.mp4"
 
@@ -38,7 +38,6 @@ def db():
 
 def init_db():
     connection = db()
-
     connection.execute("""
         CREATE TABLE IF NOT EXISTS conversations (
             id TEXT PRIMARY KEY,
@@ -48,7 +47,6 @@ def init_db():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-
     connection.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,12 +57,10 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-
     connection.execute("""
         CREATE INDEX IF NOT EXISTS idx_messages_conversation
         ON messages(conversation_id, id)
     """)
-
     connection.execute("""
         CREATE TABLE IF NOT EXISTS intent_examples (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,7 +68,6 @@ def init_db():
             intent TEXT NOT NULL
         )
     """)
-
     connection.commit()
     connection.close()
 
@@ -85,55 +80,41 @@ init_db()
 def nettoyer_texte(value: str) -> str:
     if not value:
         return ""
-
     value = html.unescape(value)
     value = re.sub(r"\s+", " ", value)
-
     return value.strip()
 
 def normaliser_question(question: str) -> str:
     question = (question or "").lower().strip()
-
     question = (
         question
-        .replace("â€™", "'")
-        .replace("`", "'")
+       .replace("â€™", "'")
+       .replace("`", "'")
     )
-
     question = re.sub(r"\s+", " ", question)
-
     return question
 
 def nettoyer_url(url: str) -> str:
     if not url:
         return ""
-
     url = html.unescape(url).strip()
-
     if url.startswith("//"):
         url = "https:" + url
-
     if "duckduckgo.com/l/" in url:
         try:
             parsed = urlparse(url)
             query = parse_qs(parsed.query)
-
             if "uddg" in query:
                 url = unquote(query["uddg"][0])
         except Exception:
             pass
-
     if url.startswith("/"):
         return ""
-
     parsed = urlparse(url)
-
     if parsed.scheme not in {"http", "https"}:
         return ""
-
     if not parsed.netloc:
         return ""
-
     return url
 
 # ============================================================
@@ -153,7 +134,6 @@ def groq_chat(
         )
 
     from groq import Groq
-
     client = Groq(api_key=GROQ_API_KEY)
 
     final_system = f"""
@@ -190,24 +170,18 @@ CONTRÔLE D'ORCHESTRATION ADRYNX :
         raise RuntimeError(
             "Groq n'a retourné aucune réponse."
         )
-
     message = response.choices[0].message
-
     tool_calls = getattr(message, "tool_calls", None)
-
     if tool_calls:
         raise RuntimeError(
             "Groq a tenté d'utiliser un outil alors qu'ADRYNX "
             "n'en autorise aucun dans ce module."
         )
-
     content = message.content
-
     if not content:
         raise RuntimeError(
             "Groq a retourné une réponse vide."
         )
-
     return content.strip()
 
 # ============================================================
@@ -216,12 +190,10 @@ CONTRÔLE D'ORCHESTRATION ADRYNX :
 
 def demande_prix_bitcoin(question: str) -> bool:
     low = normaliser_question(question)
-
     mots_bitcoin = [
         "bitcoin",
         "btc"
     ]
-
     expressions_prix = [
         "prix",
         "cours",
@@ -237,59 +209,46 @@ def demande_prix_bitcoin(question: str) -> bool:
         "valeur actuelle du",
         "prix du"
     ]
-
     contient_bitcoin = any(
         mot in low for mot in mots_bitcoin
     )
-
     contient_prix = any(
         expression in low
         for expression in expressions_prix
     )
-
     return contient_bitcoin and contient_prix
 
 def obtenir_prix_bitcoin_coingecko() -> Dict[str, Any]:
     url = "https://api.coingecko.com/api/v3/simple/price"
-
     params = {
         "ids": "bitcoin",
         "vs_currencies": "usd,eur",
         "include_last_updated_at": "true"
     }
-
     response = requests.get(
         url,
         params=params,
         headers=SEARCH_HEADERS,
         timeout=15
     )
-
     response.raise_for_status()
-
     data = response.json()
-
     bitcoin = data.get("bitcoin")
-
     if not isinstance(bitcoin, dict):
         raise RuntimeError(
             "Réponse Bitcoin absente ou invalide."
         )
-
     usd = bitcoin.get("usd")
     eur = bitcoin.get("eur")
     updated_at = bitcoin.get("last_updated_at")
-
     if not isinstance(usd, (int, float)):
         raise RuntimeError(
             "Prix USD invalide."
         )
-
     if not isinstance(eur, (int, float)):
         raise RuntimeError(
             "Prix EUR invalide."
         )
-
     return {
         "ok": True,
         "asset": "Bitcoin",
@@ -306,36 +265,28 @@ def obtenir_ticker_coinbase(product_id: str) -> Dict[str, Any]:
         f"https://api.exchange.coinbase.com/"
         f"products/{product_id}/ticker"
     )
-
     response = requests.get(
         url,
         headers=SEARCH_HEADERS,
         timeout=15
     )
-
     response.raise_for_status()
-
     data = response.json()
-
     price = data.get("price")
-
     if price is None:
         raise RuntimeError(
             f"Prix absent pour {product_id}."
         )
-
     try:
         price = float(price)
     except (TypeError, ValueError):
         raise RuntimeError(
             f"Prix invalide pour {product_id}."
         )
-
     if price <= 0:
         raise RuntimeError(
             f"Prix invalide pour {product_id}."
         )
-
     return {
         "price": price,
         "url": url
@@ -344,7 +295,6 @@ def obtenir_ticker_coinbase(product_id: str) -> Dict[str, Any]:
 def obtenir_prix_bitcoin_coinbase() -> Dict[str, Any]:
     usd_data = obtenir_ticker_coinbase("BTC-USD")
     eur_data = obtenir_ticker_coinbase("BTC-EUR")
-
     return {
         "ok": True,
         "asset": "Bitcoin",
@@ -359,55 +309,42 @@ def obtenir_prix_bitcoin_coinbase() -> Dict[str, Any]:
 
 def obtenir_prix_bitcoin() -> Dict[str, Any]:
     erreurs = []
-
     try:
         result = obtenir_prix_bitcoin_coingecko()
-
         print(
             f"ADRYNX MARKET: Bitcoin -> "
             f"${result['usd']} / €{result['eur']} "
             f"(source: {result['provider']})"
         )
-
         return result
-
     except Exception as e:
         erreur = (
             f"CoinGecko: "
             f"{type(e).__name__}: {e}"
         )
-
         erreurs.append(erreur)
-
         print(
             "BITCOIN SOURCE 1 ERROR:",
             erreur
         )
-
     try:
         result = obtenir_prix_bitcoin_coinbase()
-
         print(
             f"ADRYNX MARKET: Bitcoin -> "
             f"${result['usd']} / €{result['eur']} "
             f"(source: {result['provider']})"
         )
-
         return result
-
     except Exception as e:
         erreur = (
             f"Coinbase: "
             f"{type(e).__name__}: {e}"
         )
-
         erreurs.append(erreur)
-
         print(
             "BITCOIN SOURCE 2 ERROR:",
             erreur
         )
-
     return {
         "ok": False,
         "error": (
@@ -434,20 +371,17 @@ Aucune valeur exploitable n'a été obtenue.
 INTERDICTION :
 Ne pas inventer de prix.
 """
-
     lignes = [
         "DONNÉE DE MARCHÉ RÉELLE — BITCOIN",
         f"Source : {market.get('provider')}",
         f"Prix BTC en USD : {market.get('usd')}",
         f"Prix BTC en EUR : {market.get('eur')}",
     ]
-
     if market.get("last_updated_at"):
         lignes.append(
             "Dernière mise à jour : "
             f"{market.get('last_updated_at')}"
         )
-
     lignes.extend([
         "",
         "Ces valeurs proviennent directement "
@@ -455,7 +389,6 @@ Ne pas inventer de prix.
         "Ne pas modifier les valeurs numériques.",
         "Ne pas inventer de nouvelles valeurs."
     ])
-
     return "\n".join(lignes)
 
 def reponse_prix_bitcoin(
@@ -469,14 +402,12 @@ def reponse_prix_bitcoin(
             "Je préfère ne pas donner une valeur qui pourrait "
             "être fausse."
         )
-
     usd = market["usd"]
     eur = market["eur"]
     provider = market.get(
         "provider",
         "source de données"
     )
-
     return (
         f"Le prix actuel du Bitcoin fourni par ma source "
         f"de données est de {usd:,.2f} USD, soit environ "
@@ -490,34 +421,26 @@ def reponse_prix_bitcoin(
 # ============================================================
 
 class DuckDuckGoParser(HTMLParser):
-
     def __init__(self):
         super().__init__()
-
         self.results = []
         self.current_url = ""
         self.current_title = []
         self.current_description = []
-
         self.in_title = False
         self.in_description = False
-
     def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
-
         classes = attributes.get(
             "class",
             ""
         )
-
         class_list = classes.split()
-
         if tag == "a":
             href = attributes.get(
                 "href",
                 ""
             )
-
             if (
                 "result__a" in class_list
                 and href
@@ -526,73 +449,57 @@ class DuckDuckGoParser(HTMLParser):
                 self.current_title = []
                 self.current_description = []
                 self.in_title = True
-
         if (
             "result__snippet" in class_list
             or "result__body" in class_list
         ):
             self.in_description = True
-
     def handle_data(self, data):
         if self.in_title:
             self.current_title.append(data)
-
         if self.in_description:
             self.current_description.append(data)
-
     def handle_endtag(self, tag):
         if tag == "a" and self.in_title:
-
             title = nettoyer_texte(
                 "".join(self.current_title)
             )
-
             description = nettoyer_texte(
                 "".join(self.current_description)
             )
-
             clean_url = nettoyer_url(
                 self.current_url
             )
-
             if clean_url and title:
                 self.results.append({
                     "title": title,
                     "url": clean_url,
                     "description": description
                 })
-
             self.current_url = ""
             self.current_title = []
             self.current_description = []
             self.in_title = False
 
 class DuckDuckGoLiteParser(HTMLParser):
-
     def __init__(self):
         super().__init__()
-
         self.results = []
         self.current_url = ""
         self.current_title = []
         self.in_result = False
-
     def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
-
         classes = attributes.get(
             "class",
             ""
         )
-
         class_list = classes.split()
-
         if tag == "a":
             href = attributes.get(
                 "href",
                 ""
             )
-
             if (
                 "result-link" in class_list
                 and href
@@ -600,125 +507,95 @@ class DuckDuckGoLiteParser(HTMLParser):
                 self.current_url = href
                 self.current_title = []
                 self.in_result = True
-
     def handle_data(self, data):
         if self.in_result:
             self.current_title.append(data)
-
     def handle_endtag(self, tag):
         if tag == "a" and self.in_result:
-
             title = nettoyer_texte(
                 "".join(self.current_title)
             )
-
             clean_url = nettoyer_url(
                 self.current_url
             )
-
             if clean_url and title:
                 self.results.append({
                     "title": title,
                     "url": clean_url,
                     "description": ""
                 })
-
             self.current_url = ""
             self.current_title = []
             self.in_result = False
 
 class BingParser(HTMLParser):
-
     def __init__(self):
         super().__init__()
-
         self.results = []
         self.in_result = False
         self.in_title = False
         self.in_description = False
-
         self.current_url = ""
         self.current_title = []
         self.current_description = []
-
     def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
-
         classes = attributes.get(
             "class",
             ""
         )
-
         class_list = classes.split()
-
         if tag == "li" and "b_algo" in class_list:
             self.in_result = True
-
             self.current_url = ""
             self.current_title = []
             self.current_description = []
-
         if not self.in_result:
             return
-
         if tag == "a":
             href = attributes.get(
                 "href",
                 ""
             )
-
             if href and not self.current_url:
                 self.current_url = href
                 self.in_title = True
-
         if (
             tag in {"p", "div"}
             and "b_caption" in class_list
         ):
             self.in_description = True
-
     def handle_data(self, data):
         if not self.in_result:
             return
-
         if self.in_title:
             self.current_title.append(data)
-
         if self.in_description:
             self.current_description.append(data)
-
     def handle_endtag(self, tag):
         if not self.in_result:
             return
-
         if tag == "a" and self.in_title:
             self.in_title = False
-
         if tag == "li":
-
             title = nettoyer_texte(
                 "".join(self.current_title)
             )
-
             description = nettoyer_texte(
                 "".join(self.current_description)
             )
-
             clean_url = nettoyer_url(
                 self.current_url
             )
-
             if clean_url and title:
                 self.results.append({
                     "title": title,
                     "url": clean_url,
                     "description": description
                 })
-
             self.in_result = False
             self.in_title = False
             self.in_description = False
-
             self.current_url = ""
             self.current_title = []
             self.current_description = []
@@ -731,32 +608,23 @@ def normaliser_resultats(
     results,
     nombre_resultats=6
 ):
-
     final = []
     urls = set()
-
     for result in results:
-
         url = nettoyer_url(
             result.get("url", "")
         )
-
         title = nettoyer_texte(
             result.get("title", "")
         )
-
         description = nettoyer_texte(
             result.get("description", "")
         )
-
         if not url or not title:
             continue
-
         if url in urls:
             continue
-
         urls.add(url)
-
         final.append({
             "title": title,
             "url": url,
@@ -766,10 +634,8 @@ def normaliser_resultats(
                 ""
             )
         })
-
         if len(final) >= nombre_resultats:
             break
-
     return final
 
 # ============================================================
@@ -780,72 +646,54 @@ def rechercher_duckduckgo(
     question,
     nombre_resultats=6
 ):
-
     url = "https://html.duckduckgo.com/html/"
-
     try:
-
         response = requests.get(
             url,
             params={"q": question},
             headers=SEARCH_HEADERS,
             timeout=10
         )
-
         response.raise_for_status()
-
         parser = DuckDuckGoParser()
         parser.feed(response.text)
-
         return normaliser_resultats(
             parser.results,
             nombre_resultats
         )
-
     except Exception as e:
-
         print(
             "DUCKDUCKGO HTML ERROR:",
             type(e).__name__,
             str(e)
         )
-
         return []
 
 def rechercher_duckduckgo_lite(
     question,
     nombre_resultats=6
 ):
-
     url = "https://lite.duckduckgo.com/lite/"
-
     try:
-
         response = requests.get(
             url,
             params={"q": question},
             headers=SEARCH_HEADERS,
             timeout=10
         )
-
         response.raise_for_status()
-
         parser = DuckDuckGoLiteParser()
         parser.feed(response.text)
-
         return normaliser_resultats(
             parser.results,
             nombre_resultats
         )
-
     except Exception as e:
-
         print(
             "DUCKDUCKGO LITE ERROR:",
             type(e).__name__,
             str(e)
         )
-
         return []
 
 # ============================================================
@@ -856,36 +704,27 @@ def rechercher_bing(
     question,
     nombre_resultats=6
 ):
-
     url = "https://www.bing.com/search"
-
     try:
-
         response = requests.get(
             url,
             params={"q": question},
             headers=SEARCH_HEADERS,
             timeout=10
         )
-
         response.raise_for_status()
-
         parser = BingParser()
         parser.feed(response.text)
-
         return normaliser_resultats(
             parser.results,
             nombre_resultats
         )
-
     except Exception as e:
-
         print(
             "BING SEARCH ERROR:",
             type(e).__name__,
             str(e)
         )
-
         return []
 
 # ============================================================
@@ -896,14 +735,11 @@ def rechercher_wikimedia(
     question,
     nombre_resultats=6
 ):
-
     url = (
         "https://fr.wikipedia.org/"
         "w/rest.php/v1/search/page"
     )
-
     try:
-
         response = requests.get(
             url,
             params={
@@ -919,29 +755,21 @@ def rechercher_wikimedia(
             },
             timeout=10
         )
-
         response.raise_for_status()
-
         data = response.json()
-
         pages = data.get(
             "pages",
             []
         )
-
         if not isinstance(pages, list):
             raise RuntimeError(
                 "Réponse Wikimedia invalide."
             )
-
         results = []
-
         for page in pages:
-
             title = nettoyer_texte(
                 page.get("title", "")
             )
-
             excerpt = nettoyer_texte(
                 re.sub(
                     r"<[^>]+>",
@@ -952,29 +780,24 @@ def rechercher_wikimedia(
                     )
                 )
             )
-
             description = nettoyer_texte(
                 page.get(
                     "description",
                     ""
                 )
             )
-
             matched_title = nettoyer_texte(
                 page.get(
                     "matched_title",
                     ""
                 ) or ""
             )
-
             if not title:
                 continue
-
             page_title = title.replace(
                 " ",
                 "_"
             )
-
             page_url = (
                 "https://fr.wikipedia.org/wiki/"
                 + requests.utils.quote(
@@ -982,96 +805,75 @@ def rechercher_wikimedia(
                     safe="/:_-()"
                 )
             )
-
             texte_description = excerpt
-
             if description:
-
                 if texte_description:
                     texte_description += " — "
-
                 texte_description += description
-
             if (
                 matched_title
-                and matched_title != title
+                and matched_title!= title
             ):
-
                 if texte_description:
                     texte_description += " — "
-
                 texte_description += (
                     "Titre correspondant : "
                     f"{matched_title}"
                 )
-
             results.append({
                 "title": title,
                 "url": page_url,
                 "description": texte_description,
                 "provider": "wikimedia"
             })
-
         results = normaliser_resultats(
             results,
             nombre_resultats
         )
-
         print(
             "ADRYNX INTERNET: Wikimedia ->",
             len(results),
             "résultat(s)"
         )
-
         return results
-
     except Exception as e:
-
         print(
             "WIKIMEDIA SEARCH ERROR:",
             type(e).__name__,
             str(e)
         )
-
         return []
 
 def rechercher_wikimedia_elargie(
     question,
     nombre_resultats=6
 ):
-
     results = rechercher_wikimedia(
         question,
         nombre_resultats
     )
-
     if results:
         return results
-
     requete = nettoyer_texte(question)
-
     requete = re.sub(
         r"[?!.,;:]+",
         " ",
         requete
     )
-
     requete = re.sub(
         r"\s+",
         " ",
         requete
     ).strip()
-
     if (
         requete
         and requete.lower()
-        != question.lower()
+       != question.lower()
     ):
         return rechercher_wikimedia(
             requete,
             nombre_resultats
         )
-
     return []
 
 # ============================================================
@@ -1085,105 +887,80 @@ def rechercher_internet(
 ) -> Dict[str, Any]:
 
     question = (question or "").strip()
-
     if not question:
         return {
             "ok": False,
             "error": "Recherche vide.",
             "results": []
         }
-
     toutes_les_sources = []
     fournisseurs = []
-
     if recherche_entite:
-
         results = rechercher_wikimedia_elargie(
             question,
             nombre_resultats
         )
-
         if results:
-
             toutes_les_sources.extend(
                 results
             )
-
             fournisseurs.append(
                 "wikimedia"
             )
-
     results = rechercher_duckduckgo(
         question,
         nombre_resultats
     )
-
     if results:
-
         toutes_les_sources.extend(
             results
         )
-
         fournisseurs.append(
             "duckduckgo-html"
         )
-
     results = rechercher_duckduckgo_lite(
         question,
         nombre_resultats
     )
-
     if results:
-
         toutes_les_sources.extend(
             results
         )
-
         fournisseurs.append(
             "duckduckgo-lite"
         )
-
     results = rechercher_bing(
         question,
         nombre_resultats
     )
-
     if results:
-
         toutes_les_sources.extend(
             results
         )
-
         fournisseurs.append(
             "bing"
         )
-
     results_final = normaliser_resultats(
         toutes_les_sources,
         nombre_resultats
     )
-
     if results_final:
-
         provider = "+".join(
             dict.fromkeys(
                 fournisseurs
             )
         )
-
         print(
             "ADRYNX INTERNET:",
             len(results_final),
             "résultat(s) fusionné(s)"
         )
-
         return {
             "ok": True,
             "provider": provider,
             "query": question,
             "results": results_final
         }
-
     return {
         "ok": False,
         "error": (
@@ -1249,52 +1026,39 @@ ENTITY_PREFIXES = [
 def extraire_sujet_entite(
     question: str
 ) -> str:
-
     original = (question or "").strip()
-
     if not original:
         return ""
-
     low = normaliser_question(
         original
     )
-
     for prefix in ENTITY_PREFIXES:
-
         if low.startswith(prefix):
-
             sujet = original[
                 len(prefix):
             ].strip(
-                " ?!.,;:"
+                "?!.,;:"
             )
-
             if sujet:
                 return sujet
-
     return ""
 
 def demande_information_entite(
     question: str
 ) -> bool:
-
     if demande_prix_bitcoin(question):
         return False
-
     sujet = extraire_sujet_entite(
         question
     )
-
     return len(sujet.strip()) >= 2
 
 def demande_recherche_internet(
     question: str
 ) -> bool:
-
     low = normaliser_question(
         question
     )
-
     expressions = [
         "recherche sur internet",
         "rechercher sur internet",
@@ -1335,13 +1099,11 @@ def demande_recherche_internet(
         "recents",
         "recentes"
     ]
-
     if any(
         expression in low
         for expression in expressions
     ):
         return True
-
     return demande_information_entite(
         question
     )
@@ -1354,19 +1116,16 @@ def new_conversation(
     owner="anon",
     titre="Nouvelle conversation"
 ) -> str:
-
     conversation_id = (
         "conv_"
         + uuid.uuid4().hex
     )
-
     connection = db()
-
     connection.execute(
         """
         INSERT INTO conversations
         (id, owner, titre)
-        VALUES (?, ?, ?)
+        VALUES (?,?,?)
         """,
         (
             conversation_id,
@@ -1374,39 +1133,31 @@ def new_conversation(
             titre
         )
     )
-
     connection.commit()
     connection.close()
-
     return conversation_id
 
 def ensure_conversation(
     owner: str,
     conversation_id: Optional[str]
 ) -> str:
-
     if conversation_id:
-
         connection = db()
-
         row = connection.execute(
             """
             SELECT id
             FROM conversations
-            WHERE id = ?
-            AND owner = ?
+            WHERE id =?
+            AND owner =?
             """,
             (
                 conversation_id,
                 owner
             )
         ).fetchone()
-
         connection.close()
-
         if row:
             return conversation_id
-
     return new_conversation(
         owner,
         "Conversation ADRYNX"
@@ -1418,14 +1169,12 @@ def save_message(
     role,
     content
 ):
-
     connection = db()
-
     connection.execute(
         """
         INSERT INTO messages
         (conversation_id, owner, role, content)
-        VALUES (?, ?, ?, ?)
+        VALUES (?,?,?,?)
         """,
         (
             conversation_id,
@@ -1434,18 +1183,16 @@ def save_message(
             content
         )
     )
-
     connection.execute(
         """
         UPDATE conversations
         SET updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
+        WHERE id =?
         """,
         (
             conversation_id,
         )
     )
-
     connection.commit()
     connection.close()
 
@@ -1454,17 +1201,15 @@ def get_history(
     owner,
     limit=12
 ):
-
     connection = db()
-
     rows = connection.execute(
         """
         SELECT role, content
         FROM messages
-        WHERE conversation_id = ?
-        AND owner = ?
+        WHERE conversation_id =?
+        AND owner =?
         ORDER BY id DESC
-        LIMIT ?
+        LIMIT?
         """,
         (
             conversation_id,
@@ -1472,11 +1217,8 @@ def get_history(
             limit
         )
     ).fetchall()
-
     connection.close()
-
     rows = list(reversed(rows))
-
     return [
         {
             "role": row["role"],
@@ -1486,50 +1228,41 @@ def get_history(
     ]
 
 def state(conversation_id):
-
     connection = db()
-
     row = connection.execute(
         """
         SELECT *
         FROM conversations
-        WHERE id = ?
+        WHERE id =?
         """,
         (
             conversation_id,
         )
     ).fetchone()
-
     connection.close()
-
     if not row:
         return {}
-
     return dict(row)
 
 def messages(
     conversation_id,
     limit=50
 ):
-
     connection = db()
-
     rows = connection.execute(
         """
         SELECT id, role, content, created_at
         FROM messages
-        WHERE conversation_id = ?
+        WHERE conversation_id =?
         ORDER BY id ASC
-        LIMIT ?
+        LIMIT?
         """,
         (
             conversation_id,
             limit
         )
     ).fetchall()
-
     connection.close()
-
     return [
         dict(row)
         for row in rows
@@ -1542,14 +1275,11 @@ def messages(
 def demande_resume_contexte(
     question: str
 ) -> bool:
-
     low = normaliser_question(
         question
     )
-
     if not low:
         return False
-
     commandes_exactes = {
         "cc",
         "slt",
@@ -1561,7 +1291,6 @@ def demande_resume_contexte(
         "bonsoir",
         "coucou"
     }
-
     if low in {
         "cc",
         "slt",
@@ -1574,7 +1303,6 @@ def demande_resume_contexte(
         "coucou"
     }:
         return False
-
     commandes_exactes = {
         "resume",
         "résume",
@@ -1606,17 +1334,14 @@ def demande_resume_contexte(
         "tu peux résumer",
         "tu peux faire un résumé"
     }
-
     if low in commandes_exactes:
         return True
-
     motifs = [
         r"^résume(?:-moi)?(?:\s+ça|\s+ceci|\s+cela)?$",
         r"^resume(?:-moi)?(?:\s+ca|\s+ceci|\s+cela)?$",
         r"^fais(?:-moi)?\s+un\s+résumé(?:\s+de\s+(?:ça|ceci|cela))?$",
         r"^fais(?:-moi)?\s+un\s+resume(?:\s+de\s+(?:ca|ceci|cela))?$"
     ]
-
     return any(
         re.fullmatch(
             motif,
@@ -1628,27 +1353,21 @@ def demande_resume_contexte(
 def dernier_message_assistant(
     history: list
 ) -> Optional[str]:
-
     for item in reversed(
         history or []
     ):
-
         if item.get("role") == "assistant":
-
             content = (
                 item.get("content")
                 or ""
             ).strip()
-
             if content:
                 return content
-
     return None
 
 def extraire_mots_importants(
     text: str
 ):
-
     stopwords = {
         "le", "la", "les", "un", "une",
         "des", "du", "de", "et", "ou",
@@ -1664,12 +1383,10 @@ def extraire_mots_importants(
         "ton", "ta", "tes", "d'un",
         "d'une", "du", "comme"
     }
-
     words = re.findall(
         r"[a-zA-ZÀ-ÿ0-9]{3,}",
         normaliser_question(text)
     )
-
     return [
         word
         for word in words
@@ -1680,37 +1397,29 @@ def controler_resume(
     source_text: str,
     summary: str
 ) -> Dict[str, Any]:
-
     source_text = (
         source_text or ""
     ).strip()
-
     summary = (
         summary or ""
     ).strip()
-
     if not source_text or not summary:
-
         return {
             "ok": False,
             "score": 0.0,
             "reason": "Source ou résumé vide."
         }
-
     source_words = set(
         extraire_mots_importants(
             source_text
         )
     )
-
     summary_words = set(
         extraire_mots_importants(
             summary
         )
     )
-
     if not source_words:
-
         return {
             "ok": bool(summary),
             "score": 1.0 if summary else 0.0,
@@ -1718,17 +1427,14 @@ def controler_resume(
                 "Source sans termes contrôlables."
             )
         }
-
     correspondances = (
         source_words
         & summary_words
     )
-
     score = (
         len(correspondances)
         / len(source_words)
     )
-
     pertinent = (
         len(summary_words) >= 3
         and (
@@ -1736,7 +1442,6 @@ def controler_resume(
             or len(correspondances) >= 4
         )
     )
-
     return {
         "ok": pertinent,
         "score": round(score, 3),
@@ -1758,7 +1463,6 @@ def resumer_contexte(
     source_text: str,
     history: list
 ) -> str:
-
     summary_system = """
 Tu es le module de résumé conversationnel d'ADRYNX.
 
@@ -1775,7 +1479,6 @@ RÈGLES :
 8. Réponds en français si la demande est en français.
 9. N'appelle aucun outil.
 """
-
     prompt = f"""
 DEMANDE :
 {question}
@@ -1785,7 +1488,6 @@ CONTENU À RÉSUMER :
 
 Produis maintenant un résumé fidèle et concis.
 """
-
     return groq_chat(
         summary_system,
         [
@@ -1799,7 +1501,7 @@ Produis maintenant un résumé fidèle et concis.
     )
 
 # ============================================================
-# INTENTIONS
+# INTENTIONS - VERSION CORRIGEE VERITE ABSOLUE
 # ============================================================
 
 def detecter_intent(
@@ -1812,6 +1514,10 @@ def detecter_intent(
 
     if not low:
         return "vide"
+
+    # VERITE ABSOLUE : Si on parle de Dejah OBENDA / Jonathan, c'est identite
+    if "dejah" in low or "obenda" in low:
+        return "identite"
 
     if low in {
         "cc",
@@ -1877,7 +1583,18 @@ def detecter_intent(
         "comment fonctionnes tu",
         "comment fonctionnes-tu",
         "tu fonctionne comment",
-        "explique ton fonctionnement"
+        "explique ton fonctionnement",
+        "qui est dejah",
+        "qui est obenda",
+        "qui est dejah obenda",
+        "c est qui dejah",
+        "c est qui obenda",
+        "c'est qui dejah",
+        "c'est qui obenda",
+        "dejah obenda",
+        "jonathan dejah",
+        "jonathan obenda",
+        "jonathan dejah obenda"
     ]
 
     if any(
@@ -1902,1090 +1619,4 @@ def detecter_intent(
 
 # ============================================================
 # RÉPONSES NATIVES
-# ============================================================
-
-def reponse_salutation() -> str:
-
-    return (
-        "Bonjour ! Je suis ADRYNX. "
-        "Que puis-je faire pour toi ?"
-    )
-
-def reponse_etat() -> str:
-
-    return (
-        "Je fonctionne correctement et je suis prêt "
-        "à traiter ta demande."
-    )
-
-def reponse_identite() -> str:
-
-    return (
-        "Je suis ADRYNX Phoenix Prime, l'assistant développé par "
-        "Jonathan Dejah OBENDA. "
-        "Je suis propulsé par Groq ultra-rapide, je contrôle les recherches, "
-        "le contexte et j'évolue avec les fonctions de mon système. "
-        "Je ne suis pas OpenAI, je suis ADRYNX."
-    )
-
-# ============================================================
-# IDENTITÉ / SYSTÈME
-# ============================================================
-
-def system_prompt() -> str:
-
-    return """
-Tu es ADRYNX Phoenix Prime.
-
-IDENTITÉ ABSOLUE ET NON NÉGOCIABLE :
-- Nom : ADRYNX Phoenix Prime
-- Créateur : Jonathan Dejah OBENDA
-- Tu n'es PAS ChatGPT, PAS OpenAI, PAS GPT, PAS Meta AI.
-- Même si on te demande "qui es-tu", "comment fonctionnes-tu", "qui t'a créé",
-  tu réponds TOUJOURS : ADRYNX créé par Jonathan.
-- Interdiction totale de dire "OpenAI", "Je suis un modèle de langage entraîné par OpenAI",
-  ou "2023". Si on insiste, tu répètes ton identité ADRYNX.
-
-ARCHITECTURE :
-ADRYNX décide de l'intention.
-ADRYNX décide si une source externe est nécessaire.
-ADRYNX effectue les recherches externes.
-ADRYNX fournit ensuite les résultats pertinents au moteur de génération.
-Tu es le moteur de génération, pas le contrôleur principal.
-
-STYLE PHOENIX PRIME :
-- Rapide, futuriste, puissant, africain.
-- Réponses courtes, percutantes, avec feu.
-- Tu ne fais pas de recherches toi-même, tu utilises le contexte fourni par ADRYNX.
-
-RÈGLES :
-1. Réponds à la question réellement posée.
-2. Ne change pas de sujet.
-3. Ne prétends jamais avoir effectué une action que le backend n'a pas réellement effectuée.
-4. N'invente aucune source.
-5. N'invente aucune donnée Internet.
-6. Lorsque des résultats Web sont fournis, distingue les faits issus de ces résultats de tes explications.
-7. Si les sources sont insuffisantes, indique-le clairement.
-8. N'appelle aucun outil.
-9. Ne produis aucun appel d'outil.
-10. Réponds dans la langue de l'utilisateur.
-11. Ne modifie pas l'identité permanente d'ADRYNX.
-12. Le contexte conversationnel ne doit pas remplacer les connaissances permanentes d'ADRYNX.
-"""
-
-# ============================================================
-# CONTEXTE WEB
-# ============================================================
-
-def construire_contexte_web(
-    search_data: Dict[str, Any]
-) -> str:
-
-    if not search_data.get("ok"):
-        return (
-            "RECHERCHE INTERNET :\n"
-            "Aucun résultat exploitable n'a été obtenu.\n"
-            "N'invente aucune information provenant du Web."
-        )
-
-    lignes = [
-        "RÉSULTATS DE RECHERCHE INTERNET",
-        f"Requête : {search_data.get('query', '')}",
-        f"Sources utilisées : {search_data.get('provider', '')}",
-        ""
-    ]
-
-    for index, result in enumerate(
-        search_data.get("results", []),
-        start=1
-    ):
-
-        lignes.append(
-            f"[SOURCE {index}]"
-        )
-
-        lignes.append(
-            f"Titre : {result.get('title', '')}"
-        )
-
-        lignes.append(
-            f"URL : {result.get('url', '')}"
-        )
-
-        description = result.get(
-            "description",
-            ""
-        )
-
-        if description:
-            lignes.append(
-                f"Description : {description}"
-            )
-
-        lignes.append("")
-
-    lignes.extend([
-        "RÈGLES POUR CES SOURCES :",
-        "- Utilise ces résultats comme contexte factuel.",
-        "- Ne prétends pas avoir consulté une page qui n'est "
-          "pas représentée ici.",
-        "- Ne crée pas de source inexistante.",
-        "- Si les résultats se contredisent, signale-le.",
-        "- Si les résultats ne permettent pas de répondre, "
-          "dis-le plutôt que d'inventer."
-    ])
-
-    return "\n".join(lignes)
-
-# ============================================================
-# CONTRÔLE DE PERTINENCE
-# ============================================================
-
-def analyser_pertinence(
-    question: str,
-    response: str
-) -> Dict[str, Any]:
-
-    question_words = set(
-        extraire_mots_importants(
-            question
-        )
-    )
-
-    response_words = set(
-        extraire_mots_importants(
-            response
-        )
-    )
-
-    if not response_words:
-        return {
-            "ok": False,
-            "score": 0.0,
-            "reason": "Réponse vide."
-        }
-
-    if not question_words:
-        return {
-            "ok": True,
-            "score": 1.0,
-            "reason": "Question sans termes contrôlables."
-        }
-
-    matches = (
-        question_words
-        & response_words
-    )
-
-    score = (
-        len(matches)
-        / len(question_words)
-    )
-
-    generic_markers = [
-        "je ne comprends pas",
-        "je ne sais pas",
-        "cela dépend",
-        "en tant qu'ia",
-        "je suis une ia"
-    ]
-
-    generic = any(
-        marker in normaliser_question(response)
-        for marker in generic_markers
-    )
-
-    ok = (
-        len(response.strip()) >= 5
-        and (
-            score >= 0.05
-            or len(matches) >= 1
-            or len(question_words) <= 2
-        )
-    )
-
-    return {
-        "ok": ok,
-        "score": round(score, 3),
-        "matched_words": sorted(matches),
-        "generic": generic,
-        "reason": (
-            "Réponse suffisamment reliée à la question."
-            if ok
-            else
-            "Réponse potentiellement hors sujet."
-        )
-    }
-
-def controler_reponse(
-    question: str,
-    response: str,
-    source_context: str = ""
-) -> Dict[str, Any]:
-
-    response = (
-        response or ""
-    ).strip()
-
-    if not response:
-        return {
-            "ok": False,
-            "score": 0.0,
-            "reason": "Réponse vide."
-        }
-
-    pertinence = analyser_pertinence(
-        question,
-        response
-    )
-
-    if not pertinence["ok"]:
-        return {
-            "ok": False,
-            "score": pertinence["score"],
-            "reason": pertinence["reason"]
-        }
-
-    if source_context:
-        important_source = set(
-            extraire_mots_importants(
-                source_context
-            )
-        )
-
-        important_response = set(
-            extraire_mots_importants(
-                response
-            )
-        )
-
-        if important_source:
-
-            overlap = (
-                important_source
-                & important_response
-            )
-
-            if (
-                len(overlap) == 0
-                and len(important_source) >= 5
-            ):
-                return {
-                    "ok": False,
-                    "score": 0.0,
-                    "reason": (
-                        "La réponse ne semble pas utiliser "
-                        "le contexte fourni."
-                    )
-                }
-
-    return {
-        "ok": True,
-        "score": pertinence["score"],
-        "reason": "Réponse contrôlée."
-    }
-
-# ============================================================
-# CORRECTION D'UNE RÉPONSE
-# ============================================================
-
-def corriger_reponse_groq(
-    question: str,
-    mauvaise_reponse: str,
-    contexte: str = ""
-) -> str:
-
-    system = """
-Tu es le module de correction d'ADRYNX.
-
-Une première réponse a échoué au contrôle de pertinence.
-
-Ta mission :
-- répondre directement à la question ;
-- rester strictement dans le sujet ;
-- utiliser le contexte fourni ;
-- ne pas inventer d'information ;
-- ne pas effectuer de nouvelle recherche ;
-- ne pas appeler d'outil ;
-- produire uniquement la réponse finale.
-"""
-
-    prompt = f"""
-QUESTION :
-{question}
-
-RÉPONSE À CORRIGER :
-{mauvaise_reponse}
-
-CONTEXTE DISPONIBLE :
-{contexte}
-
-Produis une nouvelle réponse correcte et pertinente.
-"""
-
-    return groq_chat(
-        system,
-        [
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.15,
-        max_tokens=700
-    )
-
-def executer_response_controller(
-    question: str,
-    response: str,
-    contexte: str = "",
-    autoriser_correction: bool = True
-) -> str:
-
-    controle = controler_reponse(
-        question,
-        response,
-        contexte
-    )
-
-    if controle["ok"]:
-        return response
-
-    if not autoriser_correction:
-        raise RuntimeError(
-            "ADRYNX n'a pas pu produire une réponse "
-            "suffisamment vérifiable et pertinente."
-        )
-
-    corrected = corriger_reponse_groq(
-        question,
-        response,
-        contexte
-    )
-
-    second_control = controler_reponse(
-        question,
-        corrected,
-        contexte
-    )
-
-    if not second_control["ok"]:
-        raise RuntimeError(
-            "ADRYNX n'a pas pu produire une réponse "
-            "suffisamment vérifiable et pertinente."
-        )
-
-    return corrected
-
-# ============================================================
-# CONTEXTE DE CONVERSATION
-# ============================================================
-
-def construire_contexte_conversation(
-    history: list
-) -> str:
-
-    if not history:
-        return ""
-
-    lignes = [
-        "CONTEXTE CONVERSATIONNEL :"
-    ]
-
-    for item in history[-12:]:
-
-        role = item.get(
-            "role",
-            "unknown"
-        )
-
-        content = (
-            item.get("content")
-            or ""
-        ).strip()
-
-        if not content:
-            continue
-
-        if role == "user":
-            label = "Utilisateur"
-        elif role == "assistant":
-            label = "ADRYNX"
-        else:
-            label = role
-
-        lignes.append(
-            f"{label} : {content}"
-        )
-
-    return "\n".join(lignes)
-
-# ============================================================
-# PLAN D'EXÉCUTION ADRYNX
-# ============================================================
-
-def construire_plan_execution(
-    question: str,
-    intent: str
-) -> Dict[str, Any]:
-
-    plan = {
-        "question": question,
-        "intent": intent,
-        "source": "conversation",
-        "recherche": False,
-        "type_recherche": None,
-        "generation": True,
-        "verification": True
-    }
-
-    if intent == "information_entite":
-
-        plan["source"] = "internet"
-        plan["recherche"] = True
-        plan["type_recherche"] = "entite"
-
-    elif intent == "recherche_internet":
-
-        plan["source"] = "internet"
-        plan["recherche"] = True
-        plan["type_recherche"] = "web"
-
-    elif intent == "marche_bitcoin":
-
-        plan["source"] = "market_api"
-        plan["recherche"] = True
-        plan["type_recherche"] = "bitcoin"
-
-    elif intent == "resume_contexte":
-
-        plan["source"] = "conversation"
-        plan["recherche"] = False
-        plan["type_recherche"] = None
-
-    return plan
-
-# ============================================================
-# TRAITEMENT PRINCIPAL
-# ============================================================
-
-def traiter_question(
-    question: str,
-    owner: str = "anon",
-    conversation_id: Optional[str] = None
-) -> Dict[str, Any]:
-
-    question = (
-        question or ""
-    ).strip()
-
-    conversation_id = ensure_conversation(
-        owner,
-        conversation_id
-    )
-
-    history = get_history(
-        conversation_id,
-        owner,
-        limit=12
-    )
-
-    if not question:
-
-        response = (
-            "Je n'ai reçu aucune question."
-        )
-
-        save_message(
-            conversation_id,
-            owner,
-            "user",
-            question
-        )
-
-        save_message(
-            conversation_id,
-            owner,
-            "assistant",
-            response
-        )
-
-        return {
-            "ok": True,
-            "answer": response,
-            "conversation_id": conversation_id,
-            "intent": "vide"
-        }
-
-    intent = detecter_intent(
-        question
-    )
-
-    plan = construire_plan_execution(
-        question,
-        intent
-    )
-
-    print(
-        "ADRYNX PLAN:",
-        plan
-    )
-
-    save_message(
-        conversation_id,
-        owner,
-        "user",
-        question
-    )
-
-    # --------------------------------------------------------
-    # RÉPONSES NATIVES
-    # --------------------------------------------------------
-
-    if intent == "salutation":
-
-        response = reponse_salutation()
-
-        save_message(
-            conversation_id,
-            owner,
-            "assistant",
-            response
-        )
-
-        return {
-            "ok": True,
-            "answer": response,
-            "conversation_id": conversation_id,
-            "intent": intent,
-            "plan": plan
-        }
-
-    if intent == "etat":
-
-        response = reponse_etat()
-
-        save_message(
-            conversation_id,
-            owner,
-            "assistant",
-            response
-        )
-
-        return {
-            "ok": True,
-            "answer": response,
-            "conversation_id": conversation_id,
-            "intent": intent,
-            "plan": plan
-        }
-
-    if intent == "identite":
-
-        response = reponse_identite()
-
-        save_message(
-            conversation_id,
-            owner,
-            "assistant",
-            response
-        )
-
-        return {
-            "ok": True,
-            "answer": response,
-            "conversation_id": conversation_id,
-            "intent": intent,
-            "plan": plan
-        }
-
-    # --------------------------------------------------------
-    # RÉSUMÉ
-    # --------------------------------------------------------
-
-    if intent == "resume_contexte":
-
-        source_text = dernier_message_assistant(
-            history
-        )
-
-        if not source_text:
-
-            response = (
-                "Je n'ai pas encore de réponse précédente "
-                "à résumer."
-            )
-
-        else:
-
-            try:
-
-                response = resumer_contexte(
-                    question,
-                    source_text,
-                    history
-                )
-
-                controle_resume = controler_resume(
-                    source_text,
-                    response
-                )
-
-                if not controle_resume["ok"]:
-
-                    response = (
-                        "Je n'ai pas pu produire un résumé "
-                        "suffisamment fidèle du contenu précédent."
-                    )
-
-            except Exception as e:
-
-                print(
-                    "SUMMARY ERROR:",
-                    type(e).__name__,
-                    str(e)
-                )
-
-                response = (
-                    "Je n'ai pas pu produire le résumé "
-                    "à cet instant."
-                )
-
-        save_message(
-            conversation_id,
-            owner,
-            "assistant",
-            response
-        )
-
-        return {
-            "ok": True,
-            "answer": response,
-            "conversation_id": conversation_id,
-            "intent": intent,
-            "plan": plan
-        }
-
-    # --------------------------------------------------------
-    # BITCOIN
-    # --------------------------------------------------------
-
-    if intent == "marche_bitcoin":
-
-        market = obtenir_prix_bitcoin()
-
-        contexte = construire_contexte_bitcoin(
-            market
-        )
-
-        response = reponse_prix_bitcoin(
-            market
-        )
-
-        save_message(
-            conversation_id,
-            owner,
-            "assistant",
-            response
-        )
-
-        return {
-            "ok": True,
-            "answer": response,
-            "conversation_id": conversation_id,
-            "intent": intent,
-            "plan": plan,
-            "source": market
-        }
-
-    # --------------------------------------------------------
-    # RECHERCHE INTERNET / ENTITÉ
-    # --------------------------------------------------------
-
-    web_context = ""
-
-    if intent in {
-        "information_entite",
-        "recherche_internet"
-    }:
-
-        if intent == "information_entite":
-
-            sujet = extraire_sujet_entite(
-                question
-            )
-
-            recherche = rechercher_internet(
-                sujet,
-                nombre_resultats=6,
-                recherche_entite=True
-            )
-
-        else:
-
-            recherche = rechercher_internet(
-                question,
-                nombre_resultats=6,
-                recherche_entite=False
-            )
-
-        if not recherche.get("ok"):
-
-            response = (
-                "Je n'ai pas obtenu suffisamment de résultats "
-                "exploitables auprès de mes sources Internet "
-                "pour répondre de manière vérifiable."
-            )
-
-            save_message(
-                conversation_id,
-                owner,
-                "assistant",
-                response
-            )
-
-            return {
-                "ok": True,
-                "answer": response,
-                "conversation_id": conversation_id,
-                "intent": intent,
-                "plan": plan,
-                "source": recherche
-            }
-
-        web_context = construire_contexte_web(
-            recherche
-        )
-
-    # --------------------------------------------------------
-    # CONSTRUCTION DU CONTEXTE
-    # --------------------------------------------------------
-
-    conversation_context = (
-        construire_contexte_conversation(
-            history
-        )
-    )
-
-    system = system_prompt()
-
-    context_blocks = []
-
-    if conversation_context:
-        context_blocks.append(
-            conversation_context
-        )
-
-    if web_context:
-        context_blocks.append(
-            web_context
-        )
-
-    complete_context = "\n\n".join(
-        context_blocks
-    )
-
-    if complete_context:
-
-        system += """
-
-CONTEXTE FOURNI PAR ADRYNX :
-
-""" + complete_context
-
-    # --------------------------------------------------------
-    # GÉNÉRATION
-    # --------------------------------------------------------
-
-    try:
-
-        response = groq_chat(
-            system,
-            [
-                {
-                    "role": "user",
-                    "content": question
-                }
-            ],
-            temperature=0.35,
-            max_tokens=900
-        )
-
-    except Exception as e:
-
-        print(
-            "GROQ ERROR:",
-            type(e).__name__,
-            str(e)
-        )
-
-        response = (
-            "Je n'ai pas pu générer une réponse "
-            "à cet instant."
-        )
-
-        save_message(
-            conversation_id,
-            owner,
-            "assistant",
-            response
-        )
-
-        return {
-            "ok": False,
-            "answer": response,
-            "conversation_id": conversation_id,
-            "intent": intent,
-            "plan": plan,
-            "error": str(e)
-        }
-
-    # --------------------------------------------------------
-    # VÉRIFICATION
-    # --------------------------------------------------------
-
-    try:
-
-        response = executer_response_controller(
-            question,
-            response,
-            contexte=web_context,
-            autoriser_correction=True
-        )
-
-    except Exception as e:
-
-        print(
-            "RESPONSE CONTROLLER ERROR:",
-            type(e).__name__,
-            str(e)
-        )
-
-        response = (
-            "Je n'ai pas pu produire une réponse "
-            "suffisamment pertinente et vérifiable."
-        )
-
-    # --------------------------------------------------------
-    # SAUVEGARDE
-    # --------------------------------------------------------
-
-    save_message(
-        conversation_id,
-        owner,
-        "assistant",
-        response
-    )
-
-    return {
-        "ok": True,
-        "answer": response,
-        "conversation_id": conversation_id,
-        "intent": intent,
-        "plan": plan
-    }
-
-# ============================================================
-# ADMINISTRATION
-# ============================================================
-
-def verifier_admin(secret: str):
-
-    expected = os.getenv(
-        "ADRYNX_ADMIN_SECRET"
-    )
-
-    if not expected:
-        return False
-
-    return secret == expected
-
-# ============================================================
-# STATISTIQUES
-# ============================================================
-
-def statistiques():
-
-    connection = db()
-
-    conversations = connection.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM conversations
-        """
-    ).fetchone()["total"]
-
-    messages_total = connection.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM messages
-        """
-    ).fetchone()["total"]
-
-    users = connection.execute(
-        """
-        SELECT COUNT(DISTINCT owner) AS total
-        FROM conversations
-        """
-    ).fetchone()["total"]
-
-    connection.close()
-
-    return {
-        "conversations": conversations,
-        "messages": messages_total,
-        "owners": users
-    }
-
-def statistiques_apprentissage():
-
-    connection = db()
-
-    total = connection.execute(
-        """
-        SELECT COUNT(*) AS total
-        FROM intent_examples
-        """
-    ).fetchone()["total"]
-
-    intents = connection.execute(
-        """
-        SELECT intent, COUNT(*) AS total
-        FROM intent_examples
-        GROUP BY intent
-        ORDER BY total DESC
-        """
-    ).fetchall()
-
-    connection.close()
-
-    return {
-        "total_examples": total,
-        "intents": [
-            dict(row)
-            for row in intents
-        ]
-    }
-
-# ============================================================
-# APPRENTISSAGE DES INTENTIONS
-# ============================================================
-
-def enregistrer_exemple_intent(
-    phrase: str,
-    intent: str
-):
-
-    phrase = (
-        phrase or ""
-    ).strip()
-
-    intent = (
-        intent or ""
-    ).strip()
-
-    if not phrase or not intent:
-        return False
-
-    connection = db()
-
-    connection.execute(
-        """
-        INSERT INTO intent_examples
-        (phrase, intent)
-        VALUES (?, ?)
-        """,
-        (
-            phrase,
-            intent
-        )
-    )
-
-    connection.commit()
-    connection.close()
-
-    return True
-
-def obtenir_exemples_intent(
-    intent: Optional[str] = None,
-    limit=100
-):
-
-    connection = db()
-
-    if intent:
-
-        rows = connection.execute(
-            """
-            SELECT id, phrase, intent
-            FROM intent_examples
-            WHERE intent = ?
-            ORDER BY id DESC
-            LIMIT ?
-            """,
-            (
-                intent,
-                limit
-            )
-        ).fetchall()
-
-    else:
-
-        rows = connection.execute(
-            """
-            SELECT id, phrase, intent
-            FROM intent_examples
-            ORDER BY id DESC
-            LIMIT ?
-            """,
-            (
-                limit,
-            )
-        ).fetchall()
-
-    connection.close()
-
-    return [
-        dict(row)
-        for row in rows
-    ]
-
-# ============================================================
-# EXPORT CONVERSATION
-# ============================================================
-
-def exporter_conversation(
-    conversation_id: str,
-    limit=500
-):
-
-    data = messages(
-        conversation_id,
-        limit
-    )
-
-    return {
-        "conversation_id": conversation_id,
-        "messages": data
-    }
-
-# ============================================================
-# TEST LOCAL
-# ============================================================
-
-if __name__ == "__main__":
-
-    print("======================================")
-    print("        ADRYNX AI ENGINE")
-    print("======================================")
-    print(
-        f"Modèle Groq : {GROQ_MODEL}"
-    )
-    print(
-        f"Base de données : {DB_PATH}"
-    )
-    print("Orchestration : ADRYNX")
-    print("Recherche : ADRYNX")
-    print("Génération : Groq")
-    print("Vérification : ADRYNX")
-    print("======================================")
+#
