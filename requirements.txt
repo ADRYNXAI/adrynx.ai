@@ -2,4 +2,5 @@ flask
 flask-cors
 groq
 openai
+requests
 gunicorn
