@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADRYNX Phoenix Prime - L'Intelligence de ton avenir</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
+body{background:#05070a;color:#fff;overflow-x:hidden}
+.hero{height:100vh;background:url('https://i.ibb.co/you-upload-here.jpg') center/cover;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:20px;background-color:#000}
+.hero::before{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.3),rgba(5,7,10,1))}
+.hero *{position:relative;z-index:2}
+.top{ display:flex;justify-content:space-between; font-size:12px; letter-spacing:2px; color:#d4b872}
+.center{ text-align:center; margin-top:10vh}
+.logoA{width:180px;height:180px;margin:0 auto;background:linear-gradient(145deg,#d4af37,#ffed8a);border-radius:30px;display:flex;align-items:center;justify-content:center;font-size:90px;font-weight:900;color:#000;box-shadow:0 0 60px #d4af3744;border:3px solid #ffed8a}
+.h1{font-size:52px;font-weight:900;margin-top:20px;line-height:1}
+.h1 span{background:linear-gradient(90deg,#ff7a00,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.cta{margin-top:30px;display:flex;gap:16px;justify-content:center}
+.btn{padding:16px 32px;border-radius:30px;border:none;font-weight:800;cursor:pointer;font-size:16px}
+.btn-gold{background:linear-gradient(90deg,#d4af37,#ffd700);color:#000}
+.btn-dark{background:#1e1e1e;color:#fff;border:1px solid #333}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;padding:40px;background:#080a0f}
+.card{background:#111319;border:1px solid #222;border-radius:16px;padding:20px}
+.card h3{color:#ff7a00;margin-bottom:8px}
+.price{padding:60px;text-align:center;background:radial-gradient(circle at center,#ff7a0011,#05070a)}
+.priceBox{background:#111319;border:2px solid #d4af37;border-radius:24px;padding:32px;max-width:400px;margin:0 auto}
+</style>
+</head>
+<body>
+
+<div class="hero" style="background-image:url('/mnt/data/image_20261001_234103.webp');">
+  <div class="top"><span>PLUS QU'UNE APP...<br><b>UNE VISION</b></span><span>L'INTELLIGENCE AU SERVICE<br>DE TON AVENIR</span></div>
+  <div class="center">
+    <div class="logoA">A</div>
+    <div class="h1">ADRYNX<br><span>PHOENIX PRIME</span></div>
+    <p style="margin-top:12px;color:#aaa">ALL IN ONE - Apprendre • Créer • Réussir</p>
+    <div class="cta">
+      <a href="/"><button class="btn btn-gold">🚀 Lancer ADRYNX</button></a>
+      <button class="btn btn-dark" onclick="document.getElementById('price').scrollIntoView()">Voir l'offre 1000F</button>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:12px"><span>🇨🇬 DU CONGO POUR LE MONDE</span><span>⭐ APPLICATION DE L'ANNÉE</span></div>
+</div>
+
+<div class="features">
+  <div class="card"><h3>📚 Apprendre</h3><p>Envoie photo de ton cours, ADRYNX t'explique comme un vrai prof. Maths, Physique, SVT, Histoire, Anglais.</p></div>
+  <div class="card"><h3>🎨 Créer</h3><p>Génère des schémas, des images, des exposés. Fini les heures sur Google.</p></div>
+  <div class="card"><h3>🏆 Réussir</h3><p>Deviens le meilleur. Résumés, exercices corrigés, préparation BAC/BEPC.</p></div>
+  <div class="card"><h3>🔥 Phoenix Prime</h3><p>IA 100% congolaise, créée par Jonathan Obenda. Pas ChatGPT. Plus rapide, offline, téléchargeable.</p></div>
+</div>
+
+<div class="price" id="price">
+  <h2 style="font-size:36px;margin-bottom:20px">Passe en PREMIUM</h2>
+  <div class="priceBox">
+    <h3>ADRYNX PREMIUM - 1000F</h3>
+    <p style="margin:16px 0;color:#888">✓ Messages illimités<br>✓ Analyse PDF / Photos de cours<br>✓ Génération d'images<br>✓ Mode vocal<br>✓ Support prioritaire</p>
+    <p style="font-size:28px;font-weight:900;color:#d4af37">1000F / mois</p>
+    <a href="https://wa.me/242XXXXXXXX?text=Je veux ADRYNX PREMIUM 1000F"><button class="btn btn-gold" style="width:100%;margin-top:16px">Payer via MTN MoMo / Airtel</button></a>
+    <p style="font-size:11px;color:#555;margin-top:10px">Après paiement, tu reçois le code d'activation</p>
+  </div>
+</div>
+
+</body>
+</html>
