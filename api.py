@@ -16,9 +16,15 @@ async def landing():
 async def app_page():
     return FileResponse("index.html")
 
+@app.get("/chat")
+async def chat_redirect():
+    return FileResponse("index.html")
+
 @app.get("/manifest.json")
 async def manifest():
-    return FileResponse("manifest.json")
+    if os.path.exists("manifest.json"):
+        return FileResponse("manifest.json")
+    return JSONResponse({})
 
 @app.get("/health")
 async def health():
@@ -44,7 +50,6 @@ async def gen_image(req: Request):
     try:
         data = await req.json()
         prompt_raw = data.get("prompt","ADRYNX Phoenix Prime")
-        # Nettoie sans accents pour eviter SyntaxError
         prompt = prompt_raw.lower().replace("genere","").replace("une image de","").replace("cree","").strip()
         if not prompt:
             prompt = "ADRYNX Phoenix Prime logo fire"
