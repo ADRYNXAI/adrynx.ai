@@ -1,41 +1,50 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX PREMIUM</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX PREMIUM - 1000F</title>
 <style>
 body{margin:0;background:#080808;color:#fff;font-family:Inter,sans-serif}
-header{background:#111;padding:12px 16px;border-bottom:1px solid #ff7a0022;display:flex;justify-content:space-between}
+header{background:#111;padding:12px 16px;border-bottom:1px solid #ff7a0022;display:flex;justify-content:space-between;align-items:center}
 .chat{max-width:500px;margin:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-.bubble{background:#1e1e1e;padding:14px 16px;border-radius:18px 18px 18px 4px;font-size:14px}
+.bubble{background:#1e1e1e;padding:14px 16px;border-radius:18px 18px 18px 4px;font-size:14px;line-height:1.4}
 .bubble.orange{background:#ff7a00;align-self:flex-end;border-radius:18px 18px 4px 18px}
 .card{background:#161616;border:1px solid #222;border-radius:16px;padding:16px}
-.btn{background:#ff7a00;border:none;color:#fff;padding:14px 20px;border-radius:24px;font-weight:800;width:100%;cursor:pointer;font-size:15px}
+.btn{background:#ff7a00;border:none;color:#fff;padding:14px 20px;border-radius:24px;font-weight:800;width:100%;cursor:pointer;font-size:15px;transition:0.2s}
+.btn:active{transform:scale(0.97)}
 input{width:100%;background:#1e1e1e;border:1px solid #333;color:#fff;padding:14px 16px;border-radius:24px;margin:6px 0;outline:none;box-sizing:border-box}
-.mtn{background:#ffcc00;color:#000;padding:12px;border-radius:12px;text-align:center;font-weight:900;font-size:18px;margin:10px 0}
+input:focus{border-color:#ff7a00}
+.mtn{background:#ffcc00;color:#000;padding:12px;border-radius:12px;text-align:center;font-weight:900;font-size:18px;margin:10px 0;border:2px dashed #000}
+.wa{background:#25D366;color:#fff;padding:12px;border-radius:24px;text-align:center;font-weight:800;display:block;text-decoration:none;margin-top:10px}
+.small{font-size:11px;color:#888;text-align:center}
 </style>
 </head><body>
-<header><b>🔥 ADRYNX</b><span style="font-size:12px;background:#222;padding:4px 8px;border-radius:12px">Paiement Sécurisé</span></header>
+<header><b>🔥 ADRYNX</b><span style="font-size:11px;background:#222;padding:5px 10px;border-radius:12px">Paiement Sécurisé 🇨🇬</span></header>
 <div class="chat">
 <div class="bubble">Salut ! Tu veux passer Premium ADRYNX ? 🚀</div>
 <div class="bubble orange">Oui combien ?</div>
-<div class="bubble">Seulement <b>1000F / semaine</b> - Images HD illimitées + Chat illimité sans attente. Tu payes sur mon MTN MoMo direct.</div>
+<div class="bubble">Seulement <b>1000F / semaine</b> - Images HD illimitées + Chat illimité sans attente + Tous les cerveaux (Étudiant, Vendeur, Codeur).<br><br>🎁 <b>Gratuit:</b> 25 msgs/jour<br>💎 <b>Premium:</b> TOUT illimité</div>
 
 <div class="card">
-<div class="mtn">📱 MTN MoMo: 061174945<br><small style="font-size:12px">Nom: OBENDA JONATHAN</small></div>
-<p style="font-size:13px;color:#aaa">1. Va sur MTN MoMo <b>*105#</b><br>2. Envoie 1000F au 061174945<br>3. Copie la référence + ton numéro ci-dessous</p>
-<input id="tel" placeholder="Ton numéro MTN (ex: 06xxxxxxx)">
-<input id="ref" placeholder="Référence MoMo (ex: PP1234...)">
+<div class="mtn">📱 MTN MoMo / Airtel: 061174945<br><small style="font-size:12px">Nom: OBENDA JONATHAN DEJAH</small></div>
+<p style="font-size:13px;color:#aaa">1. Compose <b>*105#</b> MTN ou Airtel Money<br>2. Envoie 1000F au <b>061174945</b><br>3. Copie la référence ci-dessous</p>
+<input id="tel" placeholder="Ton numéro (ex: 06 117 49 45)">
+<input id="ref" placeholder="Référence MoMo (ex: PP1234.C1234...)">
 <input type="hidden" id="uid">
-<button class="btn" onclick="send()">✅ J'AI PAYÉ 1000F - ACTIVER PREMIUM</button>
+<button class="btn" onclick="send()">✅ J'AI PAYÉ 1000F - ACTIVER MAINTENANT</button>
 <div id="msg" style="margin-top:10px;font-size:13px;text-align:center"></div>
+<a class="wa" href="https://wa.me/242061174945?text=Salut%20Jonathan%20j'ai%20pay%C3%A9%20ADRYNX%20Premium%201000F%20-%20ID:" target="_blank" id="waLink">💬 Envoyer preuve sur WhatsApp</a>
+<div class="small" style="margin-top:10px">Après paiement, validation en <b style="color:#00c853">moins de 5 min</b> dans l'admin</div>
 </div>
-
-<div class="bubble" style="font-size:12px;color:#888">Après ton paiement *105#, je valide en moins de 5min dans mon admin. Tu seras notifié.</div>
+<div class="bubble" style="font-size:12px;color:#666;text-align:center"><a href="/app" style="color:#888">← Retour à ADRYNX</a> | <a href="/" style="color:#888">Accueil</a></div>
 </div>
 <script>
-document.getElementById('uid').value=localStorage.getItem('adrynx_uid')||localStorage.getItem('adrynx_id')||'user_'+Math.random().toString(36).slice(2,8);
+let uidVal = localStorage.getItem('adrynx_uid')||localStorage.getItem('adrynx_id')||'user_'+Math.random().toString(36).slice(2,8);
+localStorage.setItem('adrynx_uid',uidVal);
+document.getElementById('uid').value=uidVal;
+document.getElementById('waLink').href='https://wa.me/242061174945?text=Salut%20Jonathan%20j%27ai%20pay%C3%A9%20ADRYNX%20Premium%201000F%20-%20ID:'+uidVal;
 function send(){
  let tel=document.getElementById('tel').value.trim(); let ref=document.getElementById('ref').value.trim();
- if(!tel||!ref){alert('Remplis tel + ref MoMo');return;}
- document.getElementById('msg').innerText='Envoi...';
+ if(!tel||!ref){document.getElementById('msg').innerHTML='<span style=color:#ff4444>⚠️ Remplis ton numéro + référence MoMo</span>';return;}
+ document.getElementById('msg').innerHTML='<span style=color:orange>⏳ Envoi en cours...</span>';
  fetch('/api/pay/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel,ref,user_id:document.getElementById('uid').value})})
- .then(r=>r.json()).then(()=>{document.getElementById('msg').innerHTML='<b style="color:#00c853">✅ Reçu ! Attends validation 5min. Ton ID: '+document.getElementById('uid').value+'</b>';});
+ .then(r=>r.json()).then(()=>{document.getElementById('msg').innerHTML='<b style="color:#00c853">✅ Reçu ! ID: '+document.getElementById('uid').value+'<br>Attends 5min, puis va sur /app - Tu seras Premium auto.</b>'; localStorage.setItem('adrynx_last_pay', Date.now());})
+ .catch(e=>{document.getElementById('msg').innerText='Erreur: '+e.message});
 }
 </script></body></html>
