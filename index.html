@@ -1,8 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Premium</title>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Netflix des IA</title>
 <style>
 body{background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
 header{padding:15px;text-align:center;border-bottom:1px solid #222;background:#111;font-weight:900;color:orange;letter-spacing:1px}
+#modes{display:flex;gap:6px;padding:10px;background:#111;border-bottom:1px solid #222;overflow-x:auto;scrollbar-width:none}
+#modes::-webkit-scrollbar{display:none}
+.modeBtn{padding:8px 14px;border-radius:20px;border:1px solid #333;background:#1e1e1e;color:#fff;font-size:12px;cursor:pointer;white-space:nowrap;transition:0.2s}
+.modeBtn.active{background:#ff7a00;border-color:#ff7a00;font-weight:800;transform:scale(1.05)}
 #chat{flex:1;overflow:auto;padding:15px;display:flex;flex-direction:column;gap:12px}
 .msg{padding:12px 15px;border-radius:14px;max-width:92%;line-height:1.4;word-wrap:break-word}
 .user{align-self:flex-end;background:#ff7a00;color:#fff;border-bottom-right-radius:4px}
@@ -12,16 +16,39 @@ header{padding:15px;text-align:center;border-bottom:1px solid #222;background:#1
 #input{flex:1;padding:14px 18px;border-radius:25px;border:1px solid #333;background:#222;color:#fff;outline:none}
 #sendBtn{padding:14px 22px;background:#ff7a00;border:none;border-radius:25px;color:#fff;font-weight:800;cursor:pointer}
 #sendBtn:disabled{opacity:0.5}
+small{font-size:11px}
 </style>
 </head><body>
-<header>🔥 ADRYNX PHOENIX PRIME - par Jonathan Obenda 🇨🇬</header>
+<header>🔥 ADRYNX - Netflix des IA - 1000F/semaine 🇨🇬</header>
+<div id="modes">
+<button class="modeBtn active" data-mode="general">💬 Général</button>
+<button class="modeBtn" data-mode="etudiant">🎓 Étudiant</button>
+<button class="modeBtn" data-mode="vendeur">💰 Vendeur</button>
+<button class="modeBtn" data-mode="codeur">💻 Codeur</button>
+<button class="modeBtn" data-mode="image">🎨 Image 4K</button>
+</div>
 <div id="chat"></div>
-<div id="bar"><input id="input" placeholder="Demande une image ou pose ta question..."><button id="sendBtn">ENVOYER</button></div>
+<div id="bar"><input id="input" placeholder="Pose ta question ou demande une image..."><button id="sendBtn">ENVOYER</button></div>
 <script>
 const chat=document.getElementById('chat');
 const input=document.getElementById('input');
 const btn=document.getElementById('sendBtn');
 let history=[];
+let currentMode='general';
+// ID unique pour chaque user - toi tu restes admin
+let userId = localStorage.getItem('adrynx_uid');
+if(!userId){ userId = 'user_' + Math.random().toString(36).substring(2,10); localStorage.setItem('adrynx_uid', userId); }
+// Si c'est toi Jonathan, on force l'admin illimité
+if(window.location.search.includes('jonathan')){ userId='jonathan_admin_unlimited'; }
+
+document.querySelectorAll('.modeBtn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.modeBtn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    currentMode=b.dataset.mode;
+    add('bot','✅ Mode <b>'+b.innerText+'</b> activé. Je change de cerveau.');
+  }
+});
 
 function add(role, html){
   let d=document.createElement('div');
@@ -41,11 +68,15 @@ async function send(){
   btn.innerText='...';
   let loading=document.createElement('div');
   loading.className='msg bot';
-  loading.innerText='⚡ ADRYNX génère en Premium...';
+  loading.innerText='⚡ ADRYNX '+currentMode+' réfléchit...';
   chat.appendChild(loading);
   chat.scrollTop=chat.scrollHeight;
   try{
-    let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':'jonathan_admin_unlimited'},body:JSON.stringify({message:q,history:history.slice(-6),isPremium:true})});
+    let r=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-User-Id': userId},
+      body:JSON.stringify({message:q,history:history.slice(-6),isPremium:userId==='jonathan_admin_unlimited',mode:currentMode})
+    });
     let data=await r.json();
     loading.remove();
     add('bot', data.reply);
@@ -60,6 +91,6 @@ async function send(){
 }
 btn.onclick=send;
 input.onkeydown=e=>{if(e.key==='Enter')send()};
-add('bot','Salut Jonathan 👋 Je suis ADRYNX Phoenix Prime. Je génère des images en 4K instantané et j’explique tous tes cours. Tape : <br><b>génère image Brazzaville futuriste</b>');
+add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b>, créée par Jonathan Dejah OBENDA.<br><br>🎁 <b>Gratuit :</b> 25 messages/jour + 3 images HD<br>💎 <b>Premium 1000F/semaine :</b> TOUT illimité instantané<br><br>Je suis le Netflix des IA :<br>🎓 Étudiant | 💰 Vendeur | 💻 Codeur | 🎨 Image<br><br>Choisis un mode en haut et tape : <b>génère image Brazzaville futuriste</b>');
 </script>
 </body></html>
