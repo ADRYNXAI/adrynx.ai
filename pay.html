@@ -7,7 +7,7 @@ header{background:#111;padding:12px 16px;border-bottom:1px solid #ff7a0022;displ
 .bubble.orange{background:#ff7a00;align-self:flex-end;border-radius:18px 18px 4px 18px}
 .card{background:#161616;border:1px solid #222;border-radius:16px;padding:16px}
 .btn{background:#ff7a00;border:none;color:#fff;padding:14px 20px;border-radius:24px;font-weight:800;width:100%;cursor:pointer;font-size:15px}
-input{width:100%;background:#1e1e1e;border:1px solid #333;color:#fff;padding:14px 16px;border-radius:24px;margin:6px 0;outline:none}
+input{width:100%;background:#1e1e1e;border:1px solid #333;color:#fff;padding:14px 16px;border-radius:24px;margin:6px 0;outline:none;box-sizing:border-box}
 .mtn{background:#ffcc00;color:#000;padding:12px;border-radius:12px;text-align:center;font-weight:900;font-size:18px;margin:10px 0}
 </style>
 </head><body>
@@ -19,7 +19,7 @@ input{width:100%;background:#1e1e1e;border:1px solid #333;color:#fff;padding:14p
 
 <div class="card">
 <div class="mtn">📱 MTN MoMo: 061174945<br><small style="font-size:12px">Nom: OBENDA JONATHAN</small></div>
-<p style="font-size:13px;color:#aaa">1. Va sur MTN MoMo *150#<br>2. Envoie 1000F au 061174945<br>3. Copie la référence + ton numéro ci-dessous</p>
+<p style="font-size:13px;color:#aaa">1. Va sur MTN MoMo <b>*105#</b><br>2. Envoie 1000F au 061174945<br>3. Copie la référence + ton numéro ci-dessous</p>
 <input id="tel" placeholder="Ton numéro MTN (ex: 06xxxxxxx)">
 <input id="ref" placeholder="Référence MoMo (ex: PP1234...)">
 <input type="hidden" id="uid">
@@ -27,12 +27,12 @@ input{width:100%;background:#1e1e1e;border:1px solid #333;color:#fff;padding:14p
 <div id="msg" style="margin-top:10px;font-size:13px;text-align:center"></div>
 </div>
 
-<div class="bubble" style="font-size:12px;color:#888">Après ton paiement, je valide en moins de 5min dans mon admin. Tu seras notifié.</div>
+<div class="bubble" style="font-size:12px;color:#888">Après ton paiement *105#, je valide en moins de 5min dans mon admin. Tu seras notifié.</div>
 </div>
 <script>
 document.getElementById('uid').value=localStorage.getItem('adrynx_uid')||localStorage.getItem('adrynx_id')||'user_'+Math.random().toString(36).slice(2,8);
 function send(){
- let tel=document.getElementById('tel').value; let ref=document.getElementById('ref').value;
+ let tel=document.getElementById('tel').value.trim(); let ref=document.getElementById('ref').value.trim();
  if(!tel||!ref){alert('Remplis tel + ref MoMo');return;}
  document.getElementById('msg').innerText='Envoi...';
  fetch('/api/pay/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel,ref,user_id:document.getElementById('uid').value})})
