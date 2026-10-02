@@ -1,4 +1,5 @@
-import os, urllib.parse
+import os, urllib.parse, json
+from datetime import datetime
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -6,6 +7,24 @@ from adrynx import PhoenixPrime
 
 app = FastAPI()
 ai = PhoenixPrime()
+
+# --- ADMIN CONFIG ---
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "ADRYNX2026")
+ADMIN_TOKEN = "adrynx_admin_token_jonathan_secret_2026"
+DB_FILE = "adrynx_db.json"
+
+def load_db():
+    if not os.path.exists(DB_FILE):
+        return {"users": [], "transactions": []}
+    try:
+        with open(DB_FILE, "r") as f:
+            return json.load(f)
+    except:
+        return {"users": [], "transactions": []}
+
+def save_db(db):
+    with open(DB_FILE, "w") as f:
+        json.dump(db, f, indent=2)
 
 if os.path.exists('static'):
     app.mount('/static', StaticFiles(directory='static'), name='static')
@@ -23,6 +42,12 @@ async def app_page():
 @app.get('/chat')
 async def chat_redirect():
     return FileResponse('index.html')
+
+@app.get('/admin')
+async def admin_page():
+    if os.path.exists('admin.html'):
+        return FileResponse('admin.html')
+    return JSONResponse({'error':'admin.html manquant'}, status_code=404)
 
 @app.get('/app.js')
 async def serve_appjs():
@@ -50,51 +75,5 @@ async def sw():
 
 @app.get('/health')
 async def health():
-    return {'status':'online','model': os.environ.get('GROQ_MODEL','openai/gpt-oss-120b'), 'creator':'Jonathan Obenda'}
-
-@app.post('/api/chat')
-async def chat_api(req: Request):
-    try:
-        data = await req.json()
-        message = data.get('message','')
-        history = data.get('history',[])
-        image = data.get('image')
-        is_premium = data.get('isPremium', False)
-        if not message and not image:
-            return JSONResponse({'reply':'Dis quelque chose Jonathan'})
-
-        low = message.lower()
-        image_keys = ['genere','génère','image','dessine','photo','cree image','crée image','imagine','affiche']
-        if any(k in low for k in image_keys):
-            clean = low
-            for w in ['genere','génère','moi','une image de','une image','image de','stp','please','tu peux','affiche','genere moi','cree','une photo de','photo de']:
-                clean = clean.replace(w,'')
-            clean = clean.strip() or 'futuristic Brazzaville Congo'
-            enhanced = f'{clean}, hyper-realistic, ultra detailed, 8K, cinematic lighting, photorealistic, vibrant, sharp focus'
-            enc = urllib.parse.quote(enhanced[:350])
-            # HD + FLUX PRO + SEED ALEATOIRE
-            img_url = f'https://image.pollinations.ai/prompt/{enc}?width=1280&height=1280&model=flux-pro&enhance=true&seed={os.urandom(2).hex()}'
-            # WRAPPER QUI CACHE LE WATERMARK POLLINATIONS
-            reply = f"🔥 **Image Premium ADRYNX : {clean}**\n\n<div style='overflow:hidden;border-radius:12px;border:1px solid #ff7a0033;line-height:0'><img src='{img_url}' style='width:100%;display:block;clip-path:inset(0 0 28px 0);margin-bottom:-28px' loading='eager' /></div>\n\n<a href='{img_url}' target='_blank' style='color:#ff7a00;text-decoration:none;font-weight:800'>📥 Télécharger HD</a><br><small>Modèle: ADRYNX Flux Pro - qualité Premium</small>"
-            return {'reply': reply}
-
-        reply = ai.ask(message, history, image_base64=image, is_premium=is_premium)
-        return {'reply': reply}
-    except Exception as e:
-        print(f'API CHAT ERROR: {e}')
-        return {'reply': f'Phoenix Prime est la: {str(e)[:200]}'}
-
-@app.post('/api/image')
-async def gen_image(req: Request):
-    try:
-        data = await req.json()
-        prompt_raw = data.get('prompt','ADRYNX Phoenix Prime')
-        prompt = prompt_raw.lower().replace('genere','').replace('une image de','').replace('cree','').strip()
-        if not prompt:
-            prompt = 'ADRYNX Phoenix Prime logo fire'
-        encoded = urllib.parse.quote(f"{prompt}, hyper-realistic, 8K, photorealistic"[:350])
-        image_url = f'https://image.pollinations.ai/prompt/{encoded}?width=1280&height=1280&model=flux-pro&enhance=true&seed={os.urandom(2).hex()}'
-        return {'image_url': image_url, 'prompt': prompt}
-    except Exception as e:
-        print(f'IMAGE ERROR: {e}')
-        return {'image_url':'https://image.pollinations.ai/prompt/ADRYNX%20Phoenix%20Prime%20logo%20fire?width=1280&height=1280&model=flux-pro&enhance=true','prompt':'ADRYNX'}
+    db = load_db()
+    return {'status':'online','model': os.environ.get
