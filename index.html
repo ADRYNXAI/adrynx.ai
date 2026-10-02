@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ADRYNX Phoenix Prime</title>
+<title>ADRYNX Phoenix Prime - Premium</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui}
 body{background:#0a0a0a;color:#fff;height:100vh;display:flex;overflow:hidden}
@@ -10,99 +10,50 @@ body{background:#0a0a0a;color:#fff;height:100vh;display:flex;overflow:hidden}
 .main{flex:1;display:flex;flex-direction:column;background:#0f0f0f;min-width:0}
 .topbar{padding:14px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center}
 #chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
-.msg{max-width:80%;padding:12px 16px;border-radius:18px;line-height:1.5}
-.user{align-self:flex-end;background:linear-gradient(90deg,#ff7a00,#ff3c00)}
-.ai{align-self:flex-start;background:#1c1c1f;border:1px solid #2a2a2a}
+.msg{max-width:82%;padding:12px 16px;border-radius:18px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.msg img{max-width:100%;border-radius:12px;margin-top:12px;border:1px solid #ff7a0033;display:block}
+.user{align-self:flex-end;background:linear-gradient(90deg,#ff7a00,#ff3c00);color:#fff;border-bottom-right-radius:4px}
+.ai{align-self:flex-start;background:#1c1c1f;border:1px solid #2a2a2a;border-bottom-left-radius:4px}
 .inputArea{padding:12px;background:#111;border-top:1px solid #222}
-.inputBox{display:flex;gap:8px;background:#1e1e1e;border-radius:28px;padding:6px 10px}
-.inputBox input{flex:1;background:transparent;border:none;color:#fff;outline:none;padding:8px}
-.sendBtn{width:42px;height:42px;border-radius:50%;background:linear-gradient(90deg,#ff7a00,#ff3c00);border:none;color:#fff;cursor:pointer}
-.badge{background:gold;color:#000;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:800}
+.inputBox{display:flex;gap:8px;background:#1e1e1e;border-radius:28px;padding:6px 10px;border:1px solid #ff7a0022}
+.inputBox input{flex:1;background:transparent;border:none;color:#fff;outline:none;padding:8px;font-size:15px}
+.sendBtn{width:42px;height:42px;border-radius:50%;background:linear-gradient(90deg,#ff7a00,#ff3c00);border:none;color:#fff;cursor:pointer;font-size:18px}
+.badge{background:linear-gradient(90deg,gold,#ffcc00);color:#000;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:800}
 </style>
 </head>
 <body>
 <div class="sidebar">
   <div style="font-weight:800;font-size:22px">🔥 ADRYNX <small style="display:block;font-size:10px;color:#666;letter-spacing:3px">PHOENIX PRIME</small></div>
-  <button onclick="newChat()" style="margin-top:16px;background:linear-gradient(90deg,#ff7a00,#ff3c00);border:none;color:#fff;padding:12px;border-radius:20px;font-weight:700;cursor:pointer;width:100%">+ New Chat</button>
-  <div style="margin-top:auto;padding-top:12px;border-top:1px solid #222"><div id="planText">Plan Gratuit</div><div id="premiumBadge" class="badge">GRATUIT 0/25</div></div>
+  <button onclick="newChat()" style="margin-top:16px;background:linear-gradient(90deg,#ff7a00,#ff3c00);border:none;color:#fff;padding:12px;border-radius:20px;font-weight:700;width:100%;cursor:pointer">+ New Chat</button>
+  <div style="margin-top:auto;padding-top:12px;border-top:1px solid #222"><div id="planText" style="font-size:12px;color:#888">Plan Gratuit</div><div id="premiumBadge" class="badge" style="margin-top:6px;display:inline-block">GRATUIT 0/25</div></div>
 </div>
 <div class="main">
-  <div class="topbar"><b>🔥 Phoenix Prime AI ● Online</b><a href="/" style="color:#666;text-decoration:none">🏠</a></div>
+  <div class="topbar"><b>🔥 Phoenix Prime AI ● Online</b><span style="font-size:10px;color:#00ff88">Premium Vision</span></div>
   <div id="chat"></div>
   <div class="inputArea">
     <div class="inputBox">
-      <input id="input" placeholder="Parle à ADRYNX..." autocomplete="off">
+      <input id="input" placeholder="Ex: génère image Brazzaville 2124 ultra réaliste..." autocomplete="off">
       <button class="sendBtn" id="sendBtn">➤</button>
     </div>
-    <div style="font-size:10px;color:#555;text-align:center;margin-top:6px">25 msgs gratuits puis Premium 1000F • Jonathan Obenda</div>
+    <div style="font-size:10px;color:#555;text-align:center;margin-top:6px">25 msgs gratuits puis Premium 1000F/semaine • Créé par Jonathan Obenda</div>
   </div>
 </div>
-<input type="file" id="fileInput" hidden accept="image/*,.pdf">
 
 <script>
-// --- ADRYNX APP INLINE V4 ---
-const chat=document.getElementById('chat'),input=document.getElementById('input'),fileInput=document.getElementById('fileInput');
+const chat=document.getElementById('chat'),input=document.getElementById('input');
 let history=JSON.parse(localStorage.getItem('adrynx_h')||'[]');
 let isPremium = localStorage.getItem('adrynx_premium') === '1';
-let pendingImage = null;
 let msgCount = parseInt(localStorage.getItem('adrynx_count')||'0');
-const FREE_LIMIT = 25;
+const FREE_LIMIT=25;
 
 function updateBadge(){
-  const b=document.getElementById('premiumBadge');
-  if(b) b.textContent=isPremium?`PREMIUM 1000F`:`GRATUIT ${msgCount}/${FREE_LIMIT}`;
-  const p=document.getElementById('planText');
-  if(p) p.textContent=isPremium?'Plan Premium 1000F/semaine':'Plan Gratuit';
+  document.getElementById('premiumBadge').textContent=isPremium?`PREMIUM ACTIF 1000F`:`GRATUIT ${msgCount}/${FREE_LIMIT}`;
+  document.getElementById('planText').textContent=isPremium?'Plan Premium Vision':'Plan Gratuit';
 }
-function add(t,w){
-  let d=document.createElement('div');
-  d.className='msg '+w;
-  d.innerHTML=t.replace(/\n/g,'<br>');
-  chat.appendChild(d);
-  chat.scrollTop=chat.scrollHeight;
-  return d;
+function add(html, who){
+  let d=document.createElement('div'); d.className='msg '+who; d.innerHTML=html;
+  chat.appendChild(d); chat.scrollTop=chat.scrollHeight; return d;
 }
 function newChat(){
-  localStorage.removeItem('adrynx_h');
-  history=[];
-  chat.innerHTML='';
-  add("ADRYNX Phoenix Prime 🦅💎<br>Je suis l'IA de Jonathan Obenda. Tape ton cours.","ai");
-}
-async function send(){
- const q=input.value.trim();
- if(!q) return;
- console.log("SEND:",q);
- if(!isPremium && msgCount>=FREE_LIMIT){
-   add(`🔒 Limite ${FREE_LIMIT} atteinte. Passe Premium 1000F/semaine. Tape activatePremium() dans console.`,"ai");
-   return;
- }
- add(q,'user');
- history.push({role:"user",content:q});
- input.value='';
- const loader=add('⚡ Phoenix Prime réfléchit...','ai');
- try{
-  const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history,isPremium})});
-  const data=await r.json();
-  loader.innerHTML=data.reply.replace(/\n/g,'<br>');
-  history.push({role:"assistant",content:data.reply});
-  localStorage.setItem('adrynx_h',JSON.stringify(history.slice(-30)));
-  if(!isPremium){ msgCount++; localStorage.setItem('adrynx_count',msgCount); updateBadge(); }
- }catch(e){
-  console.error(e);
-  loader.innerHTML="Erreur réseau, Render se réveille, réessaie dans 5s 🔥";
- }
-}
-
-window.newChat=newChat;
-window.activatePremium=()=>{localStorage.setItem('adrynx_premium','1');isPremium=true;updateBadge();add("✅ PREMIUM ACTIVÉ!","ai")};
-
-document.getElementById('sendBtn').onclick=send;
-input.addEventListener('keydown',e=>{if(e.key==='Enter')send()});
-
-history.forEach(m=>{ add(m.content,m.role==='user'?'user':'ai'); });
-if(!history.length) add("Je suis ADRYNX Phoenix Prime, créée par Jonathan Obenda 🇨🇬<br>Envoie ton cours, je l'explique.<br><small>25 messages gratuits puis Premium 1000F/semaine</small>","ai");
-updateBadge();
-console.log("ADRYNX INLINE V4 CHARGÉ");
-</script>
-</body>
-</html>
+  localStorage.removeItem('adrynx_h'); history=[]; chat.innerHTML='';
+  add("🦅 
