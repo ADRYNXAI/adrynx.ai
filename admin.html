@@ -24,5 +24,35 @@ input{width:100%;background:#1e1e1e;border:1px solid #333;color:#fff;padding:14p
 <div id="login" class="card">
 <div class="bubble">✅ Mode 👑 Admin activé. Je change de cerveau.</div>
 <br>
-<input id="pwd" type="password" placeholder="Mot de passe ADRYNX2026">
-<div style="margin-top:12px;text
+<input id="pwd" type="password" placeholder="Mot de passe ADRYNX2026" value="ADRYNX2026">
+<div style="margin-top:12px;text-align:right"><button class="btn" onclick="login()">ENVOYER ➤</button></div>
+</div>
+
+<div id="dash" style="display:none">
+<div class="card"><b>📊 Dashboard</b> <span class="tag">Users: <b id="u">0</b></span> <span class="tag">Tx: <b id="txc">0</b></span> <button class="btn small ghost" onclick="load()" style="margin-left:10px">Actualiser</button></div>
+<div id="txs"></div>
+<div id="users"></div>
+</div>
+
+</div>
+<script>
+let TOK=localStorage.getItem('adrynx_admin_tok')||'';
+function login(){
+ fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pwd').value})})
+ .then(r=>r.json()).then(d=>{
+   if(d.token){TOK=d.token;localStorage.setItem('adrynx_admin_tok',TOK);document.getElementById('login').style.display='none';document.getElementById('dash').style.display='block';document.getElementById('st').innerText='Connecté ✅';load()}
+   else alert('Mauvais mdp');
+ });
+}
+function load(){
+ fetch('/api/admin/data',{headers:{'X-Admin-Token':TOK}}).then(r=>r.json()).then(db=>{
+   document.getElementById('u').innerText=db.users.length;
+   document.getElementById('txc').innerText=db.transactions.length;
+   let txDiv=document.getElementById('txs');
+   txDiv.innerHTML=db.transactions.length==0?'<div class="bubble">Aucun paiement pour 061174945</div>':'<div class="bubble">💰 Paiements MTN 061174945</div>'+db.transactions.map(t=>`<div class="card tx-card"><div class="bubble">📱 ${t.tel}<br>Ref: ${t.ref}<br>ID: ${t.user_id}<br><small>${t.date}</small></div><div class="row"><button class="btn green" onclick="validatePrem('${t.user_id}','${t.id}')">✅ VALIDER 1000F</button> <button class="btn ghost small" onclick="delTx('${t.id}')">Refuser</button></div></div>`).join('');
+   document.getElementById('users').innerHTML=db.users.slice().reverse().map(u=>`<div class="card"><div class="bubble">${u.id}<br><small>${u.date} | ${u.premium?'✅ PREMIUM':u.unlimited?'♾️ GOD':'FREE'}</small></div><div class="row"><button class="btn small" onclick="setP('${u.id}','premium')">PREMIUM</button> <button class="btn small green" onclick="setP('${u.id}','unlimited')">GOD</button> <button class="btn small ghost" onclick="setP('${u.id}','ban')">BAN</button></div></div>`).join('');
+ });
+}
+function setP(id,act){fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id,action:act})}).then(()=>load())}
+function delTx(id){fetch('/api/admin/validate',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id})}).then(()=>load())}
+function validatePrem(uid,txid){fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id:uid,action:'premium
