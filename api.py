@@ -29,6 +29,19 @@ async def root():
         return FileResponse("landing.html")
     return FileResponse("index.html")
 
+# --- FIX MANQUANT : ton bouton Lancer pointe ici ---
+@app.get("/app")
+async def app_page():
+    return FileResponse("index.html")
+
+@app.get("/index.html")
+async def index_page():
+    return FileResponse("index.html")
+
+@app.get("/sw.js")
+async def sw():
+    return JSONResponse({}, status_code=204)
+
 @app.get("/admin")
 async def admin_page():
     if os.path.exists("admin.html"):
