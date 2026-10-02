@@ -37,9 +37,10 @@ async def chat(req: Request):
         message = data.get("message","")
         history = data.get("history",[])
         image = data.get("image")
+        is_premium = data.get("isPremium", False)  # <-- AJOUT PREMIUM 1000F
         if not message and not image:
             return JSONResponse({"reply":"Dis quelque chose Jonathan"})
-        reply = ai.ask(message, history, image_base64=image)
+        reply = ai.ask(message, history, image_base64=image, is_premium=is_premium)
         return {"reply": reply}
     except Exception as e:
         print(f"API CHAT ERROR: {e}")
