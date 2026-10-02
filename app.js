@@ -30,7 +30,7 @@ async function send(){
  const q=input.value.trim();
  if(!q &&!pendingImage) return;
  if(!isPremium && msgCount>=FREE_LIMIT){
-   add(`🔒 <b>Limite gratuite atteinte (${FREE_LIMIT}/${FREE_LIMIT}).</b><br>💎 Passe Premium <b>1000F/semaine</b> = Accès GPT-4, Claude, Gemini + Photos/PDF illimités + Images + Vocal.<br>Paye MTN MoMo/Airtel Money et tape <code>activatePremium()</code>.`,"ai");
+   add(`🔒 <b>Limite gratuite atteinte (${FREE_LIMIT}/${FREE_LIMIT}).</b><br>💎 Passe Premium <b>1000F/semaine</b> = Accès GPT-4o, Claude 3.5, Gemini Pro + Photos/PDF illimités + Images + Vocal.<br>Paye MTN MoMo/Airtel Money et tape <code>activatePremium()</code>.`,"ai");
    return;
  }
  if(q.toLowerCase().startsWith("génère") || q.toLowerCase().startsWith("genere") || q.toLowerCase().includes("image de") || q.toLowerCase().startsWith("cree une image")){
@@ -40,7 +40,7 @@ async function send(){
    try{
      const r=await fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:q})});
      const data=await r.json();
-     loader.innerHTML=`Image: ${q}<br><img src="${data.image_url}" onload="window.scrollTo(0,document.body.scrollHeight)" />`;
+     loader.innerHTML=`Image: ${q}<br><img src="${data.image_url}" style="max-width:100%;border-radius:12px;margin-top:8px" onload="chat.scrollTop=chat.scrollHeight" />`;
      history.push({role:"user",content:q});
      history.push({role:"assistant",content:`[IMAGE] ${data.image_url}`});
    }catch(e){loader.innerHTML="Erreur image, réessaie."}
@@ -52,9 +52,9 @@ async function send(){
  if(preview){ preview.style.display='none'; preview.src=''; }
  const loader=add('⚡ Phoenix Prime réfléchit...','ai');
  try{
-  const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history,image:pendingImage})});
+  const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history,image:pendingImage,isPremium:isPremium})});
   const data=await r.json();
-  loader.innerHTML=data.reply;
+  loader.innerHTML=data.reply.replace(/\n/g,'<br>');
   history.push({role:"assistant",content:data.reply});
   localStorage.setItem('adrynx_h',JSON.stringify(history.slice(-30)));
   if(!isPremium){ msgCount++; localStorage.setItem('adrynx_count',msgCount); updateBadge(); }
@@ -66,27 +66,4 @@ function triggerFile(){
   fileInput.click();
 }
 fileInput.addEventListener('change',e=>{
- const file=e.target.files[0]; if(!file)return;
- const reader=new FileReader();
- reader.onload=()=>{
-   pendingImage=reader.result.split(',')[1];
-   if(preview){ preview.src=reader.result; preview.style.display='block'; }
-   add(`📄 ${file.name} prêt - j'analyse...`,'user');
-   input.value=`Analyse ce cours: ${file.name} et explique point par point comme un prof`;
-   send();
- };
- reader.readAsDataURL(file);
-});
-window.send=send; window.triggerFile=triggerFile;
-window.startVoice=()=>{
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!SR){alert("Micro non supporté");return;}
- const rec=new SR(); rec.lang='fr-FR'; rec.start();
- rec.onresult=ev=>{input.value=ev.results[0][0].transcript; send();};
-};
-window.activatePremium=()=>{ localStorage.setItem('adrynx_premium','1'); isPremium=true; updateBadge(); add("✅ PREMIUM ACTIVÉ! Tu as débloqué GPT-4, Claude, PDF, Photos, Images illimitées pour 1000F/semaine. 🔥","ai"); };
-window.newChat=newChat;
-input.addEventListener('keydown',e=>{if(e.key==='Enter')send()});
-history.forEach(m=>{ if(!m.content.includes('[IMAGE]')) add(m.content,m.role==='user'?'user':'ai'); });
-if(!history.length) add("Je suis ADRYNX Phoenix Prime, créée par Jonathan Obenda 🇨🇬<br>Envoie ton cours (photo/PDF) je l'explique, ou dis 'génère une image de...'.<br><small>25 messages gratuits puis Premium 1000F/semaine</small>","ai");
-updateBadge();
+ const file=e.target.files
