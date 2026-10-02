@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Payer ADRYNX Premium</title>
+<style>
+body{background:#07070a;color:#fff;font-family:Inter,sans-serif;padding:20px;margin:0}
+.box{background:#15151a;padding:28px;border-radius:24px;max-width:420px;margin:30px auto;border:1px solid #ff6a00;box-shadow:0 0 40px rgba(255,106,0,0.2)}
+.btn{background:linear-gradient(90deg,#ff6a00,#ff2a00);color:white;padding:16px;border-radius:14px;border:none;width:100%;font-weight:800;font-size:16px;margin-top:15px}
+input{width:100%;box-sizing:border-box;padding:16px;border-radius:12px;border:1px solid #333;background:#0f0f12;color:white;margin:10px 0;font-size:15px}
+.momo{font-size:28px;color:#ff6a00;font-weight:900;letter-spacing:1px}
+.idbox{background:#000;padding:10px;border-radius:8px;font-family:monospace;color:#ff6a00;margin:10px 0}
+</style>
+</head>
+<body>
+<center><h1 style="margin-bottom:5px">ADRYNX PREMIUM</h1><p style="color:#888">1000F = 7 jours illimités</p></center>
+<div class="box">
+<h3>1️⃣ Paye sur MTN MoMo</h3>
+<p>Numéro officiel ADRYNX:</p>
+<p class="momo">061174945</p>
+<p>Nom: <b>OBENDA Jonathan</b><br>Montant: <b>1000 FCFA</b></p>
+<div class="idbox">Motif: ADRYNX <span id="uid"></span></div>
+<p style="color:#aaa;font-size:13px">* Mets ton ID dans le motif pour qu'on te retrouve vite</p>
+<hr style="border-color:#222;margin:20px 0">
+<h3>2️⃣ Confirme ton paiement</h3>
+<input id="tel" placeholder="Ton numéro qui a payé (ex: 06...)">
+<input id="ref" placeholder="Référence MoMo (ex: MP... ou ID transaction)">
+<button class="btn" onclick="send()">J'AI PAYÉ 1000F - ACTIVE MOI</button>
+<p id="msg" style="text-align:center;margin-top:15px"></p>
+</div>
+<center><a href="/app" style="color:#666;text-decoration:none">← Retour à l'app</a></center>
+<script>
+const uid=localStorage.getItem("adrynx_uid")||"user_"+Math.random().toString(36).slice(2,6);
+localStorage.setItem("adrynx_uid",uid);
+document.getElementById("uid").innerText=uid;
+async function send(){
+ const tel=document.getElementById("tel").value.trim();
+ const ref=document.getElementById("ref").value.trim();
+ if(!tel||!ref){alert("Mets ton numéro et la ref MoMo");return}
+ document.getElementById("msg").innerText="Envoi en cours...";
+ const r=await fetch("/api/pay/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:uid,tel:tel,ref:ref})});
+ const j=await r.json();
+ if(j.ok){document.getElementById("msg").innerHTML="✅ <b>Reçu !</b><br>Jonathan va vérifier et t'activer dans 2-5 min.<br>Garde l'app ouverte."}else{document.getElementById("msg").innerText="Erreur, réessaie"}
+}
+</script>
+</body>
+</html>
