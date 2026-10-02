@@ -1,13 +1,18 @@
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>ADRYNX Admin</title>
-<style>body{background:#0f0f0f;color:#fff;font-family:sans-serif;padding:20px}input,button{padding:12px;border-radius:8px;border:none;margin:5px}button{background:#ff4500;color:#fff;font-weight:bold;cursor:pointer}.card{background:#1e1e1e;padding:15px;border-radius:12px;margin:10px 0}</style>
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Admin - Jonathan</title>
+<style>body{background:#0f0f0f;color:#fff;font-family:Inter,sans-serif;padding:12px;margin:0}header{background:#111;padding:12px;border-radius:12px;border:1px solid #222;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}input,button{padding:12px;border-radius:8px;border:none;margin:3px}input{background:#1e1e1e;border:1px solid #333;color:#fff}button{background:#ff4500;color:#fff;font-weight:bold;cursor:pointer}button.green{background:#00c853}button.gray{background:#333}button.red{background:#ff2222}.card{background:#1e1e1e;padding:12px;border-radius:12px;margin:8px 0;border:1px solid #222}.stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.stat{flex:1;min-width:80px;background:#161616;padding:10px;border-radius:10px;text-align:center;border:1px solid #222}#login{max-width:340px;margin:80px auto;text-align:center;background:#161616;padding:24px;border-radius:16px;border:1px solid #222}</style>
 </head><body>
-<h1>🔥 ADRYNX ADMIN - Jonathan</h1>
-<div id="login"><input id="pwd" type="password" placeholder="Mot de passe"><button id="btnLogin">ENVOYER</button><p id="msg"></p></div>
-<div id="panel" style="display:none"><h2>Users: <span id="count">0</span></h2><div id="users"></div><h2>Transactions</h2><div id="txs"></div><button onclick="logout()">Logout</button></div>
+<header><b>🔥 ADRYNX ADMIN - Jonathan</b><span id="live" style="font-size:11px;background:#00c853;padding:4px 8px;border-radius:10px">LIVE</span></header>
+<div id="login"><h3 style="color:#ff7a00">Connexion Boss</h3><input id="pwd" type="password" placeholder="Mot de passe ADRYNX2026"><br><button id="btnLogin" style="width:100%;margin-top:10px">ENTRER</button><p id="msg" style="font-size:12px;color:#888"></p></div>
+<div id="panel" style="display:none">
+<div class="stats"><div class="stat"><div id="count" style="font-size:22px;font-weight:900">0</div><small>Total</small></div><div class="stat"><div id="countPrem" style="font-size:22px;font-weight:900;color:#ff7a00">0</div><small>Premiums</small></div><div class="stat"><div id="countFree" style="font-size:22px;font-weight:900;color:#888">0</div><small>Gratuits</small></div><div class="stat"><div id="countTx" style="font-size:22px;font-weight:900;color:#ffcc00">0</div><small>À valider</small></div></div>
+<div style="display:flex;gap:6px;margin-bottom:10px"><input id="search" placeholder="Chercher ID, tel, ref..." style="flex:1" oninput="filter()"><button class="gray" onclick="loadData()">↻ Refresh</button><a href="/app?jonathan" style="text-decoration:none"><button class="green">🚀 ADRYNX ADMIN ILLIMITÉ</button></a><button onclick="logout()" class="gray">Logout</button></div>
+<div class="card"><b>💸 Paiements en attente - 1000F</b><div id="txs"></div></div>
+<div class="card"><b>👥 Utilisateurs (dernier en haut)</b><div id="users"></div></div>
+</div>
 <script>
 const TOKEN_KEY='adrynx_admin_token';
 let token=localStorage.getItem(TOKEN_KEY)||'';
+let DB={users:[],transactions:[]};
 const loginDiv=document.getElementById('login'), panelDiv=document.getElementById('panel');
 async function login(){
   const p=document.getElementById('pwd').value.trim();
@@ -21,13 +26,22 @@ async function login(){
 }
 async function loadData(){
   const r=await fetch('/api/admin/data',{headers:{'X-Admin-Token':token}});
-  const db=await r.json();
-  document.getElementById('count').innerText=db.users.length;
-  document.getElementById('users').innerHTML=db.users.map(u=>`<div class=card>${u.id} | ${u.date} | ${u.premium?'PREMIUM':'FREE'} <button onclick="actionUser('${u.id}','premium')">Premium</button> <button onclick="actionUser('${u.id}','unlimited')">Unlimited</button> <button onclick="actionUser('${u.id}','ban')">Ban</button> <button onclick="actionUser('${u.id}','delete')">Del</button></div>`).join('');
-  document.getElementById('txs').innerHTML=db.transactions.map(t=>`<div class=card>${t.tel} ${t.ref} ${t.date} <button onclick="validateTx('${t.id}')">Valider</button></div>`).join('');
+  if(r.status!==200){logout(); return;}
+  DB=await r.json();
+  document.getElementById('count').innerText=DB.users.length;
+  document.getElementById('countPrem').innerText=DB.users.filter(u=>u.premium).length;
+  document.getElementById('countFree').innerText=DB.users.filter(u=>!u.premium).length;
+  document.getElementById('countTx').innerText=DB.transactions.length;
+  render();
+}
+function render(){
+  document.getElementById('txs').innerHTML=DB.transactions.map(t=>`<div class="card" style="background:#222"><b>📱 ${t.tel||'No tel'}</b> - ${t.ref||''}<br><small>${t.date||''} | ID: ${t.user_id||''} | ${t.amount||'1000F'}</small><br><div style="margin-top:6px"><button class="green" onclick="validateAndPrem('${t.id}','${t.user_id}')">✅ VALIDER + PREMIUM</button><button onclick="validateTx('${t.id}')">Juste valider</button></div></div>`).join('')||'<small style=color:#666>Aucun paiement en attente</small>';
+  document.getElementById('users').innerHTML=DB.users.slice().reverse().map(u=>`<div class="urow card" data-search="${(u.id+' '+(u.tel||'')).toLowerCase()}"><div style="display:flex;justify-content:space-between"><div><b>${u.id}</b> ${u.premium?'<span style=color:#ff7a00>[PREMIUM]</span>':u.unlimited?'[ILLIMITÉ]':'[FREE]'}<br><small>${u.date||''} | ${u.messages||0} msgs | ${u.images||0} imgs</small></div><div><button onclick="actionUser('${u.id}','premium')">PREM</button><button class="green" onclick="actionUser('${u.id}','unlimited')">ILLIM</button><button class="gray" onclick="actionUser('${u.id}','ban')">BAN</button><button class="red" onclick="actionUser('${u.id}','delete')">DEL</button></div></div></div>`).join('');
 }
 async function actionUser(id,action){await fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify({id,action})}); loadData();}
 async function validateTx(id){await fetch('/api/admin/validate',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify({id})}); loadData();}
+async function validateAndPrem(tid,uid){await actionUser(uid,'premium'); await validateTx(tid);}
+function filter(){let q=document.getElementById('search').value.toLowerCase(); document.querySelectorAll('.urow').forEach(r=>{r.style.display=r.dataset.search.includes(q)?'block':'none';});}
 function logout(){localStorage.removeItem(TOKEN_KEY); location.reload();}
 document.getElementById('btnLogin').addEventListener('click',login);
 document.getElementById('pwd').addEventListener('keydown',e=>{if(e.key==='Enter') login();});
