@@ -1,49 +1,22 @@
-<!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX ADMIN</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#080808;color:#fff;font-family:Inter,system-ui,sans-serif}
-header{position:sticky;top:0;background:#111;padding:12px 16px;border-bottom:1px solid #ff7a0022;display:flex;justify-content:space-between;align-items:center;z-index:10}
-.logo{font-weight:900;letter-spacing:1px} .logo span{color:#ff7a00}
-.chat{padding:12px;display:flex;flex-direction:column;gap:10px;max-width:600px;margin:auto}
-.bubble{background:#1e1e1e;padding:14px 16px;border-radius:18px 18px 18px 4px;font-size:14px;line-height:1.4}
-.bubble.orange{background:#ff7a00;color:#fff;align-self:flex-end;border-radius:18px 18px 4px 18px;max-width:85%}
-.card{background:#161616;border:1px solid #222;border-radius:16px;padding:14px;margin:8px 0}
-.btn{background:#ff7a00;border:none;color:#fff;padding:10px 18px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer}
-.btn.ghost{background:#222} .btn.green{background:#00c853} .btn.small{padding:6px 12px;font-size:12px}
-input{width:100%;background:#1e1e1e;border:1px solid #333;color:#fff;padding:14px 16px;border-radius:24px;outline:none}
-.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.tag{font-size:11px;background:#222;padding:4px 8px;border-radius:12px}
-.tx-card{border:1px solid #ff7a00;background:#1a1205}
-</style>
-</head><body>
-<header><div class="logo">🔥 ADRYNX <span>ADMIN</span></div><div id="st" class="tag">Non connecté</div></header>
-
-<div class="chat">
-
-<div id="login" class="card">
-<div class="bubble">✅ Mode 👑 Admin activé. Je change de cerveau.</div>
-<br>
-<input id="pwd" type="password" placeholder="Mot de passe ADRYNX2026" value="ADRYNX2026">
-<div style="margin-top:12px;text-align:right"><button class="btn" onclick="login()">ENVOYER ➤</button></div>
-</div>
-
-<div id="dash" style="display:none">
-<div class="card"><b>📊 Dashboard</b> <span class="tag">Users: <b id="u">0</b></span> <span class="tag">Tx: <b id="txc">0</b></span> <button class="btn small ghost" onclick="load()" style="margin-left:10px">Actualiser</button></div>
-<div id="txs"></div>
-<div id="users"></div>
-</div>
-
-</div>
 <script>
 let TOK=localStorage.getItem('adrynx_admin_tok')||'';
+
 function login(){
  fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pwd').value})})
  .then(r=>r.json()).then(d=>{
-   if(d.token){TOK=d.token;localStorage.setItem('adrynx_admin_tok',TOK);document.getElementById('login').style.display='none';document.getElementById('dash').style.display='block';document.getElementById('st').innerText='Connecté ✅';load()}
-   else alert('Mauvais mdp');
+   if(d.token){
+     TOK=d.token;
+     localStorage.setItem('adrynx_admin_tok',TOK);
+     document.getElementById('login').style.display='none';
+     document.getElementById('dash').style.display='block';
+     document.getElementById('st').innerText='Connecté ✅';
+     load();
+   } else {
+     alert('Mauvais mdp');
+   }
  });
 }
+
 function load(){
  fetch('/api/admin/data',{headers:{'X-Admin-Token':TOK}}).then(r=>r.json()).then(db=>{
    document.getElementById('u').innerText=db.users.length;
@@ -53,6 +26,13 @@ function load(){
    document.getElementById('users').innerHTML=db.users.slice().reverse().map(u=>`<div class="card"><div class="bubble">${u.id}<br><small>${u.date} | ${u.premium?'✅ PREMIUM':u.unlimited?'♾️ GOD':'FREE'}</small></div><div class="row"><button class="btn small" onclick="setP('${u.id}','premium')">PREMIUM</button> <button class="btn small green" onclick="setP('${u.id}','unlimited')">GOD</button> <button class="btn small ghost" onclick="setP('${u.id}','ban')">BAN</button></div></div>`).join('');
  });
 }
+
 function setP(id,act){fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id,action:act})}).then(()=>load())}
 function delTx(id){fetch('/api/admin/validate',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id})}).then(()=>load())}
-function validatePrem(uid,txid){fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id:uid,action:'premium
+
+function validatePrem(uid,txid){
+  fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id:uid,action:'premium'})})
+  .then(()=>fetch('/api/admin/validate',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id:txid})}))
+  .then(()=>{alert('✅ Premium activé pour '+uid);load();});
+}
+</script>
