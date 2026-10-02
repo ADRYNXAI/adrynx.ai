@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Premium</title>
 <style>
 body{background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
@@ -45,7 +45,7 @@ async function send(){
   chat.appendChild(loading);
   chat.scrollTop=chat.scrollHeight;
   try{
-    let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:history.slice(-6),isPremium:true})});
+    let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id':'jonathan_admin_unlimited'},body:JSON.stringify({message:q,history:history.slice(-6),isPremium:true})});
     let data=await r.json();
     loading.remove();
     add('bot', data.reply);
