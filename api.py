@@ -9,6 +9,7 @@ ai = PhoenixPrime()
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "ADRYNX2026")
 ADMIN_TOKEN = "adrynx_admin_token_jonathan_secret_2026"
 DB_FILE = "adrynx_db.json"
+DAILY_LIMIT = 25
 
 def load_db():
     if not os.path.exists(DB_FILE):
@@ -29,7 +30,6 @@ async def root():
         return FileResponse("landing.html")
     return FileResponse("index.html")
 
-# --- FIX MANQUANT : ton bouton Lancer pointe ici ---
 @app.get("/app")
 async def app_page():
     return FileResponse("index.html")
@@ -148,26 +148,61 @@ async def chat_api(req: Request):
                 "last_reset": datetime.now().isoformat()
             }
             db["users"].append(user)
+        
+        # RESET QUOTIDIEN
+        try:
+            last = datetime.fromisoformat(user.get("last_reset", datetime.now().isoformat()))
+            if last.date() < datetime.now().date():
+                user["messages"] = 0
+                user["images"] = 0
+                user["last_reset"] = datetime.now().isoformat()
+        except:
+            user["last_reset"] = datetime.now().isoformat()
+
         if user_id == "jonathan_admin_unlimited":
             user["premium"] = True
             user["unlimited"] = True
-        save_db(db)
+        
+        is_vip = user.get("premium") or user.get("unlimited")
+        
+        # LIMITE 25 POUR GRATUITS SEULEMENT
+        if not is_vip and user.get("messages", 0) >= DAILY_LIMIT:
+            save_db(db)
+            return {
+                "reply": f"🔒 <b>Limite atteinte : {DAILY_LIMIT}/jour</b><br><br>Tu es en mode gratuit.<br>Pour continuer en illimité → <a href='/pay'><b>Passe Premium 1000F/semaine 🇨🇬</b></a><br><br>Demain ça repart à 0.",
+                "is_premium": False,
+                "limit_reached": True
+            }
+
         if not message and not image:
             return JSONResponse({"reply": "Dis quelque chose"})
-        is_vip = user.get("premium") or user.get("unlimited")
+
         low = message.lower()
         keys = ["genere", "image", "dessine", "photo", "imagine", "affiche"]
         is_img = any(k in low for k in keys)
         if is_img:
+            if not is_vip and user.get("images", 0) >= 3:
+                save_db(db)
+                return {
+                    "reply": "🎨 <b>Limite 3 images/jour en gratuit</b><br>Passe Premium pour illimité → <a href='/pay'><b>1000F/semaine</b></a>",
+                    "is_premium": False,
+                    "limit_reached": True
+                }
             clean = low
             for w in ["genere moi", "une image de", "une image", "image de", "photo de"]:
                 clean = clean.replace(w, "")
             safe = (clean.strip() or "Brazzaville")[:350]
             enc = urllib.parse.quote(safe)
             url = f"https://image.pollinations.ai/prompt/{enc}?width=1024&height=1024&model=flux&nologo=true&seed={os.urandom(2).hex()}"
-            return {"reply": f"Image {safe}<br><img src='{url}' style='width:100%;border-radius:12px'/>"}
+            user["images"] = user.get("images", 0) + 1
+            user["messages"] = user.get("messages", 0) + 1
+            save_db(db)
+            return {"reply": f"Image {safe}<br><img src='{url}' style='width:100%;border-radius:12px'/>", "is_premium": is_vip}
+
         reply = ai.ask(message, history[-6:], image_base64=image, is_premium=is_vip)
-        return {"reply": reply}
+        user["messages"] = user.get("messages", 0) + 1
+        save_db(db)
+        return {"reply": reply, "is_premium": is_vip}
     except Exception as e:
         return {"reply": f"Erreur {str(e)[:200]}"}
 
