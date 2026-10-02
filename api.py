@@ -150,31 +150,9 @@ async def chat_api(req: Request):
             clean=low
             for w in ['genere','génère','moi','une image de','une image','image de','stp','please','tu peux','affiche','genere moi','cree','une photo de','photo de']: clean=clean.replace(w,'')
             clean=clean.strip() or 'futuristic Brazzaville Congo'
+            # GRATUIT SANS PAYWALL - CORRIGÉ
             if not is_vip and user.get("images",0)>=3:
                 enc=urllib.parse.quote(f'{clean}, simple style'[:350])
-                img_url=f'https://image.pollinations.ai/prompt/{enc}?width=512&height=512&model=turbo&seed={os.urandom(2).hex()}'
-                return {'reply':f"⚠️ 3/3 HD atteintes<br><img src='{img_url}' style='width:100%'/><br>Passe Premium 1000F"}
-            enc=urllib.parse.quote(f'{clean}, hyper-realistic, 8K'[:350])
-            img_url=f'https://image.pollinations.ai/prompt/{enc}?width=1280&height=1280&model=flux-pro&enhance=true&seed={os.urandom(2).hex()}'
-            if not is_vip: user["images"]+=1; save_db(db)
-            return {'reply':f"🔥 {clean}<br><img src='{img_url}' style='width:100%'/><br><a href='{img_url}' target='_blank'>📥 Télécharger HD</a>"}
-        if not is_vip and user["messages"]>=25:
-            return {'reply':"🔒 Limite 25 messages/jour atteinte. Premium 1000F/semaine pour illimite."}
-        system_prompt=MODES.get(mode, MODES["general"])
-        final_history=[] if not is_vip else history[-6:]
-        full_message=f"[{system_prompt}] Utilisateur: {message}"
-        reply=ai.ask(full_message, final_history, image_base64=image, is_premium=is_vip)
-        if not is_image_request: user["messages"]+=1; save_db(db)
-        return {'reply': reply}
-    except Exception as e:
-        print(f'ERROR: {e}'); return {'reply': f'Erreur: {str(e)[:200]}'}
-
-@app.post('/api/image')
-async def gen_image(req: Request):
-    try:
-        data=await req.json(); prompt_raw=data.get('prompt','ADRYNX'); prompt=prompt_raw.lower().replace('genere','').strip() or 'ADRYNX logo fire'
-        encoded=urllib.parse.quote(f"{prompt}, hyper-realistic, 8K"[:350])
-        image_url=f'https://image.pollinations.ai/prompt/{encoded}?width=1280&height=1280&model=flux-pro&enhance=true&seed={os.urandom(2).hex()}'
-        return {'image_url': image_url, 'prompt': prompt}
-    except Exception as e:
-        return {'image_url':'https://image.pollinations.ai/prompt/ADRYNX%20logo%20fire?width=1280&height=1280&model=flux-pro','prompt':'ADRYNX'}
+                img_url=f'https://image.pollinations.ai/prompt/{enc}?width=512&height=512&model=turbo&nologo=true&seed={os.urandom(2).hex()}'
+                return {'reply':f"⚠️ 3/3 HD atteintes<br><img src='{img_url}' style='width:100%;border-radius:12px'/><br>Passe Premium 1000F"}
+            enc=urllib.parse.quote(f'{clean}, hyper-realistic, 8
