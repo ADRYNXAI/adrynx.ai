@@ -1,32 +1,66 @@
 <!DOCTYPE html>
-<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX TEST</title></head><body style="background:#0a0a0a;color:#fff;padding:20px;font-family:sans-serif">
-<div id="chat" style="height:80vh;overflow:auto;border:1px solid #333;padding:10px;margin-bottom:10px"></div>
-<div style="display:flex;gap:10px"><input id="input" style="flex:1;padding:12px;border-radius:20px;border:none;background:#222;color:#fff" placeholder="tape ici"><button id="sendBtn" style="padding:12px 20px;background:orange;border:none;border-radius:20px;color:#fff;font-weight:800">ENVOYER</button></div>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Premium</title>
+<style>
+body{background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
+header{padding:15px;text-align:center;border-bottom:1px solid #222;background:#111;font-weight:900;color:orange;letter-spacing:1px}
+#chat{flex:1;overflow:auto;padding:15px;display:flex;flex-direction:column;gap:12px}
+.msg{padding:12px 15px;border-radius:14px;max-width:90%;line-height:1.4;word-wrap:break-word}
+.user{align-self:flex-end;background:#ff7a00;color:#fff;border-bottom-right-radius:4px}
+.bot{align-self:flex-start;background:#1e1e1e;border:1px solid #2a2a2a;border-bottom-left-radius:4px}
+.bot img{max-width:100%;border-radius:12px;margin-top:10px;display:block}
+.bot a{color:#ff7a00}
+#bar{display:flex;gap:10px;padding:12px;background:#111;border-top:1px solid #222}
+#input{flex:1;padding:14px 18px;border-radius:25px;border:1px solid #333;background:#222;color:#fff;outline:none}
+#sendBtn{padding:14px 22px;background:#ff7a00;border:none;border-radius:25px;color:#fff;font-weight:800;cursor:pointer}
+#sendBtn:disabled{opacity:0.5}
+</style>
+</head><body>
+<header>🔥 ADRYNX PHOENIX PRIME - par Jonathan Obenda 🇨🇬</header>
+<div id="chat"></div>
+<div id="bar"><input id="input" placeholder="Demande une image ou pose ta question..."><button id="sendBtn">ENVOYER</button></div>
 <script>
-console.log("TEST JS CHARGE");
 const chat=document.getElementById('chat');
 const input=document.getElementById('input');
 const btn=document.getElementById('sendBtn');
+let history=[];
 
-function add(t){let d=document.createElement('div');d.style.margin='10px 0';d.style.padding='10px';d.style.background='#1e1e1e';d.style.borderRadius='10px';d.innerHTML=t;chat.appendChild(d);chat.scrollTop=99999;}
+function add(role, html){
+  let d=document.createElement('div');
+  d.className='msg '+role;
+  d.innerHTML=html;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
 
 async function send(){
   const q=input.value.trim();
-  alert("CLICK DETECTE: "+q); // TEST
   if(!q) return;
-  add("<b>Toi:</b> "+q);
+  add('user', q);
+  history.push({role:'user', content:q});
   input.value='';
-  add("⚡ ADRYNX charge...");
+  btn.disabled=true;
+  btn.innerText='...';
+  let loading=document.createElement('div');
+  loading.className='msg bot';
+  loading.innerText='⚡ ADRYNX génère en Premium...';
+  chat.appendChild(loading);
+  chat.scrollTop=chat.scrollHeight;
   try{
-    let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:[],isPremium:false})});
+    let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:history.slice(-6),isPremium:true})});
     let data=await r.json();
-    add("<b>ADRYNX:</b> "+data.reply);
+    loading.remove();
+    add('bot', data.reply);
+    history.push({role:'assistant', content:data.reply});
   }catch(e){
-    add("Erreur: "+e);
+    loading.remove();
+    add('bot','Erreur: '+e.message);
   }
+  btn.disabled=false;
+  btn.innerText='ENVOYER';
+  input.focus();
 }
 btn.onclick=send;
 input.onkeydown=e=>{if(e.key==='Enter')send()};
-add("Si tu vois ça, le JS marche. Tape quelque chose et clique ENVOYER.");
+add('bot','Salut Jonathan 👋 Je suis ADRYNX Phoenix Prime. Je génère des images en 4K instantané et j’explique tous tes cours. Tape : <br><b>génère image Brazzaville futuriste</b>');
 </script>
 </body></html>
