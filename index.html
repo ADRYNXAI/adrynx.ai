@@ -87,4 +87,11 @@ async function send(){
   let data=await r.json(); loading.remove();
   if(data.limit_reached){ add('bot', data.reply); input.disabled=true; btn.disabled=true; btn.innerText='PREMIUM'; btn.onclick=()=>location.href='/pay'; counterEl.innerText='0/25'; counterEl.className='low'; return; }
   add('bot', data.reply); history.push({role:'assistant', content:data.reply});
-  if(!isAdmin){let cur=loadCount(); cur
+  if(!isAdmin){let cur=loadCount(); cur.count=(cur.count||0)+1; saveCount(cur.count); updateCounter();}
+ }catch(e){loading.remove(); add('bot','Erreur: '+e.message);}
+ btn.disabled=false; btn.innerText='ENVOYER'; input.focus();
+}
+btn.onclick=send; input.onkeydown=e=>{if(e.key==='Enter') send();};
+add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b>, créée par Jonathan Dejah OBENDA.<br><br>🎁 <b>Gratuit :</b> 25 messages/jour + 3 images HD<br>💎 <b>Premium 1000F/semaine :</b> TOUT illimité instantané<br><br>Mode: 🎓 Étudiant | 💰 Vendeur | 💻 Codeur | 🎨 Image<br><br>Essaye: <b>génère image Brazzaville futuriste</b>');
+</script>
+</body></html>
