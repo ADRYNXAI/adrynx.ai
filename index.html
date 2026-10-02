@@ -1,9 +1,8 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Netflix des IA</title>
+ <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Netflix des IA</title>
 <style>
 body{background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
 header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;background:#111;font-weight:900;color:orange;letter-spacing:0.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 #modes{display:flex;gap:6px;padding:10px;background:#111;border-bottom:1px solid #222;overflow-x:auto;scrollbar-width:none}
-#modes::-webkit-scrollbar{display:none}
 .modeBtn{padding:8px 14px;border-radius:20px;border:1px solid #333;background:#1e1e1e;color:#fff;font-size:12px;cursor:pointer;white-space:nowrap;transition:0.2s}
 .modeBtn.active{background:#ff7a00;border-color:#ff7a00;font-weight:800;transform:scale(1.05)}
 #chat{flex:1;overflow:auto;padding:15px;display:flex;flex-direction:column;gap:12px}
@@ -11,16 +10,22 @@ header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;backgrou
 .user{align-self:flex-end;background:#ff7a00;color:#fff;border-bottom-right-radius:4px}
 .bot{align-self:flex-start;background:#1e1e1e;border:1px solid #2a2a2a;border-bottom-left-radius:4px}
 .bot a{color:#ff7a00;text-decoration:none;font-weight:700}
-#bar{display:flex;gap:8px;padding:12px;background:#111;border-top:1px solid #222;align-items:center}
-#input{flex:1;padding:14px 18px;border-radius:25px;border:1px solid #333;background:#222;color:#fff;outline:none}
-#sendBtn{padding:14px 18px;background:#ff7a00;border:none;border-radius:25px;color:#fff;font-weight:800;cursor:pointer;white-space:nowrap}
-#sendBtn:disabled{opacity:0.4}
+#bar{display:flex;flex-direction:column;background:#111;border-top:1px solid #222;padding:12px}
+#inputWrapper{flex:1;display:flex;align-items:center;background:#fff;border-radius:28px;border:1.5px solid #e5e7eb;padding:6px 8px 6px 12px;gap:8px}
+#plusBtn{width:36px;height:36px;border:none;background:none;font-size:28px;color:#111;cursor:pointer;border-radius:50%}
+#input{flex:1;padding:10px 4px;border:none;background:transparent;color:#111;outline:none;font-size:16px}
+#input::placeholder{color:#9aa0a6}
+#micBtn{width:36px;height:36px;border:none;background:none;font-size:20px;cursor:pointer;border-radius:50%}
+#micBtn.listening{animation:pulse 1s infinite;background:#ff7a0022}
+#sendBtn{width:44px;height:44px;background:#ff7a00;border:none;border-radius:50%;color:#fff;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
 #voiceToggle{padding:5px 10px;border-radius:20px;border:1px solid #ff7a00;background:#1e1e1e;color:#ff7a00;font-size:11px;font-weight:800;cursor:pointer}
 #voiceToggle.on{background:#ff7a00;color:#fff}
 #counter{font-size:10px;background:#1e1e1e;border:1px solid #333;padding:5px 10px;border-radius:20px;color:#aaa;white-space:nowrap}
 #counter.low{background:#ff222211;border-color:#ff2222;color:#ff6666}
 #counter.premium{background:#ff7a0022;border-color:#ff7a00;color:#ff7a00}
 .speakBtn{margin-left:8px;padding:2px 8px;border-radius:12px;border:1px solid #333;background:#222;color:#ff7a00;font-size:11px;cursor:pointer}
+#fileName{font-size:11px;color:#ff7a00;padding:0 0 8px 12px;display:none}
 </style>
 </head><body>
 <header><span>🔥 ADRYNX 1000F 🇨🇬</span><div style="display:flex;gap:6px;align-items:center"><span id="counter">25/25</span><button id="voiceToggle" class="on">🔊</button></div></header>
@@ -32,66 +37,34 @@ header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;backgrou
 <button class="modeBtn" data-mode="image">🎨 Image 4K</button>
 </div>
 <div id="chat"></div>
-<div id="bar"><input id="input" placeholder="Pose ta question..."><button id="sendBtn">ENVOYER</button></div>
+<div id="bar"><div id="fileName"></div><div id="inputWrapper"><button id="plusBtn" title="Fichier">+</button><input id="input" placeholder="Demander à ADRYNX..."><button id="micBtn" title="Micro">🎙️</button><button id="sendBtn">)))</button></div><input type="file" id="fileInput" hidden accept=".pdf,.docx,.doc,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp"></div>
 <script>
-const chat=document.getElementById('chat'), input=document.getElementById('input'), btn=document.getElementById('sendBtn'), voiceToggle=document.getElementById('voiceToggle'), counterEl=document.getElementById('counter');
-let history=[], currentMode='general', voiceEnabled=localStorage.getItem('adrynx_voice')!=='off', bestVoice=null;
+const chat=document.getElementById('chat'), input=document.getElementById('input'), btn=document.getElementById('sendBtn'), voiceToggle=document.getElementById('voiceToggle'), counterEl=document.getElementById('counter'), plusBtn=document.getElementById('plusBtn'), fileInput=document.getElementById('fileInput'), micBtn=document.getElementById('micBtn'), fileNameEl=document.getElementById('fileName');
+let history=[], currentMode='general', voiceEnabled=localStorage.getItem('adrynx_voice')!=='off', bestVoice=null, attachedFileContent=null, attachedFileName=null;
 const LIMIT=25;
-
-// USER ID
 let userId=localStorage.getItem('adrynx_uid');
 if(!userId){ userId='user_'+Math.random().toString(36).substring(2,10); localStorage.setItem('adrynx_uid', userId); }
 if(window.location.search.includes('jonathan')) userId='jonathan_admin_unlimited';
 const isAdmin = userId==='jonathan_admin_unlimited';
-
-// COMPTEUR JOURNALIER
 function getToday(){return new Date().toISOString().slice(0,10);}
-function loadCount(){
- if(isAdmin) return {count:0,date:getToday()};
- let d=JSON.parse(localStorage.getItem('adrynx_count_v2')||'{}');
- if(d.date!==getToday()) return {count:0,date:getToday()};
- return d;
-}
+function loadCount(){ if(isAdmin) return {count:0,date:getToday()}; let d=JSON.parse(localStorage.getItem('adrynx_count_v2')||'{}'); if(d.date!==getToday()) return {count:0,date:getToday()}; return d; }
 function saveCount(c){localStorage.setItem('adrynx_count_v2', JSON.stringify({count:c,date:getToday()}));}
-function updateCounter(){
- if(isAdmin){ counterEl.innerText='∞ ILLIMITÉ'; counterEl.className='premium'; return; }
- let {count}=loadCount();
- let rest=LIMIT-count;
- counterEl.innerText=rest>0?rest+'/25 restants':'0/25 - Premium?';
- counterEl.className=rest<=5?'low':'';
- if(rest<=0){ input.placeholder='Limite atteinte - Passe Premium 1000F'; input.disabled=true; btn.disabled=true; btn.innerText='PREMIUM'; btn.onclick=()=>location.href='/pay'; }
-}
+function updateCounter(){ if(isAdmin){ counterEl.innerText='∞ ILLIMITÉ'; counterEl.className='premium'; return; } let {count}=loadCount(); let rest=LIMIT-count; counterEl.innerText=rest>0?rest+'/25 restants':'0/25 - Premium?'; counterEl.className=rest<=5?'low':''; if(rest<=0){ input.placeholder='Limite atteinte - Passe Premium 1000F'; input.disabled=true; btn.disabled=true; btn.innerText='!'; btn.onclick=()=>location.href='/pay'; } }
 updateCounter();
-
-// VOIX
 function loadVoices(){const voices=speechSynthesis.getVoices(); if(!voices.length) return; const fr=voices.filter(v=>v.lang.toLowerCase().includes('fr')); const prio=['Google français','Amélie','Thomas','Hortense','Paul']; for(let n of prio){let f=fr.find(v=>v.name.includes(n)); if(f){bestVoice=f; break;}} if(!bestVoice&&fr.length) bestVoice=fr[0];}
 if('speechSynthesis' in window){loadVoices(); speechSynthesis.onvoiceschanged=loadVoices;}
 function updateVoiceBtn(){voiceToggle.innerText=voiceEnabled?'🔊':'🔇'; voiceToggle.className=voiceEnabled?'on':''; localStorage.setItem('adrynx_voice', voiceEnabled?'on':'off');}
 updateVoiceBtn(); voiceToggle.onclick=()=>{voiceEnabled=!voiceEnabled; if(!voiceEnabled) speechSynthesis.cancel(); updateVoiceBtn();};
 function speakHuman(text){if(!voiceEnabled) return; if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); let clean=text.replace(/<[^>]*>/g,'').replace(/https?:\/\/\S+/g,'').slice(0,350).trim(); if(!clean) return; const u=new SpeechSynthesisUtterance(clean); if(bestVoice) u.voice=bestVoice; u.lang='fr-FR'; u.rate=0.93; u.pitch=1.02; speechSynthesis.speak(u);}
-
 document.querySelectorAll('.modeBtn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.modeBtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); currentMode=b.dataset.mode; add('bot','✅ Mode <b>'+b.innerText+'</b> activé.');}});
-function add(role, html){
- let d=document.createElement('div'); d.className='msg '+role;
- if(role==='bot') d.innerHTML=html+' <button class="speakBtn" onclick="speakHuman(this.parentNode.innerText)">🔊</button>';
- else d.innerHTML=html;
- chat.appendChild(d); chat.scrollTop=chat.scrollHeight; if(role==='bot') speakHuman(html);
-}
-async function send(){
- const q=input.value.trim(); if(!q) return;
- if(!isAdmin){let {count,date}=loadCount(); if(count>=LIMIT){ add('bot','🔒 <b>Limite 25/jour atteinte</b><br>Passe Premium 1000F/semaine → <a href="/pay">PAYER MAINTENANT</a>'); return; }}
- add('user', q); history.push({role:'user', content:q}); input.value=''; btn.disabled=true; btn.innerText='...';
- let loading=document.createElement('div'); loading.className='msg bot'; loading.innerText='⚡ ADRYNX '+currentMode+' réfléchit...'; chat.appendChild(loading); chat.scrollTop=chat.scrollHeight;
- try{
-  let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id': userId},body:JSON.stringify({message:q,history:history.slice(-6),isPremium:isAdmin,mode:currentMode})});
-  let data=await r.json(); loading.remove();
-  if(data.limit_reached){ add('bot', data.reply); input.disabled=true; btn.disabled=true; btn.innerText='PREMIUM'; btn.onclick=()=>location.href='/pay'; counterEl.innerText='0/25'; counterEl.className='low'; return; }
-  add('bot', data.reply); history.push({role:'assistant', content:data.reply});
-  if(!isAdmin){let cur=loadCount(); cur.count=(cur.count||0)+1; saveCount(cur.count); updateCounter();}
- }catch(e){loading.remove(); add('bot','Erreur: '+e.message);}
- btn.disabled=false; btn.innerText='ENVOYER'; input.focus();
-}
+function add(role, html){ let d=document.createElement('div'); d.className='msg '+role; if(role==='bot') d.innerHTML=html+' <button class="speakBtn" onclick="speakHuman(this.parentNode.innerText)">🔊</button>'; else d.innerHTML=html; chat.appendChild(d); chat.scrollTop=chat.scrollHeight; if(role==='bot') speakHuman(html); }
+plusBtn.onclick=()=>fileInput.click();
+fileInput.onchange=async (e)=>{ const file=e.target.files[0]; if(!file) return; fileNameEl.style.display='block'; fileNameEl.innerText='📎 '+file.name+' lecture...'; attachedFileName=file.name; try{ if(file.type.startsWith('text/')||file.name.match(/\.(csv|txt)$/i)){ attachedFileContent=await file.text(); } else if(file.name.match(/\.(png|jpg|jpeg|webp)$/i)){ const r=new FileReader(); attachedFileContent=await new Promise(res=>{r.onload=()=>res(r.result); r.readAsDataURL(file);}); } else { try{ attachedFileContent=await file.text(); if(attachedFileContent.length<20) throw 'bin'; }catch{ attachedFileContent='[FICHIER: '+file.name+']'; } } fileNameEl.innerText='✅ 📎 '+file.name+' prêt'; input.placeholder='Question sur '+file.name+'...'; }catch(err){ fileNameEl.innerText='⚠️ '+err; } };
+function clearFile(){ attachedFileContent=null; attachedFileName=null; fileNameEl.style.display='none'; fileInput.value=''; input.placeholder='Demander à ADRYNX...'; }
+let recognition=null; if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; recognition=new SR(); recognition.lang='fr-FR'; recognition.onstart=()=>{micBtn.classList.add('listening');}; recognition.onend=()=>{micBtn.classList.remove('listening');}; recognition.onresult=(ev)=>{ input.value=ev.results[0][0].transcript; }; }
+micBtn.onclick=()=>{ if(!recognition){ add('bot','🎤 Utilise Chrome'); return; } try{ recognition.start(); }catch{ recognition.stop(); } };
+async function send(){ let q=input.value.trim(); if(!q &&!attachedFileContent) return; if(!isAdmin){let {count}=loadCount(); if(count>=LIMIT){ add('bot','🔒 <b>Limite 25/jour atteinte</b><br>Passe Premium 1000F/semaine → <a href="/pay">PAYER MAINTENANT</a>'); return; }} let fullQ=q; if(attachedFileContent){ if(attachedFileContent.startsWith('data:image')) fullQ=(q||'Analyse image')+'\n[IMAGE: '+attachedFileName+']'; else fullQ=(q||'Analyse fichier')+'\n--- FICHIER '+attachedFileName+' ---\n'+attachedFileContent.slice(0,15000)+'\n--- FIN ---'; } add('user', (attachedFileName?'📎 <b>'+attachedFileName+'</b><br>':'')+ (q||'(analyse)')); history.push({role:'user', content:fullQ}); input.value=''; btn.disabled=true; let loading=document.createElement('div'); loading.className='msg bot'; loading.innerText='⚡ ADRYNX '+currentMode+' analyse...'; chat.appendChild(loading); chat.scrollTop=chat.scrollHeight; try{ let payload={message:fullQ,history:history.slice(-6),isPremium:isAdmin,mode:currentMode}; if(attachedFileContent && attachedFileContent.startsWith('data:image')) payload.image=attachedFileContent; let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id': userId},body:JSON.stringify(payload)}); let data=await r.json(); loading.remove(); if(data.limit_reached){ add('bot', data.reply); input.disabled=true; btn.disabled=true; btn.innerText='!'; btn.onclick=()=>location.href='/pay'; counterEl.innerText='0/25'; counterEl.className='low'; return; } add('bot', data.reply); history.push({role:'assistant', content:data.reply}); if(!isAdmin){let cur=loadCount(); cur.count=(cur.count||0)+1; saveCount(cur.count); updateCounter();} clearFile(); }catch(e){loading.remove(); add('bot','Erreur: '+e.message);} btn.disabled=false; input.focus(); }
 btn.onclick=send; input.onkeydown=e=>{if(e.key==='Enter') send();};
-add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b>, créée par Jonathan Dejah OBENDA.<br><br>🎁 <b>Gratuit :</b> 25 messages/jour + 3 images HD<br>💎 <b>Premium 1000F/semaine :</b> TOUT illimité instantané<br><br>Mode: 🎓 Étudiant | 💰 Vendeur | 💻 Codeur | 🎨 Image<br><br>Essaye: <b>génère image Brazzaville futuriste</b>');
+add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b>, créée par Jonathan Dejah OBENDA.<br><br>🎁 <b>Gratuit :</b> 25 messages/jour + 3 images HD<br>💎 <b>Premium 1000F/semaine :</b> TOUT illimité<br><br>📎 <b>Nouveau:</b> <b>+</b> = analyse PDF/Word/Excel/images<br>🎙️ = dictée vocale<br><br>Essaye: <b>génère image Brazzaville futuriste</b>');
 </script>
 </body></html>
