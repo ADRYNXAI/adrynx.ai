@@ -67,13 +67,14 @@ async def chat_api(req: Request):
         image_keys = ['genere','génère','image','dessine','photo','cree image','crée image','imagine','affiche']
         if any(k in low for k in image_keys):
             clean = low
-            for w in ['genere','génère','moi','une image de','une image','image de','stp','please','tu peux','affiche','genere moi']:
+            for w in ['genere','génère','moi','une image de','une image','image de','stp','please','tu peux','affiche','genere moi','cree']:
                 clean = clean.replace(w,'')
             clean = clean.strip() or 'futuristic Brazzaville Congo'
-            enhanced = f'{clean}, hyper-realistic, ultra detailed, 8K, cinematic lighting, photorealistic, vibrant'
+            enhanced = f'{clean}, hyper-realistic, ultra detailed, 8K, cinematic lighting, photorealistic, vibrant, sharp focus'
             enc = urllib.parse.quote(enhanced[:300])
-            img_url = f'https://image.pollinations.ai/prompt/{enc}?width=1024&height=1024&nologo=true&model=flux&seed={os.urandom(2).hex()}'
-            reply = f"🔥 **Image Premium ADRYNX : {clean}**\n\n<img src='{img_url}' style='max-width:100%;border-radius:12px;border:1px solid #ff7a0033' />\n\n<a href='{img_url}' target='_blank' style='color:#ff7a00'>📥 Télécharger HD</a><br><small>Modele: Flux Pro - qualite GPT-4o + Claude Pro</small>"
+            # FIX HD SANS WATERMARK
+            img_url = f'https://image.pollinations.ai/prompt/{enc}?width=1280&height=1280&model=flux-pro&enhance=true&seed={os.urandom(2).hex()}'
+            reply = f"🔥 **Image Premium ADRYNX : {clean}**\n\n<img src='{img_url}' style='max-width:100%;border-radius:12px;border:1px solid #ff7a0033;display:block' loading='lazy' />\n\n<a href='{img_url}' target='_blank' style='color:#ff7a00;text-decoration:none'>📥 Télécharger HD</a><br><small>Modèle: ADRYNX Flux Pro - qualité Premium</small>"
             return {'reply': reply}
 
         reply = ai.ask(message, history, image_base64=image, is_premium=is_premium)
@@ -91,8 +92,8 @@ async def gen_image(req: Request):
         if not prompt:
             prompt = 'ADRYNX Phoenix Prime logo fire'
         encoded = urllib.parse.quote(prompt)
-        image_url = f'https://image.pollinations.ai/prompt/{encoded}?width=1024&height=1024&nologo=true&model=flux'
+        image_url = f'https://image.pollinations.ai/prompt/{encoded}?width=1280&height=1280&model=flux-pro&enhance=true&seed={os.urandom(2).hex()}'
         return {'image_url': image_url, 'prompt': prompt}
     except Exception as e:
         print(f'IMAGE ERROR: {e}')
-        return {'image_url':'https://image.pollinations.ai/prompt/ADRYNX%20Phoenix%20Prime%20logo%20fire?width=1024','prompt':'ADRYNX'}
+        return {'image_url':'https://image.pollinations.ai/prompt/ADRYNX%20Phoenix%20Prime%20logo%20fire?width=1280&height=1280&model=flux-pro','prompt':'ADRYNX'}
