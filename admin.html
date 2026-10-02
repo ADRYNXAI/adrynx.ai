@@ -2,27 +2,34 @@
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX ADMIN</title>
 <style>
 body{background:#050505;color:#fff;font-family:Inter,sans-serif;margin:0}
-header{background:#111;padding:15px;border-bottom:1px solid #ff7a0033;display:flex;justify-content:space-between}
+header{background:#111;padding:15px;border-bottom:1px solid #ff7a0033;display:flex;justify-content:space-between;align-items:center}
 .card{background:#141414;border:1px solid #222;border-radius:12px;padding:15px;margin:12px}
-button{background:#ff7a00;border:none;padding:8px 14px;border-radius:8px;color:#fff;font-weight:800;cursor:pointer}
-table{width:100%;border-collapse:collapse} th,td{padding:8px;border-bottom:1px solid #222;text-align:left;font-size:13px}
+button{background:#ff7a00;border:none;padding:8px 14px;border-radius:8px;color:#fff;font-weight:800;cursor:pointer;margin:2px}
+button.green{background:#00c851} button.red{background:#333}
+table{width:100%;border-collapse:collapse} th,td{padding:10px;border-bottom:1px solid #222;text-align:left;font-size:13px}
 input{padding:12px;background:#222;border:1px solid #333;border-radius:8px;color:#fff;width:90%}
+.badge{background:#ff7a00;padding:2px 8px;border-radius:20px;font-size:11px}
+.tx{background:#1a1a00;border:1px solid #ff7a00}
 </style>
 </head><body>
 <header><b>🔥 ADRYNX ADMIN</b><span id="st">Non connecté</span></header>
 <div style="padding:10px">
-<div id="login" class="card"><h3>Connexion</h3><input id="pwd" type="password" placeholder="Mot de passe"><br><br><button onclick="login()">Entrer</button></div>
+<div id="login" class="card"><h3>Connexion Patron</h3><input id="pwd" type="password" placeholder="Mot de passe ADRYNX2026"><br><br><button onclick="login()">Entrer</button></div>
 <div id="dash" style="display:none">
-<div class="card">Total Users: <b id="u">0</b> | Premium: <b id="p">0</b></div>
-<div class="card"><h3>Utilisateurs</h3><table><thead><tr><th>ID</th><th>Date</th><th>Premium</th><th>Action</th></tr></thead><tbody id="ut"></tbody></table></div>
+<div class="card">Total Users: <b id="u">0</b> | Premium: <b id="p">0</b> | Paiements: <b id="txc">0</b> <button onclick="load()" style="float:right">Actualiser</button></div>
+
+<div class="card tx"><h3>💰 Paiements MTN MoMo 061174945 - En attente</h3><div id="txs">Chargement...</div></div>
+
+<div class="card"><h3>👥 Utilisateurs</h3><table><thead><tr><th>ID</th><th>Date</th><th>Msg/Img</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="ut"></tbody></table></div>
 </div>
 </div>
 <script>
-let TOK='';
+let TOK=localStorage.getItem('adrynx_admin_tok')||'';
+if(TOK){document.getElementById('login').style.display='none';document.getElementById('dash').style.display='block';document.getElementById('st').innerText='Connecté';load()}
 function login(){
  fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pwd').value})})
  .then(r=>r.json()).then(d=>{
-   if(d.token){TOK=d.token; document.getElementById('login').style.display='none'; document.getElementById('dash').style.display='block'; document.getElementById('st').innerText='Connecté'; load();}
+   if(d.token){TOK=d.token; localStorage.setItem('adrynx_admin_tok',TOK); document.getElementById('login').style.display='none'; document.getElementById('dash').style.display='block'; document.getElementById('st').innerText='Connecté'; load();}
    else alert('Mauvais mot de passe');
  });
 }
@@ -30,10 +37,28 @@ function load(){
  fetch('/api/admin/data',{headers:{'X-Admin-Token':TOK}}).then(r=>r.json()).then(d=>{
    document.getElementById('u').innerText=d.users.length;
    document.getElementById('p').innerText=d.users.filter(x=>x.premium).length;
+   document.getElementById('txc').innerText=(d.transactions||[]).length;
+   // Paiements
+   let txDiv=document.getElementById('txs');
+   if(!d.transactions||d.transactions.length==0){txDiv.innerHTML='<small style="color:#888">Aucun paiement pour le moment</small>'}
+   else{
+     txDiv.innerHTML=d.transactions.map(t=>`<div style="background:#222;padding:10px;border-radius:8px;margin:8px 0">📱 <b>${t.tel}</b> | Ref: <b style="color:#ff7a00">${t.ref||t.trans_ref||'--'}</b><br><small>ID: ${t.user_id} | ${t.date} | ${t.amount}</small><br><button class="green" onclick="validateAndPremium('${t.user_id}','${t.id}')">✅ VALIDER 1000F + ACTIVER PREMIUM</button> <button class="red" onclick="delTx('${t.id}')">Refuser</button></div>`).join('');
+   }
+   // Users
    let t=document.getElementById('ut'); t.innerHTML='';
-   d.users.forEach(u=>{ t.innerHTML+=`<tr><td>${u.id.slice(0,6)}</td><td>${u.date}</td><td>${u.premium?'✅':'❌'}</td><td><button onclick="setP('${u.id}')">Passer Premium</button></td></tr>` });
+   d.users.slice().reverse().forEach(u=>{
+     let msg=u.messages||0; let img=u.images||0;
+     t.innerHTML+=`<tr><td title="${u.id}">${u.id.slice(0,8)}</td><td>${u.date}</td><td>${msg}/${img}</td><td>${u.unlimited?'♾️ GOD':u.premium?'✅ PREM':'❌ FREE'}</td><td><button onclick="setP('${u.id}','premium')">PREM</button><button class="green" onclick="setP('${u.id}','unlimited')">GOD</button><button class="red" onclick="setP('${u.id}','delete')">X</button></td></tr>`
+   });
  });
 }
-function setP(id){ fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id,action:'premium'})}).then(()=>load()); }
+function setP(id,action){ fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id,action})}).then(()=>load()); }
+function delTx(id){ fetch('/api/admin/validate',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id})}).then(()=>load()); }
+function validateAndPremium(userId, txId){
+ // 1. passe premium 2. supprime la transaction
+ fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id:userId,action:'premium'})})
+ .then(()=>fetch('/api/admin/validate',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id:txId})}))
+ .then(()=>{alert('Client activé PREMIUM ! 1000F validé'); load();});
+}
 </script>
 </body></html>
