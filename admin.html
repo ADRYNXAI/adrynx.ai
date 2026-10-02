@@ -1,38 +1,35 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>ADRYNX Admin</title>
+<style>body{background:#0f0f0f;color:#fff;font-family:sans-serif;padding:20px}input,button{padding:12px;border-radius:8px;border:none;margin:5px}button{background:#ff4500;color:#fff;font-weight:bold;cursor:pointer}.card{background:#1e1e1e;padding:15px;border-radius:12px;margin:10px 0}</style>
+</head><body>
+<h1>🔥 ADRYNX ADMIN - Jonathan</h1>
+<div id="login"><input id="pwd" type="password" placeholder="Mot de passe"><button id="btnLogin">ENVOYER</button><p id="msg"></p></div>
+<div id="panel" style="display:none"><h2>Users: <span id="count">0</span></h2><div id="users"></div><h2>Transactions</h2><div id="txs"></div><button onclick="logout()">Logout</button></div>
 <script>
-let TOK=localStorage.getItem('adrynx_admin_tok')||'';
-
-function login(){
- fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pwd').value})})
- .then(r=>r.json()).then(d=>{
-   if(d.token){
-     TOK=d.token;
-     localStorage.setItem('adrynx_admin_tok',TOK);
-     document.getElementById('login').style.display='none';
-     document.getElementById('dash').style.display='block';
-     document.getElementById('st').innerText='Connecté ✅';
-     load();
-   } else {
-     alert('Mauvais mdp');
-   }
- });
+const TOKEN_KEY='adrynx_admin_token';
+let token=localStorage.getItem(TOKEN_KEY)||'';
+const loginDiv=document.getElementById('login'), panelDiv=document.getElementById('panel');
+async function login(){
+  const p=document.getElementById('pwd').value.trim();
+  document.getElementById('msg').innerText='Connexion...';
+  try{
+    const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});
+    const d=await r.json();
+    if(d.token){token=d.token; localStorage.setItem(TOKEN_KEY,token); loginDiv.style.display='none'; panelDiv.style.display='block'; loadData();}
+    else document.getElementById('msg').innerText='Mauvais mot de passe';
+  }catch(e){document.getElementById('msg').innerText='Erreur: '+e}
 }
-
-function load(){
- fetch('/api/admin/data',{headers:{'X-Admin-Token':TOK}}).then(r=>r.json()).then(db=>{
-   document.getElementById('u').innerText=db.users.length;
-   document.getElementById('txc').innerText=db.transactions.length;
-   let txDiv=document.getElementById('txs');
-   txDiv.innerHTML=db.transactions.length==0?'<div class="bubble">Aucun paiement pour 061174945</div>':'<div class="bubble">💰 Paiements MTN 061174945</div>'+db.transactions.map(t=>`<div class="card tx-card"><div class="bubble">📱 ${t.tel}<br>Ref: ${t.ref}<br>ID: ${t.user_id}<br><small>${t.date}</small></div><div class="row"><button class="btn green" onclick="validatePrem('${t.user_id}','${t.id}')">✅ VALIDER 1000F</button> <button class="btn ghost small" onclick="delTx('${t.id}')">Refuser</button></div></div>`).join('');
-   document.getElementById('users').innerHTML=db.users.slice().reverse().map(u=>`<div class="card"><div class="bubble">${u.id}<br><small>${u.date} | ${u.premium?'✅ PREMIUM':u.unlimited?'♾️ GOD':'FREE'}</small></div><div class="row"><button class="btn small" onclick="setP('${u.id}','premium')">PREMIUM</button> <button class="btn small green" onclick="setP('${u.id}','unlimited')">GOD</button> <button class="btn small ghost" onclick="setP('${u.id}','ban')">BAN</button></div></div>`).join('');
- });
+async function loadData(){
+  const r=await fetch('/api/admin/data',{headers:{'X-Admin-Token':token}});
+  const db=await r.json();
+  document.getElementById('count').innerText=db.users.length;
+  document.getElementById('users').innerHTML=db.users.map(u=>`<div class=card>${u.id} | ${u.date} | ${u.premium?'PREMIUM':'FREE'} <button onclick="actionUser('${u.id}','premium')">Premium</button> <button onclick="actionUser('${u.id}','unlimited')">Unlimited</button> <button onclick="actionUser('${u.id}','ban')">Ban</button> <button onclick="actionUser('${u.id}','delete')">Del</button></div>`).join('');
+  document.getElementById('txs').innerHTML=db.transactions.map(t=>`<div class=card>${t.tel} ${t.ref} ${t.date} <button onclick="validateTx('${t.id}')">Valider</button></div>`).join('');
 }
-
-function setP(id,act){fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id,action:act})}).then(()=>load())}
-function delTx(id){fetch('/api/admin/validate',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id})}).then(()=>load())}
-
-function validatePrem(uid,txid){
-  fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id:uid,action:'premium'})})
-  .then(()=>fetch('/api/admin/validate',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':TOK},body:JSON.stringify({id:txid})}))
-  .then(()=>{alert('✅ Premium activé pour '+uid);load();});
-}
-</script>
+async function actionUser(id,action){await fetch('/api/admin/user',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify({id,action})}); loadData();}
+async function validateTx(id){await fetch('/api/admin/validate',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':token},body:JSON.stringify({id})}); loadData();}
+function logout(){localStorage.removeItem(TOKEN_KEY); location.reload();}
+document.getElementById('btnLogin').addEventListener('click',login);
+document.getElementById('pwd').addEventListener('keydown',e=>{if(e.key==='Enter') login();});
+if(token){loginDiv.style.display='none'; panelDiv.style.display='block'; loadData();}
+</script></body></html>
