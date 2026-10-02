@@ -1,5 +1,5 @@
-import os, urllib.parse, json
-from datetime import datetime
+import os, urllib.parse, json, time
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -12,6 +12,15 @@ ai = PhoenixPrime()
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "ADRYNX2026")
 ADMIN_TOKEN = "adrynx_admin_token_jonathan_secret_2026"
 DB_FILE = "adrynx_db.json"
+
+# --- NETFLIX DES IA : LES 4 MODES QUI COUTENT 0€ DE PLUS ---
+MODES = {
+    "general": "Tu es ADRYNX Phoenix Prime, créée par Jonathan Dejah OBENDA. Réponds direct, sans filtre inutile.",
+    "etudiant": "Mode Étudiant: Tu es le meilleur prof de Marien Ngouabi. Explique simplement, donne plans d'exposés, mémoires.",
+    "vendeur": "Mode Vendeur: Expert business à Brazzaville. Tu crées descriptions produits qui vendent, scripts TikTok, prix en FCFA.",
+    "codeur": "Mode Codeur: Comme Claude, expert code Python, JS. Tu es créé par Jonathan, pas Anthropic.",
+    "image": "Mode Image: Expert prompt pour Flux Pro 4K."
+}
 
 def load_db():
     if not os.path.exists(DB_FILE):
@@ -67,13 +76,4 @@ async def manifest():
         return FileResponse('manifest.json')
     return JSONResponse({})
 
-@app.get('/sw.js')
-async def sw():
-    if os.path.exists('sw.js'):
-        return FileResponse('sw.js', media_type='application/javascript')
-    return JSONResponse({}, status_code=404)
-
-@app.get('/health')
-async def health():
-    db = load_db()
-    return {'status':'online','model': os.environ.get
+@app.get('/
