@@ -26,41 +26,31 @@ header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;backgrou
 #counter.premium{background:#ff7a0022;border-color:#ff7a00;color:#ff7a00}
 .speakBtn{margin-left:8px;padding:2px 8px;border-radius:12px;border:1px solid #333;background:#222;color:#ff7a00;font-size:11px;cursor:pointer}
 #fileName{font-size:11px;color:#ff7a00;padding:0 0 8px 12px;display:none}
-/* ORBE ORANGE */
-#voiceOverlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#fafafa;z-index:9999;flex-direction:column;align-items:center;justify-content:space-between;padding:20px 16px}
+/* ORBE ULTRA SPECTACULAIRE - PLUS QUE GPT - 100% SAFE CSS PUR */
+#voiceOverlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#faf6f1;z-index:9999;flex-direction:column;align-items:center;justify-content:space-between;padding:20px 16px}
 #voiceOverlay.open{display:flex}
-#orb{width:240px;height:240px;border-radius:50%;background:radial-gradient(ellipse at 30% 20%, #ffad66 0%, #ff7a00 25%, #ff5a00 50%, #ff8c33 80%, #fff 100%);box-shadow:0 0 80px rgba(255,122,0,0.35), inset 0 0 40px rgba(255,255,255,0.6);position:relative;overflow:hidden}
-#orb::before{content:'';position:absolute;top:-10%;left:-10%;width:120%;height:70%;background:radial-gradient(ellipse, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 40%, transparent 70%);animation:cloudDrift 6s ease-in-out infinite alternate}
-#orb.speaking{animation:orbPulse 1.2s ease-in-out infinite}
-@keyframes orbPulse{0%,100%{transform:scale(1.05)}50%{transform:scale(1.15)}}
-@keyframes cloudDrift{0%{transform:translateX(-10px)}100%{transform:translateX(10px)}}
+#orb{width:295px;height:295px;border-radius:50%;background:radial-gradient(ellipse at 22% 28%, rgba(255,255,255,0.98) 0 14%, rgba(255,255,255,0.55) 20%, transparent 36%),radial-gradient(ellipse at 76% 64%, rgba(255,255,255,0.88) 0 13%, transparent 30%),radial-gradient(ellipse at 45% 85%, rgba(255,255,255,0.5) 0 10%, transparent 24%),radial-gradient(circle at 32% 22%, #ffd9a6 0%, #ff9a3d 18%, #ff7a00 28%, #ff4a00 52%, #ff8c33 80%, #fff7ec 100%);box-shadow:0 0 95px rgba(255,122,0,0.6), inset 0 0 45px rgba(255,255,255,0.85);position:relative;overflow:hidden;animation:adrynxBreath 1.7s ease-in-out infinite}
+#orb::before{content:'';position:absolute;top:-12%;left:-12%;width:124%;height:72%;background:radial-gradient(ellipse, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.35) 38%, transparent 68%);animation:cloudDrift 4.5s ease-in-out infinite alternate}
+#orb::after{content:'';position:absolute;inset:-34px;border-radius:50%;background:radial-gradient(circle, rgba(255,122,0,0.48) 0%, rgba(255,122,0,0.12) 40%, transparent 70%);animation:adrynxGlow 1.7s ease-in-out infinite;z-index:-1}
+#orb.speaking{animation:orbPulseFast 0.6s ease-in-out infinite!important}
+@keyframes adrynxBreath{0%{transform:scale(1)}50%{transform:scale(1.2);filter:brightness(1.22)}100%{transform:scale(1)}}
+@keyframes orbPulseFast{0%{transform:scale(1.06)}50%{transform:scale(1.32);filter:brightness(1.32)}100%{transform:scale(1.06)}}
+@keyframes adrynxGlow{0%{transform:scale(0.8);opacity:0.5}50%{transform:scale(1.42);opacity:1}100%{transform:scale(0.8);opacity:0.5}}
+@keyframes cloudDrift{0%{transform:translateX(-9px) translateY(3px)}100%{transform:translateX(9px) translateY(-3px)}}
 #voiceClose{width:44px;height:44px;background:#111;border:none;border-radius:50%;color:#fff;font-size:20px;cursor:pointer}
 </style>
 </head><body>
 <header><span>🔥 ADRYNX 1000F 🇨🇬</span><div style="display:flex;gap:6px;align-items:center"><span id="counter">25/25</span><button id="voiceToggle" class="on">🔊</button></div></header>
-<div id="modes">
-<button class="modeBtn active" data-mode="general">💬 Général</button>
-<button class="modeBtn" data-mode="etudiant">🎓 Étudiant</button>
-<button class="modeBtn" data-mode="vendeur">💰 Vendeur</button>
-<button class="modeBtn" data-mode="codeur">💻 Codeur</button>
-<button class="modeBtn" data-mode="image">🎨 Image 4K</button>
-</div>
+<div id="modes"><button class="modeBtn active" data-mode="general">💬 Général</button><button class="modeBtn" data-mode="etudiant">🎓 Étudiant</button><button class="modeBtn" data-mode="vendeur">💰 Vendeur</button><button class="modeBtn" data-mode="codeur">💻 Codeur</button><button class="modeBtn" data-mode="image">🎨 Image 4K</button></div>
 <div id="chat"></div>
 <div id="bar"><div id="fileName"></div><div id="inputWrapper"><button id="plusBtn">+</button><input id="input" placeholder="Demander à ADRYNX..."><button id="micBtn">🎙️</button><button id="sendBtn">)))</button></div><input type="file" id="fileInput" hidden accept=".pdf,.docx,.doc,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp"></div>
-<div id="voiceOverlay"><div style="width:100%;display:flex;justify-content:space-between"><button onclick="closeOrb()" style="width:36px;height:36px;border-radius:50%;border:none">—</button><button style="width:36px;height:36px;border-radius:50%;border:none">⤢</button></div><div id="orb"></div><div style="width:100%;display:flex;flex-direction:column;gap:12px;align-items:center"><div id="voiceStatus" style="font-size:14px;color:#666">Parle à ADRYNX...</div><div style="width:100%;max-width:500px;display:flex;align-items:center;background:#fff;border-radius:28px;border:1px solid #e5e7eb;padding:8px 10px;gap:8px"><button style="border:none;background:none;font-size:22px">+</button><input id="voiceInput" placeholder="Demander à ADRYNX..." style="flex:1;border:none;outline:none"><button id="voiceClose" onclick="closeOrb()">✕</button></div></div></div>
+<div id="voiceOverlay"><div style="width:100%;display:flex;justify-content:space-between"><button onclick="closeOrb()" style="width:36px;height:36px;border-radius:50%;border:none;background:#fff">—</button><button style="width:36px;height:36px;border-radius:50%;border:none;background:#fff">⤢</button></div><div id="orb"></div><div style="width:100%;display:flex;flex-direction:column;gap:12px;align-items:center"><div id="voiceStatus" style="font-size:14px;color:#666;font-weight:600">Parle à ADRYNX...</div><div style="width:100%;max-width:500px;display:flex;align-items:center;background:#fff;border-radius:28px;border:1px solid #e5e7eb;padding:8px 10px;gap:8px"><button style="border:none;background:none;font-size:22px">+</button><input id="voiceInput" placeholder="Demander à ADRYNX..." style="flex:1;border:none;outline:none"><button id="voiceClose" onclick="closeOrb()">✕</button></div></div></div>
 <script>
 const chat=document.getElementById('chat'), input=document.getElementById('input'), btn=document.getElementById('sendBtn'), voiceToggle=document.getElementById('voiceToggle'), counterEl=document.getElementById('counter'), plusBtn=document.getElementById('plusBtn'), fileInput=document.getElementById('fileInput'), micBtn=document.getElementById('micBtn'), fileNameEl=document.getElementById('fileName'), overlay=document.getElementById('voiceOverlay'), orb=document.getElementById('orb'), voiceStatus=document.getElementById('voiceStatus'), voiceInput=document.getElementById('voiceInput');
 let history=[], currentMode='general', voiceEnabled=localStorage.getItem('adrynx_voice')!=='off', bestVoice=null, attachedFileContent=null, attachedFileName=null;
-const LIMIT=25;
-let userId=localStorage.getItem('adrynx_uid');
-if(!userId){ userId='user_'+Math.random().toString(36).substring(2,10); localStorage.setItem('adrynx_uid', userId); }
-if(window.location.search.includes('jonathan')) userId='jonathan_admin_unlimited';
-const isAdmin = userId==='jonathan_admin_unlimited';
-function getToday(){return new Date().toISOString().slice(0,10);}
-function loadCount(){ if(isAdmin) return {count:0,date:getToday()}; let d=JSON.parse(localStorage.getItem('adrynx_count_v2')||'{}'); if(d.date!==getToday()) return {count:0,date:getToday()}; return d; }
-function saveCount(c){localStorage.setItem('adrynx_count_v2', JSON.stringify({count:c,date:getToday()}));}
-function updateCounter(){ if(isAdmin){ counterEl.innerText='∞ ILLIMITÉ'; counterEl.className='premium'; return; } let {count}=loadCount(); let rest=LIMIT-count; counterEl.innerText=rest>0?rest+'/25 restants':'0/25 - Premium?'; counterEl.className=rest<=5?'low':''; if(rest<=0){ input.placeholder='Limite atteinte - Passe Premium 1000F'; input.disabled=true; btn.disabled=true; btn.innerText='!'; btn.onclick=()=>location.href='/pay'; } }
-updateCounter();
+const LIMIT=25; let userId=localStorage.getItem('adrynx_uid'); if(!userId){ userId='user_'+Math.random().toString(36).substring(2,10); localStorage.setItem('adrynx_uid', userId); } if(window.location.search.includes('jonathan')) userId='jonathan_admin_unlimited'; const isAdmin = userId==='jonathan_admin_unlimited';
+function getToday(){return new Date().toISOString().slice(0,10);} function loadCount(){ if(isAdmin) return {count:0,date:getToday()}; let d=JSON.parse(localStorage.getItem('adrynx_count_v2')||'{}'); if(d.date!==getToday()) return {count:0,date:getToday()}; return d; } function saveCount(c){localStorage.setItem('adrynx_count_v2', JSON.stringify({count:c,date:getToday()}));}
+function updateCounter(){ if(isAdmin){ counterEl.innerText='∞ ILLIMITÉ'; counterEl.className='premium'; return; } let {count}=loadCount(); let rest=LIMIT-count; counterEl.innerText=rest>0?rest+'/25 restants':'0/25 - Premium?'; counterEl.className=rest<=5?'low':''; if(rest<=0){ input.placeholder='Limite atteinte - Passe Premium 1000F'; input.disabled=true; btn.disabled=true; btn.innerText='!'; btn.onclick=()=>location.href='/pay'; } } updateCounter();
 function loadVoices(){const voices=speechSynthesis.getVoices(); if(!voices.length) return; const fr=voices.filter(v=>v.lang.toLowerCase().includes('fr')); const prio=['Google français','Amélie','Thomas','Hortense','Paul']; for(let n of prio){let f=fr.find(v=>v.name.includes(n)); if(f){bestVoice=f; break;}} if(!bestVoice&&fr.length) bestVoice=fr[0];}
 if('speechSynthesis' in window){loadVoices(); speechSynthesis.onvoiceschanged=loadVoices;}
 function updateVoiceBtn(){voiceToggle.innerText=voiceEnabled?'🔊':'🔇'; voiceToggle.className=voiceEnabled?'on':''; localStorage.setItem('adrynx_voice', voiceEnabled?'on':'off');}
@@ -71,7 +61,7 @@ function add(role, html){ let d=document.createElement('div'); d.className='msg 
 plusBtn.onclick=()=>fileInput.click();
 fileInput.onchange=async (e)=>{ const file=e.target.files[0]; if(!file) return; fileNameEl.style.display='block'; fileNameEl.innerText='📎 '+file.name+' lecture...'; attachedFileName=file.name; try{ if(file.type.startsWith('text/')||file.name.match(/\.(csv|txt)$/i)){ attachedFileContent=await file.text(); } else if(file.name.match(/\.(png|jpg|jpeg|webp)$/i)){ const r=new FileReader(); attachedFileContent=await new Promise(res=>{r.onload=()=>res(r.result); r.readAsDataURL(file);}); } else { try{ attachedFileContent=await file.text(); if(attachedFileContent.length<20) throw 'bin'; }catch{ attachedFileContent='[FICHIER: '+file.name+']'; } } fileNameEl.innerText='✅ 📎 '+file.name+' prêt'; input.placeholder='Question sur '+file.name+'...'; }catch(err){ fileNameEl.innerText='⚠️ '+err; } };
 function clearFile(){ attachedFileContent=null; attachedFileName=null; fileNameEl.style.display='none'; fileInput.value=''; input.placeholder='Demander à ADRYNX...'; }
-let recognition=null; if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; recognition=new SR(); recognition.lang='fr-FR'; recognition.onstart=()=>{micBtn.classList.add('listening'); voiceStatus.innerText='Je t\'écoute...';}; recognition.onend=()=>{micBtn.classList.remove('listening'); voiceStatus.innerText='Parle à ADRYNX...';}; recognition.onresult=(ev)=>{ let t=ev.results[0][0].transcript; input.value=t; voiceInput.value=t; if(overlay.classList.contains('open')) send(t); }; }
+let recognition=null; if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; recognition=new SR(); recognition.lang='fr-FR'; recognition.onstart=()=>{micBtn.classList.add('listening'); orb.classList.add('listening'); voiceStatus.innerText='Je t\'écoute...';}; recognition.onend=()=>{micBtn.classList.remove('listening'); orb.classList.remove('listening'); voiceStatus.innerText='Parle à ADRYNX...';}; recognition.onresult=(ev)=>{ let t=ev.results[0][0].transcript; input.value=t; voiceInput.value=t; if(overlay.classList.contains('open')) send(t); }; }
 micBtn.onclick=()=>{ if(!recognition){ add('bot','🎤 Utilise Chrome'); return; } try{ recognition.start(); }catch{ recognition.stop(); } };
 function openOrb(){ overlay.classList.add('open'); if(recognition) try{recognition.start();}catch{} }
 function closeOrb(){ overlay.classList.remove('open'); speechSynthesis.cancel(); orb.classList.remove('speaking'); }
@@ -79,6 +69,6 @@ async function send(forcedQ){ let q=(forcedQ||input.value||voiceInput.value).tri
 btn.onclick=()=>{ let q=input.value.trim(); if(!q &&!attachedFileContent){ openOrb(); } else { send(); } };
 input.onkeydown=e=>{if(e.key==='Enter') send();};
 voiceInput.onkeydown=e=>{if(e.key==='Enter') send();};
-add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b>, créée par Jonathan Dejah OBENDA.<br><br>🎁 <b>Gratuit :</b> 25 messages/jour + 3 images HD<br>💎 <b>Premium 1000F/semaine :</b> TOUT illimité<br><br>📎 <b>+</b> = fichier | 🎙️ = dictée | 🟠 ))) vide = ORBE ORANGE<br><br>Essaye: <b>génère image Brazzaville futuriste</b>');
+add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b>, créée par Jonathan Dejah OBENDA.<br><br>🎁 <b>Gratuit :</b> 25 messages/jour + 3 images HD<br>💎 <b>Premium 1000F/semaine :</b> TOUT illimité<br><br>📎 <b>+</b> = fichier | 🎙️ = dictée | 🟠 ))) vide = ORBE SOLEIL<br><br>Essaye: <b>génère image Brazzaville futuriste</b>');
 </script>
 </body></html>
