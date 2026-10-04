@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Orbe Caramel Chaud V12</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Orbe Caramel Chaud V12.1 Fix Rond</title>
 <style>
 body{background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
 header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;background:#111;font-weight:900;color:orange;letter-spacing:0.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -25,13 +25,12 @@ header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;backgrou
 #fileName{font-size:11px;color:#ff7a00;padding:0 0 8px 12px;display:none}
 #voiceOverlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#faf6f1;z-index:9999;flex-direction:column;align-items:center;padding:12px 16px;overflow:hidden}
 #voiceOverlay.open{display:flex}
-/* FIX PROMESSE V12 - CARAMEL CHAUD - ANDROID NE SORT PLUS */
-#orbWrap{width:min(280px,68vw);height:min(280px,68vw);max-width:300px;max-height:300px;margin:12px auto;padding:16px 0 20px;position:relative;display:flex;align-items:center;justify-content:center;overflow:visible;perspective:900px;box-sizing:border-box}
-#orb{width:100%;height:100%;border-radius:50%;overflow:hidden;position:relative;background:#000;animation:bouleLevitateSafe 3.8s ease-in-out infinite;box-shadow:0 32px 64px rgba(0,0,0,0.55),0 0 95px rgba(255,122,0,0.65),0 0 160px rgba(255,122,0,0.32)}
-#orbVideo{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;transform:scale(1.06)}
-#orbShadow{position:absolute;bottom:0;left:50%;width:42%;height:18px;background:radial-gradient(ellipse, rgba(0,0,0,0.48) 0%, rgba(0,0,0,0.12) 55%, transparent 76%);border-radius:50%;filter:blur(6px);transform:translateX(-50%);animation:shadowSafe 3.8s ease-in-out infinite}
+/* V12.1 FIX ROND PARFAIT - PROMESSE: NE CASSE RIEN - LOGS VERTS */
+#orbWrap{width:min(280px,68vw);height:min(280px,68vw);max-width:300px;max-height:300px;margin:12px auto;padding:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:visible;perspective:900px;box-sizing:border-box;aspect-ratio:1/1;background:transparent}
+#orb{width:100%;height:100%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;position:relative;background:transparent;animation:bouleLevitateSafe 3.8s ease-in-out infinite;box-shadow:none;filter:drop-shadow(0 28px 32px rgba(0,0,0,0.45)) drop-shadow(0 0 28px rgba(255,122,0,0.55))}
+#orbVideo{width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;object-position:center center;border-radius:50%;display:block;transform:none;background:transparent}
+#orbShadow{display:none}
 @keyframes bouleLevitateSafe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.02)}}
-@keyframes shadowSafe{0%,100%{transform:translateX(-50%) scale(1);opacity:0.45}50%{transform:translateX(-50%) scale(0.65);opacity:0.14}}
 #orb.speaking{animation:bouleLevitateSafe 3.8s ease-in-out infinite, speakSafe 0.32s ease-in-out infinite!important}
 @keyframes speakSafe{0%{transform:translateY(-8px) scale(1.02)}50%{transform:translateY(-8px) scale(1.14)}100%{transform:translateY(-8px) scale(1.02)}}
 @keyframes breathInOut{0%{transform:translateY(-8px) scale(1.02)}40%{transform:translateY(-8px) scale(1.28)}60%{transform:translateY(-8px) scale(1.28)}100%{transform:translateY(-8px) scale(1.02)}}
@@ -41,8 +40,7 @@ header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;backgrou
 .orbMode{padding:8px 12px;border-radius:20px;border:1px solid #ddd;background:#fff;color:#333;font-size:12px;cursor:pointer}
 .orbMode.active{background:#111;color:#fff;font-weight:800}
 #startBreath{padding:12px 22px;border-radius:28px;border:none;background:#ff8c2f;color:#fff;font-weight:900;font-size:14px;cursor:pointer}
-</style>
-</head><body>
+</style></head><body>
 <header><span>🔥 ADRYNX 1000F 🇨🇬</span><div style="display:flex;gap:6px;align-items:center"><span id="counter">25/25</span><button id="voiceToggle" class="on">🔊</button></div></header>
 <div id="modes"><button class="modeBtn active" data-mode="general">💬 Général</button><button class="modeBtn" data-mode="etudiant">🎓 Étudiant</button><button class="modeBtn" data-mode="vendeur">💰 Vendeur</button><button class="modeBtn" data-mode="codeur">💻 Codeur</button><button class="modeBtn" data-mode="image">🎨 Image 4K</button></div>
 <div id="chat"></div>
@@ -68,12 +66,9 @@ function clearFile(){ attachedFileContent=null; attachedFileName=null; fileNameE
 let recognition=null; let keepListening=false;
 if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  recognition=new SR();
-  recognition.lang='fr-FR';
-  recognition.continuous=true;
-  recognition.interimResults=false;
+  recognition=new SR(); recognition.lang='fr-FR'; recognition.continuous=true; recognition.interimResults=false;
   recognition.onstart=()=>{ keepListening=true; micBtn.classList.add('listening'); voiceStatus.innerText='Je t\'écoute...'; };
-  recognition.onend=()=>{ micBtn.classList.remove('listening'); if(keepListening && overlay.classList.contains('open')){ try{recognition.start();}catch{} voiceStatus.innerText='Je t\'écoute encore...'; } else { voiceStatus.innerText='Breathe • 4s inhale • 6s exhale'; } };
+  recognition.onend=()=>{ micBtn.classList.remove('listening'); if(keepListening && overlay.classList.contains('open')){ try{recognition.start();}catch{} } else { voiceStatus.innerText='Breathe • 4s inhale • 6s exhale'; } };
   recognition.onresult=(ev)=>{ let t=ev.results[ev.results.length-1][0].transcript.trim(); if(!t) return; voiceStatus.innerText='Tu as dit: '+t; input.value=t; voiceInput.value=t; send(t); };
 }
 micBtn.onclick=()=>{ if(!recognition){ add('bot','🎤 Utilise Chrome'); return; } if(keepListening){ keepListening=false; try{recognition.stop();}catch{} } else { keepListening=true; try{recognition.start();}catch{ recognition.stop(); } } };
@@ -81,12 +76,11 @@ function openOrb(){ overlay.classList.add('open'); keepListening=true; if(recogn
 function closeOrb(){ keepListening=false; overlay.classList.remove('open'); speechSynthesis.cancel(); orb.classList.remove('speaking','breathing'); if(orbVideo) orbVideo.classList.remove('speaking','breathing'); breathingActive=false; document.getElementById('startBreath').innerText='⏸ Start Breathing'; voiceStatus.innerText='Breathe • 4s inhale • 6s exhale'; try{recognition.stop();}catch{} }
 function speakHuman(text){ if(!voiceEnabled) return; if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); let clean=text.replace(/<[^>]*>/g,'').replace(/https?:\/\/\S+/g,'').trim(); if(!clean) return; let phrases=clean.match(/[^.!?]+[.!?]+/g)||[clean]; let i=0; function speakNext(){ if(i>=phrases.length){ orb.classList.remove('speaking'); if(orbVideo) orbVideo.classList.remove('speaking'); return; } const u=new SpeechSynthesisUtterance(phrases[i].slice(0,380)); if(bestVoice) u.voice=bestVoice; u.lang='fr-FR'; u.rate=0.93; u.pitch=1.02; orb.classList.add('speaking'); if(orbVideo) orbVideo.classList.add('speaking'); u.onend=()=>{ i++; speakNext(); }; speechSynthesis.speak(u); } speakNext(); }
 let breathingActive=false, breathTimer=null;
-document.querySelectorAll('.orbMode').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.orbMode').forEach(x=>x.classList.remove('active')); b.classList.add('active'); if(b.dataset.orb==='clarity') orbVideo.style.filter='hue-rotate(180deg) brightness(1.2)'; else if(b.dataset.orb==='energy') orbVideo.style.filter='hue-rotate(320deg) saturate(1.8)'; else if(b.dataset.orb==='calm') orbVideo.style.filter='saturate(0.5) brightness(1.1)'; else orbVideo.style.filter='none';}});
-document.getElementById('startBreath').onclick=()=>{const btnB=document.getElementById('startBreath'); if(breathingActive){breathingActive=false; clearInterval(breathTimer); orb.classList.remove('breathing'); orbVideo.classList.remove('breathing'); btnB.innerText='⏸ Start Breathing'; voiceStatus.innerText='Breathe • 4s inhale • 6s exhale'; speechSynthesis.cancel(); return;} breathingActive=true; btnB.innerText='⏹ Stop Breathing'; let inhale=true, cycles=0; orb.classList.add('breathing'); orbVideo.classList.add('breathing'); function tick(){if(!breathingActive) return; if(inhale){voiceStatus.innerText='🫁 INSPIRE 4s...'; try{speechSynthesis.speak(new SpeechSynthesisUtterance('Inspire'));}catch{}} else{voiceStatus.innerText='😮 EXPIRE 6s...'; try{speechSynthesis.speak(new SpeechSynthesisUtterance('Expire'));}catch{} cycles++; if(cycles>=6){breathingActive=false; clearInterval(breathTimer); orb.classList.remove('breathing'); orbVideo.classList.remove('breathing'); btnB.innerText='⏸ Start Breathing'; voiceStatus.innerText='✅ Séance terminée - Bravo!'; return;}} inhale=!inhale;} tick(); breathTimer=setInterval(tick, 5000);};
+document.querySelectorAll('.orbMode').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.orbMode').forEach(x=>x.classList.remove('active')); b.classList.add('active');}});
+document.getElementById('startBreath').onclick=()=>{const btnB=document.getElementById('startBreath'); if(breathingActive){breathingActive=false; clearInterval(breathTimer); orb.classList.remove('breathing'); orbVideo.classList.remove('breathing'); btnB.innerText='⏸ Start Breathing'; voiceStatus.innerText='Breathe • 4s inhale • 6s exhale'; speechSynthesis.cancel(); return;} breathingActive=true; btnB.innerText='⏹ Stop Breathing'; let inhale=true, cycles=0; orb.classList.add('breathing'); orbVideo.classList.add('breathing'); function tick(){if(!breathingActive) return; if(inhale){voiceStatus.innerText='🫁 INSPIRE 4s...';} else{voiceStatus.innerText='😮 EXPIRE 6s...'; cycles++; if(cycles>=6){breathingActive=false; clearInterval(breathTimer); orb.classList.remove('breathing'); orbVideo.classList.remove('breathing'); btnB.innerText='⏸ Start Breathing'; voiceStatus.innerText='✅ Séance terminée - Bravo!'; return;}} inhale=!inhale;} tick(); breathTimer=setInterval(tick, 5000);};
 async function send(forcedQ){ let q=(forcedQ||input.value||voiceInput.value).trim(); if(!q &&!attachedFileContent) return; if(!isAdmin){let {count}=loadCount(); if(count>=LIMIT){ add('bot','🔒 <b>Limite 25/jour atteinte</b><br>Passe Premium 1000F/semaine → <a href="/pay">PAYER MAINTENANT</a>'); return; }} let fullQ=q; if(attachedFileContent){ if(attachedFileContent.startsWith('data:image')) fullQ=(q||'Analyse image')+'\n[IMAGE: '+attachedFileName+']'; else fullQ=(q||'Analyse fichier')+'\n--- FICHIER '+attachedFileName+' ---\n'+attachedFileContent.slice(0,15000)+'\n--- FIN ---'; } add('user', (attachedFileName?'📎 <b>'+attachedFileName+'</b><br>':'')+ (q||'(analyse)')); history.push({role:'user', content:fullQ}); input.value=''; voiceInput.value=''; btn.disabled=true; let loading=document.createElement('div'); loading.className='msg bot'; loading.innerText='⚡ ADRYNX '+currentMode+' analyse...'; chat.appendChild(loading); chat.scrollTop=chat.scrollHeight; try{ let payload={message:fullQ,history:history.slice(-6),isPremium:isAdmin,mode:currentMode}; if(attachedFileContent && attachedFileContent.startsWith('data:image')) payload.image=attachedFileContent; let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id': userId},body:JSON.stringify(payload)}); let data=await r.json(); loading.remove(); if(data.limit_reached){ add('bot', data.reply); input.disabled=true; btn.disabled=true; btn.innerText='!'; btn.onclick=()=>location.href='/pay'; counterEl.innerText='0/25'; counterEl.className='low'; return; } add('bot', data.reply); history.push({role:'assistant', content:data.reply}); if(!isAdmin){let cur=loadCount(); cur.count=(cur.count||0)+1; saveCount(cur.count); updateCounter();} clearFile(); }catch(e){loading.remove(); add('bot','Erreur: '+e.message);} btn.disabled=false; input.focus(); }
 btn.onclick=()=>{ let q=input.value.trim(); if(!q &&!attachedFileContent){ openOrb(); } else { send(); } };
 input.onkeydown=e=>{if(e.key==='Enter') send();};
 voiceInput.onkeydown=e=>{if(e.key==='Enter') send();};
-add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b> - Caramel Chaud V12 ✅<br>Vidéo: oj4pkp.mp4 • Fix Android • Logs verts');
-</script>
-</body></html>
+add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b> - Caramel Chaud V12.1 ✅<br>Fix rond parfait gauche/droite • oj4pkp.mp4 • Logs verts');
+</script></body></html>
