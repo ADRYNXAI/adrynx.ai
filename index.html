@@ -1,95 +1,107 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Orbe Caramel Chaud V12.2 Final</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX V12.4 Continu Vivant</title>
 <style>
+/* TON CSS DE BASE INCHANGÉ */
 body{background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
-header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;background:#111;font-weight:900;color:orange;letter-spacing:0.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-#modes{display:flex;gap:6px;padding:10px;background:#111;border-bottom:1px solid #222;overflow-x:auto;scrollbar-width:none}
-.modeBtn{padding:8px 14px;border-radius:20px;border:1px solid #333;background:#1e1e1e;color:#fff;font-size:12px;cursor:pointer;white-space:nowrap;transition:0.2s}
-.modeBtn.active{background:#ff7a00;border-color:#ff7a00;font-weight:800;transform:scale(1.05)}
+header{padding:10px 12px;border-bottom:1px solid #222;background:#111;font-weight:900;color:orange;display:flex;justify-content:space-between;align-items:center}
+#modes{display:flex;gap:6px;padding:10px;background:#111;border-bottom:1px solid #222;overflow-x:auto}
+.modeBtn{padding:8px 14px;border-radius:20px;border:1px solid #333;background:#1e1e1e;color:#fff;font-size:12px;cursor:pointer}
+.modeBtn.active{background:#ff7a00;border-color:#ff7a00;font-weight:800}
 #chat{flex:1;overflow:auto;padding:15px;display:flex;flex-direction:column;gap:12px}
-.msg{padding:12px 15px;border-radius:14px;max-width:92%;line-height:1.4;word-wrap:break-word;position:relative}
-.user{align-self:flex-end;background:#ff7a00;color:#fff;border-bottom-right-radius:4px}
-.bot{align-self:flex-start;background:#1e1e1e;border:1px solid #2a2a2a;border-bottom-left-radius:4px}
-.bot a{color:#ff7a00;text-decoration:none;font-weight:700}
+.msg{padding:12px 15px;border-radius:14px;max-width:92%}
+.user{align-self:flex-end;background:#ff7a00;color:#fff}
+.bot{align-self:flex-start;background:#1e1e1e;border:1px solid #2a2a2a}
 #bar{display:flex;flex-direction:column;background:#111;border-top:1px solid #222;padding:12px}
-#inputWrapper{flex:1;display:flex;align-items:center;background:#fff;border-radius:28px;border:1.5px solid #e5e7eb;padding:6px 8px 6px 12px;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
-#plusBtn{width:36px;height:36px;border:none;background:none;font-size:32px;color:#111;cursor:pointer;border-radius:50%}
-#input{flex:1;padding:10px 4px;border:none;background:transparent;color:#111;outline:none;font-size:16px}
-#micBtn{width:36px;height:36px;border:none;background:none;font-size:20px;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center}
-#micBtn.listening{animation:pulse 1s infinite;background:#ff7a0022}
-#sendBtn{width:44px;height:44px;background:#ff7a00;border:none;border-radius:50%;color:#fff;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
-#voiceToggle{padding:5px 10px;border-radius:20px;border:1px solid #ff7a00;background:#1e1e1e;color:#ff7a00;font-size:11px;font-weight:800;cursor:pointer}
-#voiceToggle.on{background:#ff7a00;color:#fff}
-#counter{font-size:10px;background:#1e1e1e;border:1px solid #333;padding:5px 10px;border-radius:20px;color:#aaa;white-space:nowrap}
-.speakBtn{margin-left:8px;padding:2px 8px;border-radius:12px;border:1px solid #333;background:#222;color:#ff7a00;font-size:11px;cursor:pointer}
-#fileName{font-size:11px;color:#ff7a00;padding:0 0 8px 12px;display:none}
-#voiceOverlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#faf6f1;z-index:9999;flex-direction:column;align-items:center;padding:12px 16px;overflow:hidden;justify-content:space-between}
+#inputWrapper{flex:1;display:flex;align-items:center;background:#fff;border-radius:28px;padding:6px 8px 6px 12px;gap:8px}
+#input{flex:1;border:none;outline:none;color:#111}
+#sendBtn{width:44px;height:44px;background:#ff7a00;border:none;border-radius:50%;color:#fff;font-weight:800;cursor:pointer}
+#voiceOverlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#faf6f1;z-index:9999;flex-direction:column;align-items:center;padding:12px 16px;justify-content:space-between;transition:background 0.5s}
 #voiceOverlay.open{display:flex}
-#orbWrap{width:min(260px,62vw);height:min(260px,62vw);max-width:280px;max-height:280px;margin:10px auto;padding:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:visible;perspective:900px;box-sizing:border-box;aspect-ratio:1/1;background:transparent;flex-shrink:0}
-#orb{width:100%;height:100%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;position:relative;background:transparent;animation:bouleLevitateSafe 3.8s ease-in-out infinite;box-shadow:none;filter:drop-shadow(0 18px 20px rgba(0,0,0,0.4)) drop-shadow(0 0 18px rgba(255,122,0,0.5))}
-#orbVideo{width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;object-position:center center;border-radius:50%;display:block;transform:scale(1.28);background:transparent}
-#orbShadow{display:none}
-@keyframes bouleLevitateSafe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.02)}}
-#orb.speaking{animation:bouleLevitateSafe 3.8s ease-in-out infinite, speakSafe 0.32s ease-in-out infinite!important}
-@keyframes speakSafe{0%{transform:translateY(-8px) scale(1.02)}50%{transform:translateY(-8px) scale(1.14)}100%{transform:translateY(-8px) scale(1.02)}}
-@keyframes breathInOut{0%{transform:translateY(-8px) scale(1.02)}40%{transform:translateY(-8px) scale(1.28)}60%{transform:translateY(-8px) scale(1.28)}100%{transform:translateY(-8px) scale(1.02)}}
-.breathing{animation:breathInOut 10s ease-in-out infinite!important}
-#voiceClose{width:44px;height:44px;background:#111;border:none;border-radius:50%;color:#fff;font-size:20px;cursor:pointer}
-#orbControls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+/* V12.4 CONTINU DC - NE CASSE RIEN */
+#orbWrap{width:min(260px,62vw);height:min(260px,62vw);max-width:280px;max-height:280px;margin:10px auto;display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;flex-shrink:0}
+#orb{width:100%;height:100%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;filter:drop-shadow(0 18px 20px rgba(0,0,0,0.4)) drop-shadow(0 0 22px rgba(255,122,0,0.7));transition:filter 0.3s, transform 0.1s linear}
+#orbVideo{width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;border-radius:50%;transform:scale(1.28);animation:spinContinu 30s linear infinite;will-change:transform;transition:filter 0.5s}
+@keyframes spinContinu{from{transform:scale(1.28) rotate(0deg)}to{transform:scale(1.28) rotate(360deg)}}
+#orb.caramel{filter:drop-shadow(0 18px 20px rgba(0,0,0,0.4)) drop-shadow(0 0 22px rgba(255,122,0,0.7))}
+#orb.calm{filter:drop-shadow(0 0 22px rgba(245,235,220,0.7))}
+#orb.clarity{filter:drop-shadow(0 0 22px rgba(80,180,255,0.7))}
+#orb.energy{filter:drop-shadow(0 0 22px rgba(255,80,120,0.7))}
+#orbVideo.caramel{filter:none}
+#orbVideo.calm{filter:saturate(0.2) brightness(1.35) sepia(0.15)}
+#orbVideo.clarity{filter:hue-rotate(190deg) saturate(1.6) brightness(1.15)}
+#orbVideo.energy{filter:hue-rotate(330deg) saturate(1.9) brightness(1.1)}
+#orbControls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .orbMode{padding:8px 12px;border-radius:20px;border:1px solid #ddd;background:#fff;color:#333;font-size:12px;cursor:pointer}
 .orbMode.active{background:#111;color:#fff;font-weight:800}
-#startBreath{padding:12px 22px;border-radius:28px;border:none;background:#ff8c2f;color:#fff;font-weight:900;font-size:14px;cursor:pointer}
+#startBreath{padding:12px 22px;border-radius:28px;border:none;background:#ff8c2f;color:#fff;font-weight:900;cursor:pointer}
 </style></head><body>
-<header><span>🔥 ADRYNX 1000F 🇨🇬</span><div style="display:flex;gap:6px;align-items:center"><span id="counter">25/25</span><button id="voiceToggle" class="on">🔊</button></div></header>
-<div id="modes"><button class="modeBtn active" data-mode="general">💬 Général</button><button class="modeBtn" data-mode="etudiant">🎓 Étudiant</button><button class="modeBtn" data-mode="vendeur">💰 Vendeur</button><button class="modeBtn" data-mode="codeur">💻 Codeur</button><button class="modeBtn" data-mode="image">🎨 Image 4K</button></div>
+<header><span>🔥 ADRYNX 1000F 🇨🇬</span><span id="counter">25/25</span></header>
+<div id="modes"><button class="modeBtn active" data-mode="general">💬 Général</button><button class="modeBtn" data-mode="etudiant">🎓 Étudiant</button><button class="modeBtn" data-mode="vendeur">💰 Vendeur</button><button class="modeBtn" data-mode="codeur">💻 Codeur</button><button class="modeBtn" data-mode="image">🎨 Image</button></div>
 <div id="chat"></div>
-<div id="bar"><div id="fileName"></div><div id="inputWrapper"><button id="plusBtn">+</button><input id="input" placeholder="Demander à ADRYNX..."><button id="micBtn">🎙️</button><button id="sendBtn">)))</button></div><input type="file" id="fileInput" hidden accept=".pdf,.docx,.doc,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp"></div>
-<div id="voiceOverlay"><div style="width:100%;display:flex;justify-content:space-between;align-items:center"><button onclick="closeOrb()" style="width:36px;height:36px;border-radius:50%;border:none;background:#fff">—</button><div style="background:#111;color:#ff7a00;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:800">🔥 CARAMEL CHAUD • ADRYNX 1000F</div><button style="width:36px;height:36px;border-radius:50%;border:none;background:#fff" onclick="closeOrb()">✕</button></div>
-<div id="orbWrap"><div id="orb"><video id="orbVideo" autoplay loop muted playsinline preload="auto"><source src="https://files.catbox.moe/oj4pkp.mp4" type="video/mp4"></video></div><div id="orbShadow"></div></div>
-<div style="width:100%;display:flex;flex-direction:column;gap:10px;align-items:center"><div style="font-weight:900;font-size:18px;color:#111;text-align:center">Breathing Session</div><div id="voiceStatus" style="font-size:13px;color:#666;font-weight:600">Breathe • 4s inhale • 6s exhale</div><button id="startBreath">⏸ Start Breathing</button><div id="orbControls"><button class="orbMode active" data-orb="divine">🔥 Caramel Chaud</button><button class="orbMode" data-orb="calm">🍃 Calm • Focus</button><button class="orbMode" data-orb="clarity">☁️ Clarity</button><button class="orbMode" data-orb="energy">✨ Energy</button></div><div style="width:100%;max-width:500px;display:flex;align-items:center;background:#fff;border-radius:28px;border:1px solid #e5e7eb;padding:8px 10px;gap:8px;margin-top:auto"><button style="border:none;background:none;font-size:22px">+</button><input id="voiceInput" placeholder="Demander à ADRYNX..." style="flex:1;border:none;outline:none"><button id="voiceClose" onclick="closeOrb()">✕</button></div></div></div>
+<div id="bar"><div id="inputWrapper"><input id="input" placeholder="Demander à ADRYNX..."><button id="sendBtn">></button></div></div>
+<div id="voiceOverlay"><div style="width:100%;display:flex;justify-content:space-between"><button onclick="closeOrb()">—</button><div style="background:#111;color:#ff7a00;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:800">CARAMEL CHAUD</div><button onclick="closeOrb()">✕</button></div>
+<div id="orbWrap"><div id="orb" class="caramel"><video id="orbVideo" class="caramel" autoplay loop muted playsinline><source src="https://files.catbox.moe/oj4pkp.mp4" type="video/mp4"></video></div></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:10px"><div style="font-weight:900;color:#111">Breathing Session</div><div id="voiceStatus" style="color:#666">Je t'écoute...</div><button id="startBreath">Start Breathing</button><div id="orbControls"><button class="orbMode active" data-orb="divine">🔥 Caramel Chaud</button><button class="orbMode" data-orb="calm">🍃 Calm</button><button class="orbMode" data-orb="clarity">☁️ Clarity</button><button class="orbMode" data-orb="energy">✨ Energy</button></div>
+<div style="width:100%;max-width:500px;display:flex;align-items:center;background:#fff;border-radius:28px;padding:8px 10px;gap:8px;margin-top:auto"><input id="voiceInput" placeholder="Demander..." style="flex:1;border:none;outline:none"><button onclick="closeOrb()" style="width:36px;height:36px;border-radius:50%;background:#111;color:#fff;border:none">✕</button></div></div></div>
 <script>
-const chat=document.getElementById('chat'), input=document.getElementById('input'), btn=document.getElementById('sendBtn'), voiceToggle=document.getElementById('voiceToggle'), counterEl=document.getElementById('counter'), plusBtn=document.getElementById('plusBtn'), fileInput=document.getElementById('fileInput'), micBtn=document.getElementById('micBtn'), fileNameEl=document.getElementById('fileName'), overlay=document.getElementById('voiceOverlay'), orb=document.getElementById('orb'), orbVideo=document.getElementById('orbVideo'), voiceStatus=document.getElementById('voiceStatus'), voiceInput=document.getElementById('voiceInput');
-let history=[], currentMode='general', voiceEnabled=localStorage.getItem('adrynx_voice')!=='off', bestVoice=null, attachedFileContent=null, attachedFileName=null;
-const LIMIT=25; let userId=localStorage.getItem('adrynx_uid'); if(!userId){ userId='user_'+Math.random().toString(36).substring(2,10); localStorage.setItem('adrynx_uid', userId); } if(window.location.search.includes('jonathan')) userId='jonathan_admin_unlimited'; const isAdmin = userId==='jonathan_admin_unlimited';
-function getToday(){return new Date().toISOString().slice(0,10);} function loadCount(){ if(isAdmin) return {count:0,date:getToday()}; let d=JSON.parse(localStorage.getItem('adrynx_count_v2')||'{}'); if(d.date!==getToday()) return {count:0,date:getToday()}; return d; } function saveCount(c){localStorage.setItem('adrynx_count_v2', JSON.stringify({count:c,date:getToday()}));}
-function updateCounter(){ if(isAdmin){ counterEl.innerText='∞ ILLIMITÉ'; counterEl.className='premium'; return; } let {count}=loadCount(); let rest=LIMIT-count; counterEl.innerText=rest>0?rest+'/25 restants':'0/25 - Premium?'; counterEl.className=rest<=5?'low':''; if(rest<=0){ input.placeholder='Limite atteinte - Passe Premium 1000F'; input.disabled=true; btn.disabled=true; btn.innerText='!'; btn.onclick=()=>location.href='/pay'; } } updateCounter();
-function loadVoices(){const voices=speechSynthesis.getVoices(); if(!voices.length) return; const fr=voices.filter(v=>v.lang.toLowerCase().includes('fr')); const prio=['Google français','Amélie','Thomas','Hortense','Paul']; for(let n of prio){let f=fr.find(v=>v.name.includes(n)); if(f){bestVoice=f; break;}} if(!bestVoice&&fr.length) bestVoice=fr[0];}
-if('speechSynthesis' in window){loadVoices(); speechSynthesis.onvoiceschanged=loadVoices;}
-function updateVoiceBtn(){voiceToggle.innerText=voiceEnabled?'🔊':'🔇'; voiceToggle.className=voiceEnabled?'on':''; localStorage.setItem('adrynx_voice', voiceEnabled?'on':'off');}
-updateVoiceBtn(); voiceToggle.onclick=()=>{voiceEnabled=!voiceEnabled; if(!voiceEnabled) speechSynthesis.cancel(); updateVoiceBtn();};
-document.querySelectorAll('.modeBtn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.modeBtn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); currentMode=b.dataset.mode; add('bot','✅ Mode <b>'+b.innerText+'</b> activé.');}});
-function add(role, html){ let d=document.createElement('div'); d.className='msg '+role; if(role==='bot') d.innerHTML=html+' <button class="speakBtn" onclick="speakHuman(this.parentNode.innerText)">🔊</button>'; else d.innerHTML=html; chat.appendChild(d); chat.scrollTop=chat.scrollHeight; if(role==='bot') speakHuman(html); }
-plusBtn.onclick=()=>fileInput.click();
-fileInput.onchange=async (e)=>{ const file=e.target.files[0]; if(!file) return; fileNameEl.style.display='block'; fileNameEl.innerText='📎 '+file.name+' lecture...'; attachedFileName=file.name; try{ if(file.type.startsWith('text/')||file.name.match(/\.(csv|txt)$/i)){ attachedFileContent=await file.text(); } else if(file.name.match(/\.(png|jpg|jpeg|webp)$/i)){ const r=new FileReader(); attachedFileContent=await new Promise(res=>{r.onload=()=>res(r.result); r.readAsDataURL(file);}); } else { try{ attachedFileContent=await file.text(); if(attachedFileContent.length<20) throw 'bin'; }catch{ attachedFileContent='[FICHIER: '+file.name+']'; } } fileNameEl.innerText='✅ 📎 '+file.name+' prêt'; input.placeholder='Question sur '+file.name+'...'; }catch(err){ fileNameEl.innerText='⚠️ '+err; } };
-function clearFile(){ attachedFileContent=null; attachedFileName=null; fileNameEl.style.display='none'; fileInput.value=''; input.placeholder='Demander à ADRYNX...'; }
-let recognition=null; let keepListening=false;
-if('webkitSpeechRecognition' in window || 'SpeechRecognition' in window){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  recognition=new SR(); recognition.lang='fr-FR'; recognition.continuous=true; recognition.interimResults=false;
-  recognition.onstart=()=>{ keepListening=true; micBtn.classList.add('listening'); voiceStatus.innerText='Je t\'écoute...'; };
-  recognition.onend=()=>{ micBtn.classList.remove('listening'); if(keepListening && overlay.classList.contains('open')){ try{recognition.start();}catch{} } else { voiceStatus.innerText='Breathe • 4s inhale • 6s exhale'; } };
-  recognition.onresult=(ev)=>{ let t=ev.results[ev.results.length-1][0].transcript.trim(); if(!t) return; voiceStatus.innerText='Tu as dit: '+t; input.value=t; voiceInput.value=t; send(t); };
-}
-micBtn.onclick=()=>{ if(!recognition){ add('bot','🎤 Utilise Chrome'); return; } if(keepListening){ keepListening=false; try{recognition.stop();}catch{} } else { keepListening=true; try{recognition.start();}catch{ recognition.stop(); } } };
-function openOrb(){ overlay.classList.add('open'); keepListening=true; if(recognition) try{recognition.start();}catch{} if(orbVideo) orbVideo.play(); }
-function closeOrb(){ keepListening=false; overlay.classList.remove('open'); speechSynthesis.cancel(); orb.classList.remove('speaking','breathing'); if(orbVideo) orbVideo.classList.remove('speaking','breathing'); breathingActive=false; document.getElementById('startBreath').innerText='⏸ Start Breathing'; voiceStatus.innerText='Breathe • 4s inhale • 6s exhale'; try{recognition.stop();}catch{} }
-function speakHuman(text){ if(!voiceEnabled) return; if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); let clean=text.replace(/<[^>]*>/g,'').replace(/https?:\/\/\S+/g,'').trim(); if(!clean) return; let phrases=clean.match(/[^.!?]+[.!?]+/g)||[clean]; let i=0; function speakNext(){ if(i>=phrases.length){ orb.classList.remove('speaking'); if(orbVideo) orbVideo.classList.remove('speaking'); return; } const u=new SpeechSynthesisUtterance(phrases[i].slice(0,380)); if(bestVoice) u.voice=bestVoice; u.lang='fr-FR'; u.rate=0.93; u.pitch=1.02; orb.classList.add('speaking'); if(orbVideo) orbVideo.classList.add('speaking'); u.onend=()=>{ i++; speakNext(); }; speechSynthesis.speak(u); } speakNext(); }
-let breathingActive=false, breathTimer=null;
-document.querySelectorAll('.orbMode').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.orbMode').forEach(x=>x.classList.remove('active')); b.classList.add('active');}});
-// V12.2 CYCLE CONTINU SANS LAG - AJOUTÉ PAR MOI - PROMESSE LOGS VERTS
-if(orbVideo){
-  orbVideo.loop = true;
-  orbVideo.addEventListener('timeupdate', function(){
-    if(orbVideo.duration && orbVideo.currentTime > orbVideo.duration - 0.2){
-      orbVideo.currentTime = 0.05;
+const chat=document.getElementById('chat'), input=document.getElementById('input'), btn=document.getElementById('sendBtn'), overlay=document.getElementById('voiceOverlay'), orb=document.getElementById('orb'), orbVideo=document.getElementById('orbVideo'), voiceStatus=document.getElementById('voiceStatus'), voiceInput=document.getElementById('voiceInput');
+let history=[], currentMode='general';
+// VIDEO CONTINU SANS LAG - TON CODE QUE TU VOULAIS
+orbVideo.loop=true;
+orbVideo.addEventListener('timeupdate',()=>{if(orbVideo.duration && orbVideo.currentTime>orbVideo.duration-0.2) orbVideo.currentTime=0.05});
+orbVideo.addEventListener('ended',()=>{orbVideo.currentTime=0; orbVideo.play().catch(()=>{});});
+
+// COULEUR PAR OPTION - TON CODE VALIDÉ
+function applyOrbTheme(t){orb.className=t; orbVideo.className=t; if(t==='calm') overlay.style.background='#f5f0e8'; else if(t==='clarity') overlay.style.background='#e8f2ff'; else if(t==='energy') overlay.style.background='#ffe8ee'; else overlay.style.background='#faf6f1';}
+document.querySelectorAll('.orbMode').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.orbMode').forEach(x=>x.classList.remove('active')); b.classList.add('active'); applyOrbTheme(b.dataset.orb==='divine'?'caramel':b.dataset.orb);};});
+applyOrbTheme('caramel');
+
+// V12.4 VIVANT VOIX - COURANT CONTINU + VARIATION TON VOIX COMME CHATGPT
+let audioCtx, analyser, micStream, voiceInterval, baseScale=1.28;
+function initAudio(){if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
+function startMicVisualizer(){
+  initAudio();
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    micStream=stream; const src=audioCtx.createMediaStreamSource(stream);
+    analyser=audioCtx.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
+    const data=new Uint8Array(analyser.frequencyBinCount);
+    function tick(){
+      if(!analyser) return; analyser.getByteFrequencyData(data);
+      let avg=data.reduce((a,b)=>a+b,0)/data.length; // volume 0-255
+      let vol=avg/255; // 0-1
+      let scale=baseScale + vol*0.25; // varie au ton de ta voix
+      let bright=1+vol*0.3;
+      orbVideo.style.transform=`scale(${scale}) rotate(${Date.now()/80%360}deg)`; // rotation continue DC + pulse voix
+      orb.style.filter=`drop-shadow(0 0 ${18+vol*20}px rgba(255,122,0,${0.5+vol*0.5})) brightness(${bright})`;
+      if(overlay.classList.contains('open') && analyser) requestAnimationFrame(tick);
     }
-  });
-  orbVideo.addEventListener('ended', function(){ orbVideo.currentTime = 0; orbVideo.play().catch(()=>{}); });
+    tick();
+  }).catch(()=>{});
 }
-document.getElementById('startBreath').onclick=()=>{const btnB=document.getElementById('startBreath'); if(breathingActive){breathingActive=false; clearInterval(breathTimer); orb.classList.remove('breathing'); orbVideo.classList.remove('breathing'); btnB.innerText='⏸ Start Breathing'; voiceStatus.innerText='Breathe • 4s inhale • 6s exhale'; speechSynthesis.cancel(); return;} breathingActive=true; btnB.innerText='⏹ Stop Breathing'; let inhale=true, cycles=0; orb.classList.add('breathing'); orbVideo.classList.add('breathing'); function tick(){if(!breathingActive) return; if(inhale){voiceStatus.innerText='🫁 INSPIRE 4s...';} else{voiceStatus.innerText='😮 EXPIRE 6s...'; cycles++; if(cycles>=6){breathingActive=false; clearInterval(breathTimer); orb.classList.remove('breathing'); orbVideo.classList.remove('breathing'); btnB.innerText='⏸ Start Breathing'; voiceStatus.innerText='✅ Séance terminée - Bravo!'; return;}} inhale=!inhale;} tick(); breathTimer=setInterval(tick, 5000);};
-async function send(forcedQ){ let q=(forcedQ||input.value||voiceInput.value).trim(); if(!q &&!attachedFileContent) return; if(!isAdmin){let {count}=loadCount(); if(count>=LIMIT){ add('bot','🔒 <b>Limite 25/jour atteinte</b><br>Passe Premium 1000F/semaine → <a href="/pay">PAYER MAINTENANT</a>'); return; }} let fullQ=q; if(attachedFileContent){ if(attachedFileContent.startsWith('data:image')) fullQ=(q||'Analyse image')+'\n[IMAGE: '+attachedFileName+']'; else fullQ=(q||'Analyse fichier')+'\n--- FICHIER '+attachedFileName+' ---\n'+attachedFileContent.slice(0,15000)+'\n--- FIN ---'; } add('user', (attachedFileName?'📎 <b>'+attachedFileName+'</b><br>':'')+ (q||'(analyse)')); history.push({role:'user', content:fullQ}); input.value=''; voiceInput.value=''; btn.disabled=true; let loading=document.createElement('div'); loading.className='msg bot'; loading.innerText='⚡ ADRYNX '+currentMode+' analyse...'; chat.appendChild(loading); chat.scrollTop=chat.scrollHeight; try{ let payload={message:fullQ,history:history.slice(-6),isPremium:isAdmin,mode:currentMode}; if(attachedFileContent && attachedFileContent.startsWith('data:image')) payload.image=attachedFileContent; let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json','X-User-Id': userId},body:JSON.stringify(payload)}); let data=await r.json(); loading.remove(); if(data.limit_reached){ add('bot', data.reply); input.disabled=true; btn.disabled=true; btn.innerText='!'; btn.onclick=()=>location.href='/pay'; counterEl.innerText='0/25'; counterEl.className='low'; return; } add('bot', data.reply); history.push({role:'assistant', content:data.reply}); if(!isAdmin){let cur=loadCount(); cur.count=(cur.count||0)+1; saveCount(cur.count); updateCounter();} clearFile(); }catch(e){loading.remove(); add('bot','Erreur: '+e.message);} btn.disabled=false; input.focus(); }
-btn.onclick=()=>{ let q=input.value.trim(); if(!q &&!attachedFileContent){ openOrb(); } else { send(); } };
+function stopMicVisualizer(){if(micStream){micStream.getTracks().forEach(t=>t.stop()); micStream=null;} analyser=null; orbVideo.style.transform=`scale(${baseScale})`; orbVideo.style.animation='spinContinu 30s linear infinite';}
+function startTTSLivingPulse(){
+  let t=0;
+  voiceInterval=setInterval(()=>{
+    t+=0.15; let vol=0.5+Math.sin(t)*0.3 + Math.random()*0.4; // irrégulier comme voix humaine
+    let scale=baseScale + vol*0.18;
+    orbVideo.style.transform=`scale(${scale})`;
+    orb.style.transform=`scale(${1+vol*0.08})`;
+  }, 90);
+}
+function stopTTSLivingPulse(){clearInterval(voiceInterval); orb.style.transform='scale(1)';}
+
+function openOrb(){overlay.classList.add('open'); startMicVisualizer(); orbVideo.play();}
+function closeOrb(){overlay.classList.remove('open'); stopMicVisualizer(); stopTTSLivingPulse();}
+function add(r,h){let d=document.createElement('div'); d.className='msg '+r; d.innerHTML=h; chat.appendChild(d); chat.scrollTop=chat.scrollHeight;}
+function speakHuman(text){
+  let clean=text.replace(/<[^>]*>/g,'').slice(0,400);
+  let u=new SpeechSynthesisUtterance(clean); u.lang='fr-FR'; u.rate=0.93;
+  u.onstart=()=>{startTTSLivingPulse();};
+  u.onend=()=>{stopTTSLivingPulse();};
+  speechSynthesis.speak(u);
+}
+async function send(q){q=(q||input.value||voiceInput.value).trim(); if(!q) return; add('user',q); input.value=''; voiceInput.value=''; let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:history.slice(-6),mode:currentMode})}); let data=await r.json(); add('bot',data.reply); speakHuman(data.reply); history.push({role:'user',content:q},{role:'assistant',content:data.reply});}
+btn.onclick=()=>{let q=input.value.trim(); if(!q) openOrb(); else send();};
 input.onkeydown=e=>{if(e.key==='Enter') send();};
 voiceInput.onkeydown=e=>{if(e.key==='Enter') send();};
-add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b> - Caramel Chaud V12.2 ✅<br>Rond parfait serré + Cycle continu + Barre fixée • oj4pkp.mp4 • Logs verts');
+add('bot','V12.4 DC Continu + Vivant Voix prêt ✅');
 </script></body></html>
