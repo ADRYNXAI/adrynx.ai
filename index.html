@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Orbe Caramel Chaud V11</title>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX Phoenix Prime - Orbe Caramel Chaud V12</title>
 <style>
 body{background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
 header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;background:#111;font-weight:900;color:orange;letter-spacing:0.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -25,10 +25,10 @@ header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;backgrou
 #fileName{font-size:11px;color:#ff7a00;padding:0 0 8px 12px;display:none}
 #voiceOverlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#faf6f1;z-index:9999;flex-direction:column;align-items:center;padding:12px 16px;overflow:hidden}
 #voiceOverlay.open{display:flex}
-/* V11 CARAMEL CHAUD - FIX ANDROID SANS CASSER */
+/* V12 CARAMEL CHAUD - FIX ANDROID GARANTI - NE SORT PLUS */
 #orbWrap{width:min(280px,68vw);height:min(280px,68vw);max-width:300px;max-height:300px;margin:12px auto;padding:16px 0 20px;position:relative;display:flex;align-items:center;justify-content:center;overflow:visible;perspective:900px;box-sizing:border-box}
 #orb{width:100%;height:100%;border-radius:50%;overflow:hidden;position:relative;background:#000;animation:bouleLevitateSafe 3.8s ease-in-out infinite;box-shadow:0 32px 64px rgba(0,0,0,0.55),0 0 95px rgba(255,122,0,0.65),0 0 160px rgba(255,122,0,0.32)}
-#orbVideo{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;transform:scale(1.06);filter:saturate(1.22) contrast(1.1) brightness(1.05)}
+#orbVideo{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;transform:scale(1.06)}
 #orbShadow{position:absolute;bottom:0;left:50%;width:42%;height:18px;background:radial-gradient(ellipse, rgba(0,0,0,0.48) 0%, rgba(0,0,0,0.12) 55%, transparent 76%);border-radius:50%;filter:blur(6px);transform:translateX(-50%);animation:shadowSafe 3.8s ease-in-out infinite}
 @keyframes bouleLevitateSafe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.02)}}
 @keyframes shadowSafe{0%,100%{transform:translateX(-50%) scale(1);opacity:0.45}50%{transform:translateX(-50%) scale(0.65);opacity:0.14}}
@@ -48,7 +48,7 @@ header{padding:10px 12px;text-align:center;border-bottom:1px solid #222;backgrou
 <div id="chat"></div>
 <div id="bar"><div id="fileName"></div><div id="inputWrapper"><button id="plusBtn">+</button><input id="input" placeholder="Demander à ADRYNX..."><button id="micBtn">🎙️</button><button id="sendBtn">)))</button></div><input type="file" id="fileInput" hidden accept=".pdf,.docx,.doc,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp"></div>
 <div id="voiceOverlay"><div style="width:100%;display:flex;justify-content:space-between;align-items:center"><button onclick="closeOrb()" style="width:36px;height:36px;border-radius:50%;border:none;background:#fff">—</button><div style="background:#111;color:#ff7a00;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:800">🔥 CARAMEL CHAUD • ADRYNX 1000F</div><button style="width:36px;height:36px;border-radius:50%;border:none;background:#fff" onclick="closeOrb()">✕</button></div>
-<div id="orbWrap"><div id="orb"><video id="orbVideo" autoplay loop muted playsinline preload="auto"><source src="https://files.catbox.moe/vj8is6.mp4" type="video/mp4"></video></div><div id="orbShadow"></div></div>
+<div id="orbWrap"><div id="orb"><video id="orbVideo" autoplay loop muted playsinline preload="auto"><source src="https://files.catbox.moe/oj4pkp.mp4" type="video/mp4"></video></div><div id="orbShadow"></div></div>
 <div style="width:100%;display:flex;flex-direction:column;gap:10px;align-items:center"><div style="font-weight:900;font-size:18px;color:#111;text-align:center">Breathing Session</div><div id="voiceStatus" style="font-size:13px;color:#666;font-weight:600">Breathe • 4s inhale • 6s exhale</div><button id="startBreath">⏸ Start Breathing</button><div id="orbControls"><button class="orbMode active" data-orb="divine">🔥 Caramel Chaud</button><button class="orbMode" data-orb="calm">🍃 Calm • Focus</button><button class="orbMode" data-orb="clarity">☁️ Clarity</button><button class="orbMode" data-orb="energy">✨ Energy</button></div><div style="width:100%;max-width:500px;display:flex;align-items:center;background:#fff;border-radius:28px;border:1px solid #e5e7eb;padding:8px 10px;gap:8px"><button style="border:none;background:none;font-size:22px">+</button><input id="voiceInput" placeholder="Demander à ADRYNX..." style="flex:1;border:none;outline:none"><button id="voiceClose" onclick="closeOrb()">✕</button></div></div></div>
 <script>
 const chat=document.getElementById('chat'), input=document.getElementById('input'), btn=document.getElementById('sendBtn'), voiceToggle=document.getElementById('voiceToggle'), counterEl=document.getElementById('counter'), plusBtn=document.getElementById('plusBtn'), fileInput=document.getElementById('fileInput'), micBtn=document.getElementById('micBtn'), fileNameEl=document.getElementById('fileName'), overlay=document.getElementById('voiceOverlay'), orb=document.getElementById('orb'), orbVideo=document.getElementById('orbVideo'), voiceStatus=document.getElementById('voiceStatus'), voiceInput=document.getElementById('voiceInput');
@@ -87,6 +87,6 @@ async function send(forcedQ){ let q=(forcedQ||input.value||voiceInput.value).tri
 btn.onclick=()=>{ let q=input.value.trim(); if(!q &&!attachedFileContent){ openOrb(); } else { send(); } };
 input.onkeydown=e=>{if(e.key==='Enter') send();};
 voiceInput.onkeydown=e=>{if(e.key==='Enter') send();};
-add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b> - Caramel Chaud V11 ✅<br>Vidéo: vj8is6.mp4 • Fix Android • Logs verts');
+add('bot','Salut 👋 Je suis <b>ADRYNX Phoenix Prime</b> - Caramel Chaud V12 ✅<br>Vidéo: oj4pkp.mp4 • Fix Android • Logs verts');
 </script>
 </body></html>
