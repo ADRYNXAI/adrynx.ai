@@ -9,89 +9,49 @@
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
 body{background:#020b24;display:flex;justify-content:center}
 .app{width:100%;max-width:430px;min-height:100dvh;position:relative;overflow:hidden;background:#020b24}
-
-/* VIDEO QUI RECULE - VILLE + CERCLES QUI S'AGRANDISSENT */
-.bg-video{position:absolute;top:0;left:0;width:100%;height:62%;object-fit:cover;z-index:0;filter:brightness(.95)}
-.bg-fade{position:absolute;top:0;left:0;width:100%;height:62%;z-index:1;background:linear-gradient(to bottom, rgba(2,11,36,0) 0%, rgba(2,11,36,.2) 40%, #020b24 92%)}
-
-.content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;padding:14px 16px 16px}
-
-/* LOGO FIXE NET PAR DESSUS LA VIDEO QUI BOUGE */
-.logo{width:310px;height:310px;margin-top:12px;filter:drop-shadow(0 0 28px rgba(255,170,0,.6)) drop-shadow(0 0 60px rgba(0,140,255,.4))}
+.bg-video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.bg-fade{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;background:linear-gradient(to bottom, rgba(2,11,36,0) 10%, rgba(2,11,36,.3) 55%, #020b24 92%)}
+.content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;padding:24px 16px 16px}
+.logo{width:300px;height:300px;margin-top:10px;filter:drop-shadow(0 0 30px rgba(255,170,0,.6)) drop-shadow(0 0 60px rgba(0,140,255,.5))}
 .logo img{width:100%;height:100%;object-fit:contain}
-
-h1{color:#fff;font-size:48px;font-weight:800;text-align:center;letter-spacing:1px;line-height:.95;margin-top:2px}
-h1 span{display:block;font-size:29px;font-weight:800;background:linear-gradient(90deg,#FF8A1A,#FFB347);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:5px}
+h1{color:#fff;font-size:48px;font-weight:800;text-align:center;line-height:.9;margin-top:6px}
+h1 span{display:block;font-size:29px;background:linear-gradient(90deg,#FF8A1A,#FFB347);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:6px}
 .sub1{color:#fff;font-size:15.5px;font-weight:600;margin-top:10px;text-align:center}
 .sub2{color:#ff8c1a;font-size:12px;font-weight:600;margin-top:5px;text-align:center}
-
-/* CARTES EXACTEMENT COMME TA CAPTURE - DORE 3D */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;margin-top:22px}
-.card{
-  height:132px;
-  background:linear-gradient(135deg, rgba(18,38,78,.62), rgba(6,18,42,.94));
-  border:1px solid rgba(95,165,255,.32);
-  border-radius:12px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
-  backdrop-filter:blur(12px);
-  box-shadow:0 0 0 1px rgba(255,255,255,.05) inset, 0 0 18px rgba(0,110,255,.18), 0 0 22px rgba(255,140,26,.14);
-  text-decoration:none;
-}
-.card svg{width:54px;height:54px;stroke:#FF9A2E;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 8px rgba(255,154,46,.6))}
-.card p{color:#eaf0ff;font-size:13.2px;font-weight:600;text-align:center;letter-spacing:.2px}
-
-.btn{width:100%;height:56px;margin-top:18px;background:linear-gradient(90deg,#FF8A1A 0%, #FFA732 50%, #FFB347 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;font-size:22px;letter-spacing:.3px;text-decoration:none;box-shadow:0 8px 28px rgba(255,138,26,.55)}
+.card{height:132px;background:linear-gradient(135deg, rgba(18,38,78,.62), rgba(6,18,42,.94));border:1px solid rgba(95,165,255,.32);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;backdrop-filter:blur(12px);box-shadow:0 0 0 1px rgba(255,255,255,.05) inset, 0 0 18px rgba(0,110,255,.18), 0 0 22px rgba(255,140,26,.14);text-decoration:none}
+.card svg{width:54px;height:54px;stroke:#FF9A2E;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.card p{color:#eaf0ff;font-size:13.2px;font-weight:600;text-align:center}
+.btn{width:100%;height:56px;margin-top:18px;background:linear-gradient(90deg,#FF8A1A,#FFB347);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#000;font-weight:800;font-size:22px;text-decoration:none;box-shadow:0 8px 28px rgba(255,138,26,.55)}
 </style>
 </head>
 <body>
 <div class="app">
-  <!-- VIDEO QUI FAIT RECULER LES CERCLES + VILLE -->
   <video class="bg-video" id="bgVideo" autoplay muted playsinline loop preload="auto">
     <source src="https://files.catbox.moe/7kilum.mp4" type="video/mp4">
   </video>
   <div class="bg-fade"></div>
-
   <div class="content">
     <div class="logo">
-      <img src="https://i.imgur.com/8Z8r0aL.png" alt="ADRYNX Logo" onerror="this.src='https://files.catbox.moe/7kilum.mp4'">
+      <!-- METS TON LOGO GOLD ICI - upload logo_gold.png que je t'ai extrait sur catbox -->
+      <img src="https://files.catbox.moe/XXXXX.png" alt="ADRYNX">
     </div>
-
     <h1>ADRYNX<span>Phoenix Prime</span></h1>
     <div class="sub1">L'IA la plus vivante du Congo</div>
     <div class="sub2">Creee par Jonathan Obenda a Brazzaville</div>
-
     <div class="grid">
-      <a class="card" href="/app?mode=cours">
-        <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h6"/><path d="M8 10h6"/></svg>
-        <p>Expliquer les cours</p>
-      </a>
-      <a class="card" href="/app?mode=pdf">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="16" cy="14" r="3"/><path d="M18.5 16.5 21 19"/></svg>
-        <p>Analyser un PDF</p>
-      </a>
-      <a class="card" href="/app?mode=image">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-3.5-3.5L3 21"/><path d="M16 5l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/></svg>
-        <p>Generer des images</p>
-      </a>
-      <!-- 7 - CHAT VOCAL LANCE DIRECT ORDRE VOCAL -->
-      <a class="card" href="/app?mode=vocal&action=voice_order&autostart=1">
-        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/><path d="M8 10a1 1 0 0 0-2 2"/><path d="M16 10a1 1 0 0 1 2 2"/><path d="M6 9a2 2 0 0 0-3 2"/><path d="M18 9a2 2 0 0 1 3 2"/></svg>
-        <p>Chat vocal</p>
-      </a>
+      <a class="card" href="/app?mode=cours"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h6"/><path d="M8 10h6"/></svg><p>Expliquer les cours</p></a>
+      <a class="card" href="/app?mode=pdf"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="16" cy="14" r="3"/><path d="M18.5 16.5 21 19"/></svg><p>Analyser un PDF</p></a>
+      <a class="card" href="/app?mode=image"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-3.5-3.5L3 21"/></svg><p>Generer des images</p></a>
+      <!-- 7 - BOUTON VOCAL QUI LANCE ORBE CARAMEL -->
+      <a class="card" href="/vocal.html"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><p>Chat vocal</p></a>
     </div>
-
     <a class="btn" href="/app">Lancer ADRYNX</a>
   </div>
 </div>
-
 <script>
-// BOUCLE SANS COUPURE NOIRE - RECULE INFINI
 const v=document.getElementById('bgVideo');
-v.addEventListener('timeupdate',()=>{
-  if(v.duration && v.duration - v.currentTime < 0.3){
-    v.currentTime = 0.08;
-  }
-});
+v.addEventListener('timeupdate',()=>{if(v.duration&&v.duration-v.currentTime<0.3){v.currentTime=0.08;}});
 </script>
 </body>
 </html>
