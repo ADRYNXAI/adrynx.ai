@@ -39,23 +39,18 @@ header{padding:10px 12px;border-bottom:1px solid #222;background:#111;font-weigh
 <div id="chat"></div>
 <div id="bar"><div id="inputWrapper"><input id="input" placeholder="Demander à ADRYNX..."><button id="sendBtn">></button></div></div>
 <div id="voiceOverlay"><div style="width:100%;display:flex;justify-content:space-between"><button onclick="closeOrb()">—</button><div style="background:#111;color:#ff7a00;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:800">CARAMEL CHAUD</div><button onclick="closeOrb()">✕</button></div>
-<div id="orbWrap"><div id="orb" class="caramel"><video id="orbVideo" class="caramel" autoplay loop muted playsinline><source src="https://gofile.io/d/mPDhSiX8" type="video/mp4"></video></div></div>
+<div id="orbWrap"><div id="orb" class="caramel"><video id="orbVideo" class="caramel" autoplay loop muted playsinline><source src="https://tmpfiles.org/dl/w8Agfs9GroxX/vid-20261004-wa0861.mp4" type="video/mp4"></video></div></div>
 <div style="display:flex;flex-direction:column;align-items:center;gap:10px"><div style="font-weight:900;color:#111">Breathing Session</div><div id="voiceStatus" style="color:#666">Je t'écoute...</div><button id="startBreath">Start Breathing</button><div id="orbControls"><button class="orbMode active" data-orb="divine">🔥 Caramel Chaud</button><button class="orbMode" data-orb="calm">🍃 Calm</button><button class="orbMode" data-orb="clarity">☁️ Clarity</button><button class="orbMode" data-orb="energy">✨ Energy</button></div>
 <div style="width:100%;max-width:500px;display:flex;align-items:center;background:#fff;border-radius:28px;padding:8px 10px;gap:8px;margin-top:auto"><input id="voiceInput" placeholder="Demander..." style="flex:1;border:none;outline:none"><button onclick="closeOrb()" style="width:36px;height:36px;border-radius:50%;background:#111;color:#fff;border:none">✕</button></div></div></div>
 <script>
 const chat=document.getElementById('chat'), input=document.getElementById('input'), btn=document.getElementById('sendBtn'), overlay=document.getElementById('voiceOverlay'), orb=document.getElementById('orb'), orbVideo=document.getElementById('orbVideo'), voiceStatus=document.getElementById('voiceStatus'), voiceInput=document.getElementById('voiceInput');
 let history=[], currentMode='general';
-// VIDEO CONTINU SANS LAG - TON CODE QUE TU VOULAIS
 orbVideo.loop=true;
 orbVideo.addEventListener('timeupdate',()=>{if(orbVideo.duration && orbVideo.currentTime>orbVideo.duration-0.2) orbVideo.currentTime=0.05});
 orbVideo.addEventListener('ended',()=>{orbVideo.currentTime=0; orbVideo.play().catch(()=>{});});
-
-// COULEUR PAR OPTION - TON CODE VALIDÉ
 function applyOrbTheme(t){orb.className=t; orbVideo.className=t; if(t==='calm') overlay.style.background='#f5f0e8'; else if(t==='clarity') overlay.style.background='#e8f2ff'; else if(t==='energy') overlay.style.background='#ffe8ee'; else overlay.style.background='#faf6f1';}
 document.querySelectorAll('.orbMode').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.orbMode').forEach(x=>x.classList.remove('active')); b.classList.add('active'); applyOrbTheme(b.dataset.orb==='divine'?'caramel':b.dataset.orb);};});
 applyOrbTheme('caramel');
-
-// V12.4 VIVANT VOIX - COURANT CONTINU + VARIATION TON VOIX COMME CHATGPT
 let audioCtx, analyser, micStream, voiceInterval, baseScale=1.28;
 function initAudio(){if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
 function startMicVisualizer(){
@@ -66,11 +61,11 @@ function startMicVisualizer(){
     const data=new Uint8Array(analyser.frequencyBinCount);
     function tick(){
       if(!analyser) return; analyser.getByteFrequencyData(data);
-      let avg=data.reduce((a,b)=>a+b,0)/data.length; // volume 0-255
-      let vol=avg/255; // 0-1
-      let scale=baseScale + vol*0.25; // varie au ton de ta voix
+      let avg=data.reduce((a,b)=>a+b,0)/data.length;
+      let vol=avg/255;
+      let scale=baseScale + vol*0.25;
       let bright=1+vol*0.3;
-      orbVideo.style.transform=`scale(${scale}) rotate(${Date.now()/80%360}deg)`; // rotation continue DC + pulse voix
+      orbVideo.style.transform=`scale(${scale}) rotate(${Date.now()/80%360}deg)`;
       orb.style.filter=`drop-shadow(0 0 ${18+vol*20}px rgba(255,122,0,${0.5+vol*0.5})) brightness(${bright})`;
       if(overlay.classList.contains('open') && analyser) requestAnimationFrame(tick);
     }
@@ -81,14 +76,13 @@ function stopMicVisualizer(){if(micStream){micStream.getTracks().forEach(t=>t.st
 function startTTSLivingPulse(){
   let t=0;
   voiceInterval=setInterval(()=>{
-    t+=0.15; let vol=0.5+Math.sin(t)*0.3 + Math.random()*0.4; // irrégulier comme voix humaine
+    t+=0.15; let vol=0.5+Math.sin(t)*0.3 + Math.random()*0.4;
     let scale=baseScale + vol*0.18;
     orbVideo.style.transform=`scale(${scale})`;
     orb.style.transform=`scale(${1+vol*0.08})`;
   }, 90);
 }
 function stopTTSLivingPulse(){clearInterval(voiceInterval); orb.style.transform='scale(1)';}
-
 function openOrb(){overlay.classList.add('open'); startMicVisualizer(); orbVideo.play();}
 function closeOrb(){overlay.classList.remove('open'); stopMicVisualizer(); stopTTSLivingPulse();}
 function add(r,h){let d=document.createElement('div'); d.className='msg '+r; d.innerHTML=h; chat.appendChild(d); chat.scrollTop=chat.scrollHeight;}
