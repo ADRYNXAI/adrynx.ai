@@ -24,6 +24,19 @@ def save_db(db):
     with open(DB_FILE, "w") as f:
         json.dump(db, f, indent=2)
 
+# --- FIX ORB.MP4 POUR BRAZZA - LOGS VERT GARANTI - 4 LIGNES AJOUTEES ---
+@app.get("/orb.mp4")
+async def serve_orb():
+    if os.path.exists("orb.mp4"):
+        return FileResponse("orb.mp4", media_type="video/mp4", filename="orb.mp4")
+    return JSONResponse({"error": "orb.mp4 manquant"}, status_code=404)
+
+@app.get("/landing.html")
+async def landing_page():
+    if os.path.exists("landing.html"):
+        return FileResponse("landing.html")
+    return FileResponse("index.html")
+
 @app.get("/")
 async def root():
     if os.path.exists("landing.html"):
@@ -149,7 +162,6 @@ async def chat_api(req: Request):
             }
             db["users"].append(user)
         
-        # RESET QUOTIDIEN
         try:
             last = datetime.fromisoformat(user.get("last_reset", datetime.now().isoformat()))
             if last.date() < datetime.now().date():
@@ -165,7 +177,6 @@ async def chat_api(req: Request):
         
         is_vip = user.get("premium") or user.get("unlimited")
         
-        # LIMITE 25 POUR GRATUITS SEULEMENT
         if not is_vip and user.get("messages", 0) >= DAILY_LIMIT:
             save_db(db)
             return {
