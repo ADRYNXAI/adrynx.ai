@@ -1,102 +1,53 @@
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ADRYNX V12.4 Continu Vivant</title>
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ADRYNX Community</title><link rel="manifest" href="/manifest.json">
 <style>
-body{background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;margin:0;padding:0;display:flex;flex-direction:column;height:100vh}
-header{padding:10px 12px;border-bottom:1px solid #222;background:#111;font-weight:900;color:orange;display:flex;justify-content:space-between;align-items:center}
-#modes{display:flex;gap:6px;padding:10px;background:#111;border-bottom:1px solid #222;overflow-x:auto}
-.modeBtn{padding:8px 14px;border-radius:20px;border:1px solid #333;background:#1e1e1e;color:#fff;font-size:12px;cursor:pointer}
-.modeBtn.active{background:#ff7a00;border-color:#ff7a00;font-weight:800}
-#chat{flex:1;overflow:auto;padding:15px;display:flex;flex-direction:column;gap:12px}
-.msg{padding:12px 15px;border-radius:14px;max-width:92%}
-.user{align-self:flex-end;background:#ff7a00;color:#fff}
-.bot{align-self:flex-start;background:#1e1e1e;border:1px solid #2a2a2a}
-#bar{display:flex;flex-direction:column;background:#111;border-top:1px solid #222;padding:12px}
-#inputWrapper{flex:1;display:flex;align-items:center;background:#fff;border-radius:28px;padding:6px 8px 6px 12px;gap:8px}
-#input{flex:1;border:none;outline:none;color:#111}
-#sendBtn{width:44px;height:44px;background:#ff7a00;border:none;border-radius:50%;color:#fff;font-weight:800;cursor:pointer}
-#voiceOverlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#faf6f1;z-index:9999;flex-direction:column;align-items:center;padding:12px 16px;justify-content:space-between;transition:background 0.5s}
-#voiceOverlay.open{display:flex}
-#orbWrap{width:min(260px,62vw);height:min(260px,62vw);max-width:280px;max-height:280px;margin:10px auto;display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;flex-shrink:0;animation:breatheVivant 3.8s ease-in-out infinite}
-#orb{width:100%;height:100%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;filter:drop-shadow(0 18px 20px rgba(0,0,0,0.4)) drop-shadow(0 0 22px rgba(255,122,0,0.7));transition:filter 0.3s, transform 0.1s linear}
-#orbVideo{width:100%;height:100%;aspect-ratio:1/1;object-fit:cover;border-radius:50%;transform:scale(1.28);animation:spinContinu 30s linear infinite;will-change:transform;transition:filter 0.5s}
-@keyframes spinContinu{from{transform:scale(1.28) rotate(0deg)}to{transform:scale(1.28) rotate(360deg)}}
-@keyframes breatheVivant{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
-#orb.caramel{filter:drop-shadow(0 18px 20px rgba(0,0,0,0.4)) drop-shadow(0 0 22px rgba(255,122,0,0.7))}
-#orb.calm{filter:drop-shadow(0 0 22px rgba(245,235,220,0.7))}
-#orb.clarity{filter:drop-shadow(0 0 22px rgba(80,180,255,0.7))}
-#orb.energy{filter:drop-shadow(0 0 22px rgba(255,80,120,0.7))}
-#orbVideo.caramel{filter:none}
-#orbVideo.calm{filter:saturate(0.2) brightness(1.35) sepia(0.15)}
-#orbVideo.clarity{filter:hue-rotate(190deg) saturate(1.6) brightness(1.15)}
-#orbVideo.energy{filter:hue-rotate(330deg) saturate(1.9) brightness(1.1)}
-#orbControls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.orbMode{padding:8px 12px;border-radius:20px;border:1px solid #ddd;background:#fff;color:#333;font-size:12px;cursor:pointer}
-.orbMode.active{background:#111;color:#fff;font-weight:800}
-#startBreath{padding:12px 22px;border-radius:28px;border:none;background:#ff8c2f;color:#fff;font-weight:900;cursor:pointer}
+*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#fff;font-family:Inter,sans-serif;height:100vh;overflow:hidden}
+#phoenix-video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.4) blur(2px)}
+.core{position:relative;z-index:2;max-width:720px;margin:0 auto;height:100vh;display:flex;flex-direction:column;padding:20px}
+h1{font-size:2.2rem;letter-spacing:12px;text-align:center;text-shadow:0 0 20px #ff6a00}
+#orb-wrap{width:160px;height:160px;margin:10px auto;position:relative}
+#orb-video{width:100%;height:100%;border-radius:50%;object-fit:cover;animation:breatheVivant 3.8s ease-in-out infinite,spinContinu 30s linear infinite;box-shadow:0 0 30px rgba(255,106,0,0.6)}
+@keyframes breatheVivant{0%,100%{transform:scale(1)}50%{transform:scale(1.28)}}
+@keyframes spinContinu{from{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.28)}to{transform:rotate(360deg) scale(1)}}
+.modes{display:flex;gap:6px;overflow-x:auto;padding:8px 0}.modes button{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:6px 12px;border-radius:20px;font-size:0.8rem}
+.modes button.active{background:rgba(255,106,0,0.2);border-color:#ff6a00}
+#community-bar{display:flex;gap:8px;overflow-x:auto;padding:10px 0;border-top:1px solid rgba(255,106,0,0.2);margin-top:8px}
+#community-bar button{padding:8px 14px;border-radius:20px;border:none;color:#fff;cursor:pointer;font-size:0.85rem}
+#chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px}
+.message{padding:10px 14px;border-radius:16px;max-width:85%;animation:pop 0.3s}.user{align-self:flex-end;background:rgba(255,255,255,0.1)}.assistant{align-self:flex-start;background:rgba(255,106,0,0.15);border:1px solid rgba(255,106,0,0.3)}
+.input-zone{display:flex;gap:10px;background:rgba(255,255,255,0.08);backdrop-filter:blur(20px);padding:12px;border-radius:24px;border:1px solid rgba(255,255,255,0.1)}
+#q{flex:1;background:transparent;border:none;color:#fff;outline:none}#community-feed{max-height:28vh;overflow-y:auto;background:rgba(0,0,0,0.6);border-radius:12px;margin-top:6px;display:none}
+@keyframes pop{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
 </style></head><body>
-<header><span>🔥 ADRYNX 1000F 🇨🇬</span><span id="counter">25/25</span></header>
-<div id="modes"><button class="modeBtn active" data-mode="general">💬 Général</button><button class="modeBtn" data-mode="etudiant">🎓 Étudiant</button><button class="modeBtn" data-mode="vendeur">💰 Vendeur</button><button class="modeBtn" data-mode="codeur">💻 Codeur</button><button class="modeBtn" data-mode="image">🎨 Image</button></div>
+<video id="phoenix-video" autoplay muted loop playsinline><source src="/orb.mp4"></video>
+<div class="core">
+<h1>ADRYNX</h1>
+<div id="orb-wrap"><video id="orb-video" autoplay muted loop playsinline><source src="/orb.mp4"></video></div>
+<div class="modes">
+<button class="active" onclick="setMode('general')">General</button>
+<button onclick="setMode('etudiant')">Etudiant</button>
+<button onclick="setMode('vendeur')">Vendeur</button>
+<button onclick="setMode('codeur')">Codeur</button>
+<button onclick="setMode('image')">Image</button>
+</div>
+<div id="community-bar">
+<button onclick="loadFeed()" style="background:rgba(255,106,0,0.25);border:1px solid #ff6a00">🌍 Feed</button>
+<button onclick="askCommunity()" style="background:rgba(255,255,255,0.08)">❓ Poser</button>
+<button onclick="loadAstuces()" style="background:rgba(255,255,255,0.08)">💡 Astuces</button>
+<button onclick="loadTop()" style="background:rgba(255,255,255,0.08)">🏆 Top</button>
+</div>
+<div id="community-feed"></div>
 <div id="chat"></div>
-<div id="bar"><div id="inputWrapper"><input id="input" placeholder="Demander à ADRYNX..."><button id="sendBtn">></button></div></div>
-<div id="voiceOverlay"><div style="width:100%;display:flex;justify-content:space-between"><button onclick="closeOrb()">—</button><div style="background:#111;color:#ff7a00;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:800">CARAMEL CHAUD</div><button onclick="closeOrb()">✕</button></div>
-<div id="orbWrap"><div id="orb" class="caramel"><video id="orbVideo" class="caramel" autoplay loop muted playsinline preload="auto"><source src="/orb.mp4" type="video/mp4"></video></div></div>
-<div style="display:flex;flex-direction:column;align-items:center;gap:10px"><div style="font-weight:900;color:#111">Breathing Session</div><div id="voiceStatus" style="color:#666">Je t'écoute...</div><button id="startBreath">Start Breathing</button><div id="orbControls"><button class="orbMode active" data-orb="divine">🔥 Caramel Chaud</button><button class="orbMode" data-orb="calm">🍃 Calm</button><button class="orbMode" data-orb="clarity">☁️ Clarity</button><button class="orbMode" data-orb="energy">✨ Energy</button></div>
-<div style="width:100%;max-width:500px;display:flex;align-items:center;background:#fff;border-radius:28px;padding:8px 10px;gap:8px;margin-top:auto"><input id="voiceInput" placeholder="Demander..." style="flex:1;border:none;outline:none"><button onclick="closeOrb()" style="width:36px;height:36px;border-radius:50%;background:#111;color:#fff;border:none">✕</button></div></div></div>
+<div class="input-zone"><input id="q" placeholder="Parle à ADRYNX..."><button onclick="send()">➤</button></div>
+</div>
 <script>
-const chat=document.getElementById('chat'), input=document.getElementById('input'), btn=document.getElementById('sendBtn'), overlay=document.getElementById('voiceOverlay'), orb=document.getElementById('orb'), orbVideo=document.getElementById('orbVideo'), voiceStatus=document.getElementById('voiceStatus'), voiceInput=document.getElementById('voiceInput');
-let history=[], currentMode='general';
-orbVideo.loop=true;
-orbVideo.addEventListener('timeupdate',()=>{if(orbVideo.duration && orbVideo.currentTime>orbVideo.duration-0.2) orbVideo.currentTime=0.05});
-orbVideo.addEventListener('ended',()=>{orbVideo.currentTime=0; orbVideo.play().catch(()=>{});});
-function applyOrbTheme(t){orb.className=t; orbVideo.className=t; if(t==='calm') overlay.style.background='#f5f0e8'; else if(t==='clarity') overlay.style.background='#e8f2ff'; else if(t==='energy') overlay.style.background='#ffe8ee'; else overlay.style.background='#faf6f1';}
-document.querySelectorAll('.orbMode').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.orbMode').forEach(x=>x.classList.remove('active')); b.classList.add('active'); applyOrbTheme(b.dataset.orb==='divine'?'caramel':b.dataset.orb);};});
-applyOrbTheme('caramel');
-let audioCtx, analyser, micStream, voiceInterval, baseScale=1.28;
-function initAudio(){if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();}
-function startMicVisualizer(){
-  initAudio();
-  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
-    micStream=stream; const src=audioCtx.createMediaStreamSource(stream);
-    analyser=audioCtx.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
-    const data=new Uint8Array(analyser.frequencyBinCount);
-    function tick(){
-      if(!analyser) return; analyser.getByteFrequencyData(data);
-      let avg=data.reduce((a,b)=>a+b,0)/data.length;
-      let vol=avg/255;
-      let scale=baseScale + vol*0.25;
-      let bright=1+vol*0.3;
-      orbVideo.style.transform=`scale(${scale}) rotate(${Date.now()/80%360}deg)`;
-      orb.style.filter=`drop-shadow(0 0 ${18+vol*20}px rgba(255,122,0,${0.5+vol*0.5})) brightness(${bright})`;
-      if(overlay.classList.contains('open') && analyser) requestAnimationFrame(tick);
-    }
-    tick();
-  }).catch(()=>{});
-}
-function stopMicVisualizer(){if(micStream){micStream.getTracks().forEach(t=>t.stop()); micStream=null;} analyser=null; orbVideo.style.transform=`scale(${baseScale})`; orbVideo.style.animation='spinContinu 30s linear infinite';}
-function startTTSLivingPulse(){
-  let t=0;
-  voiceInterval=setInterval(()=>{
-    t+=0.15; let vol=0.5+Math.sin(t)*0.3 + Math.random()*0.4;
-    let scale=baseScale + vol*0.18;
-    orbVideo.style.transform=`scale(${scale})`;
-    orb.style.transform=`scale(${1+vol*0.08})`;
-  }, 90);
-}
-function stopTTSLivingPulse(){clearInterval(voiceInterval); orb.style.transform='scale(1)';}
-function openOrb(){overlay.classList.add('open'); startMicVisualizer(); orbVideo.play();}
-function closeOrb(){overlay.classList.remove('open'); stopMicVisualizer(); stopTTSLivingPulse();}
-function add(r,h){let d=document.createElement('div'); d.className='msg '+r; d.innerHTML=h; chat.appendChild(d); chat.scrollTop=chat.scrollHeight;}
-function speakHuman(text){
-  let clean=text.replace(/<[^>]*>/g,'').slice(0,400);
-  let u=new SpeechSynthesisUtterance(clean); u.lang='fr-FR'; u.rate=0.93;
-  u.onstart=()=>{startTTSLivingPulse();};
-  u.onend=()=>{stopTTSLivingPulse();};
-  speechSynthesis.speak(u);
-}
-async function send(q){q=(q||input.value||voiceInput.value).trim(); if(!q) return; add('user',q); input.value=''; voiceInput.value=''; let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q,history:history.slice(-6),mode:currentMode})}); let data=await r.json(); add('bot',data.reply); speakHuman(data.reply); history.push({role:'user',content:q},{role:'assistant',content:data.reply});}
-btn.onclick=()=>{let q=input.value.trim(); if(!q) openOrb(); else send();};
-input.onkeydown=e=>{if(e.key==='Enter') send();};
-voiceInput.onkeydown=e=>{if(e.key==='Enter') send();};
-add('bot','V12.4 EXACT Verre Feu local prêt ✅');
-// --- MODE OFFLINE MTN BRAZZA ---
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').then(()=>console.log('ADRYNX offline prêt'));}
-</script></body></html>l
+let mode='general'; const uid=localStorage.user_id||(localStorage.user_id='user_'+Math.random().toString(36).slice(2,8));
+function setMode(m){mode=m;document.querySelectorAll('.modes button').forEach(b=>b.classList.remove('active'));event.target.classList.add('active')}
+async function send(){let i=document.getElementById('q');let t=i.value;if(!t)return;i.value='';let c=document.getElementById('chat');c.innerHTML+=`<div class="message user">${t}</div>`;let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());c.innerHTML+=`<div class="message assistant">${r.reponse}</div>`;c.scrollTop=c.scrollHeight}
+async function loadFeed(){let f=document.getElementById('community-feed');f.style.display='block';f.innerHTML='Chargement...';let r=await fetch('/api/community/feed').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)"><b>${x.uid}</b> <small>${x.time}</small><br>${x.q}<br><small style="color:#ff6a00">${x.r}</small></div>`).join('')||'Aucune question. Sois le 1er dev Congo!';}
+async function askCommunity(){let q=prompt('Ta question Dev Congo?');if(!q)return;let r=prompt('Ta réponse / astuce?');if(!r)return;await fetch('/api/community/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,q,r})});loadFeed();}
+async function loadAstuces(){let f=document.getElementById('community-feed');f.style.display='block';let r=await fetch('/api/community/astuces').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;background:rgba(255,106,0,0.1);margin:4px;border-radius:8px"><b>${x.t}</b><br>${x.c}</div>`).join('');}
+async function loadTop(){let f=document.getElementById('community-feed');f.style.display='block';let r=await fetch('/api/community/top').then(r=>r.json());f.innerHTML=r.map((x,i)=>`<div style="padding:8px">#${i+1} ${x.uid} - ${x.count} posts</div>`).join('')||'Pas encore de Top';}
+document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
+</script></body></html>
