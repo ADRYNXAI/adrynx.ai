@@ -1,53 +1,90 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ADRYNX Community</title><link rel="manifest" href="/manifest.json">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#fff;font-family:Inter,sans-serif;height:100vh;overflow:hidden}
-#phoenix-video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;filter:brightness(0.4) blur(2px)}
-.core{position:relative;z-index:2;max-width:720px;margin:0 auto;height:100vh;display:flex;flex-direction:column;padding:20px}
-h1{font-size:2.2rem;letter-spacing:12px;text-align:center;text-shadow:0 0 20px #ff6a00}
-#orb-wrap{width:160px;height:160px;margin:10px auto;position:relative}
-#orb-video{width:100%;height:100%;border-radius:50%;object-fit:cover;animation:breatheVivant 3.8s ease-in-out infinite,spinContinu 30s linear infinite;box-shadow:0 0 30px rgba(255,106,0,0.6)}
-@keyframes breatheVivant{0%,100%{transform:scale(1)}50%{transform:scale(1.28)}}
-@keyframes spinContinu{from{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.28)}to{transform:rotate(360deg) scale(1)}}
-.modes{display:flex;gap:6px;overflow-x:auto;padding:8px 0}.modes button{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#fff;padding:6px 12px;border-radius:20px;font-size:0.8rem}
-.modes button.active{background:rgba(255,106,0,0.2);border-color:#ff6a00}
-#community-bar{display:flex;gap:8px;overflow-x:auto;padding:10px 0;border-top:1px solid rgba(255,106,0,0.2);margin-top:8px}
-#community-bar button{padding:8px 14px;border-radius:20px;border:none;color:#fff;cursor:pointer;font-size:0.85rem}
-#chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:10px}
-.message{padding:10px 14px;border-radius:16px;max-width:85%;animation:pop 0.3s}.user{align-self:flex-end;background:rgba(255,255,255,0.1)}.assistant{align-self:flex-start;background:rgba(255,106,0,0.15);border:1px solid rgba(255,106,0,0.3)}
-.input-zone{display:flex;gap:10px;background:rgba(255,255,255,0.08);backdrop-filter:blur(20px);padding:12px;border-radius:24px;border:1px solid rgba(255,255,255,0.1)}
-#q{flex:1;background:transparent;border:none;color:#fff;outline:none}#community-feed{max-height:28vh;overflow-y:auto;background:rgba(0,0,0,0.6);border-radius:12px;margin-top:6px;display:none}
-@keyframes pop{from{transform:scale(0.9);opacity:0}to{transform:scale(1);opacity:1}}
-</style></head><body>
-<video id="phoenix-video" autoplay muted loop playsinline><source src="/orb.mp4"></video>
+*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#fff;font-family:Inter,system-ui;height:100dvh;overflow:hidden}
+#bg{position:fixed;inset:0;object-fit:cover;width:100%;height:100%;opacity:0.32;z-index:0}
+.core{position:relative;z-index:2;display:flex;flex-direction:column;height:100dvh;max-width:780px;margin:0 auto;padding:10px}
+.top{display:flex;justify-content:space-between;align-items:center}
+.top h1{letter-spacing:12px;font-size:1.9rem;text-shadow:0 0 20px #ff6a00}
+.icon-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff}
+#orb-wrap{width:150px;height:150px;margin:6px auto;flex-shrink:0}
+#orb{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #ff6a00;box-shadow:0 0 35px #ff6a00;animation:breatheVivant 3.8s ease-in-out infinite,spinContinu 30s linear infinite}
+@keyframes breatheVivant{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}@keyframes spinContinu{from{transform:rotate(0deg) scale(1)}to{transform:rotate(360deg) scale(1)}}
+.modes,.comm{display:flex;gap:6px;overflow-x:auto;flex-shrink:0;padding:6px 0;scrollbar-width:none}
+.modes::-webkit-scrollbar,.comm::-webkit-scrollbar{display:none}
+.modes button,.comm button{padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.08);color:#fff;font-size:0.8rem;white-space:nowrap}
+.modes button.active,.comm button.active{background:rgba(255,106,0,0.28);border-color:#ff6a00}
+#feed{max-height:26vh;overflow-y:auto;background:rgba(0,0,0,0.7);border-radius:12px;display:none;border:1px solid rgba(255,106,0,0.2);margin:4px 0}
+#chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:8px}
+.msg{padding:10px 14px;border-radius:18px;max-width:88%;font-size:0.92rem}.user{align-self:flex-end;background:linear-gradient(135deg,#ff6a00,#ff8c32)}.assistant{align-self:flex-start;background:rgba(255,255,255,0.09);border:1px solid rgba(255,106,0,0.25)}
+.input{flex-shrink:0;display:flex;gap:8px;background:rgba(18,18,18,0.92);border:1px solid rgba(255,106,0,0.35);border-radius:28px;padding:10px 12px;margin:8px 0 env(safe-area-inset-bottom)}
+.input input{flex:1;background:transparent;border:none;color:#fff;outline:none}.input button{width:38px;height:38px;border-radius:50%;background:#ff6a00;border:none;color:#fff}
+/* SETTINGS DRAWER - inspiré de ta vidéo ChatGPT */
+#settings{position:fixed;top:0;right:-100%;width:100%;max-width:420px;height:100%;background:#f6f6f6;color:#111;z-index:20;transition:0.3s;overflow-y:auto;padding:0 0 20px 0}
+#settings.open{right:0}#settings header{display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid #e5e5e5;position:sticky;top:0;background:#f6f6f6}
+.card{background:#fff;border-radius:14px;margin:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.card h3{font-size:0.95rem;margin-bottom:2px}.card p{font-size:0.78rem;color:#666}
+.row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0}.row:last-child{border:none}
+.toggle{width:44px;height:26px;background:#ccc;border-radius:20px;position:relative}.toggle.on{background:#111}.toggle::after{content:'';position:absolute;top:2px;left:2px;width:22px;height:22px;background:#fff;border-radius:50%;transition:0.2s}.toggle.on::after{left:20px}
+</style></head>
+<body>
+<video id="bg" autoplay muted loop playsinline><source src="/orb.mp4"></video>
 <div class="core">
-<h1>ADRYNX</h1>
-<div id="orb-wrap"><video id="orb-video" autoplay muted loop playsinline><source src="/orb.mp4"></video></div>
-<div class="modes">
-<button class="active" onclick="setMode('general')">General</button>
-<button onclick="setMode('etudiant')">Etudiant</button>
-<button onclick="setMode('vendeur')">Vendeur</button>
-<button onclick="setMode('codeur')">Codeur</button>
-<button onclick="setMode('image')">Image</button>
+<div class="top"><h1>ADRYNX</h1><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
+<div id="orb-wrap"><video id="orb" autoplay muted loop playsinline><source src="/orb.mp4"></video></div>
+<div class="modes"><button class="active" onclick="setMode('general',this)">General</button><button onclick="setMode('etudiant',this)">Etudiant</button><button onclick="setMode('vendeur',this)">Vendeur</button><button onclick="setMode('codeur',this)">Codeur</button><button onclick="setMode('image',this)">Image</button></div>
+<div class="comm"><button class="active" onclick="loadFeed()">🌍 Feed</button><button onclick="askCommunity()">❓ Poser</button><button onclick="loadAstuces()">💡 Astuces</button><button onclick="loadTop()">🏆 Top</button><button onclick="openSettings()">🧠 Mémoire</button></div>
+<div id="feed"></div>
+<div id="chat"><div class="msg assistant">Chef, ADRYNX V15 Pro est prêt 🔥 Chat en bas, Orbe vivant, Settings pro comme ChatGPT. Teste le ⚙️</div></div>
+<div class="input"><input id="q" placeholder="Parle à ADRYNX..."><button onclick="send()">➤</button></div>
 </div>
-<div id="community-bar">
-<button onclick="loadFeed()" style="background:rgba(255,106,0,0.25);border:1px solid #ff6a00">🌍 Feed</button>
-<button onclick="askCommunity()" style="background:rgba(255,255,255,0.08)">❓ Poser</button>
-<button onclick="loadAstuces()" style="background:rgba(255,255,255,0.08)">💡 Astuces</button>
-<button onclick="loadTop()" style="background:rgba(255,255,255,0.08)">🏆 Top</button>
+
+<div id="settings">
+<header><button onclick="closeSettings()" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:#fff">←</button><b>Personnalisation ADRYNX</b></header>
+
+<div class="card"><h3>🎨 Thème Phoenix</h3><p>Couleur d'accentuation</p>
+<div class="row"><span>Orange Caramel (défaut Systalink)</span><span style="color:#ff6a00">●</span></div>
+<div class="row" style="flex-wrap:wrap;gap:6px"><button onclick="setAccent('Orange')" style="background:#ff6a00;color:#fff;border:none;padding:6px 10px;border-radius:20px">Orange</button><button onclick="setAccent('Bleu')" style="padding:6px 10px;border-radius:20px;border:1px solid #ddd">Bleu</button><button onclick="setAccent('Violet')" style="padding:6px 10px;border-radius:20px;border:1px solid #ddd">Violet</button></div>
 </div>
-<div id="community-feed"></div>
-<div id="chat"></div>
-<div class="input-zone"><input id="q" placeholder="Parle à ADRYNX..."><button onclick="send()">➤</button></div>
+
+<div class="card"><h3>🧬 Style et ton de base</h3>
+<div class="row"><span>Style</span><select id="s_style" onchange="saveS()"><option>Par défaut</option><option>Professionnel</option><option>Simple</option><option>Entrepreneur Congo</option></select></div>
+<div class="row"><span>Chaleur</span><select id="s_chaleur" onchange="saveS()"><option>Par défaut</option><option>Chaleureux</option><option>Direct</option></select></div>
+<div class="row"><span>Enthousiasme</span><select id="s_enth" onchange="saveS()"><option>Par défaut</option><option>Calme</option><option>Enthousiaste</option></select></div>
+<div class="row"><span>Emojis</span><select id="s_emoji" onchange="saveS()"><option>Par défaut</option><option>Sans</option><option>Beaucoup</option></select></div>
 </div>
+
+<div class="card"><h3>🧠 Mémoire</h3><p>ADRYNX se souvient de toi</p>
+<div class="row"><span>Activer mémoire</span><div id="t_mem" class="toggle on" onclick="toggleMem()"></div></div>
+<div class="row"><span>Synthèse de la mémoire</span><span>›</span></div>
+</div>
+
+<div class="card"><h3>📊 Utilisation et limites</h3>
+<div class="row"><span>Limite journalière</span><span id="u_limite">Chargement...</span></div>
+<div class="row"><span>Réinitialisation</span><span>00:00 Brazzaville</span></div>
+<div class="row"><span>Recharge Premium</span><span style="color:#ff6a00">1000F → /pay ›</span></div>
+</div>
+
+<div class="card"><h3>🔌 Plugins</h3><p>Extension Systalink</p><div class="row"><span>Community Feed</span><div class="toggle on"></div></div><div class="row"><span>Parcourir les plugins</span><span>›</span></div></div>
+
+<div class="card"><h3>👤 Compte</h3><div class="row"><span>Adresse e-mail</span><span>adrynx@gmail.com</span></div><div class="row"><span>Contact de confiance</span><span>›</span></div><div class="row"><span>Se déconnecter</span><span style="color:red">↪</span></div></div>
+</div>
+
 <script>
-let mode='general'; const uid=localStorage.user_id||(localStorage.user_id='user_'+Math.random().toString(36).slice(2,8));
-function setMode(m){mode=m;document.querySelectorAll('.modes button').forEach(b=>b.classList.remove('active'));event.target.classList.add('active')}
-async function send(){let i=document.getElementById('q');let t=i.value;if(!t)return;i.value='';let c=document.getElementById('chat');c.innerHTML+=`<div class="message user">${t}</div>`;let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());c.innerHTML+=`<div class="message assistant">${r.reponse}</div>`;c.scrollTop=c.scrollHeight}
-async function loadFeed(){let f=document.getElementById('community-feed');f.style.display='block';f.innerHTML='Chargement...';let r=await fetch('/api/community/feed').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.1)"><b>${x.uid}</b> <small>${x.time}</small><br>${x.q}<br><small style="color:#ff6a00">${x.r}</small></div>`).join('')||'Aucune question. Sois le 1er dev Congo!';}
-async function askCommunity(){let q=prompt('Ta question Dev Congo?');if(!q)return;let r=prompt('Ta réponse / astuce?');if(!r)return;await fetch('/api/community/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,q,r})});loadFeed();}
-async function loadAstuces(){let f=document.getElementById('community-feed');f.style.display='block';let r=await fetch('/api/community/astuces').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;background:rgba(255,106,0,0.1);margin:4px;border-radius:8px"><b>${x.t}</b><br>${x.c}</div>`).join('');}
-async function loadTop(){let f=document.getElementById('community-feed');f.style.display='block';let r=await fetch('/api/community/top').then(r=>r.json());f.innerHTML=r.map((x,i)=>`<div style="padding:8px">#${i+1} ${x.uid} - ${x.count} posts</div>`).join('')||'Pas encore de Top';}
+let mode='general'; const uid=localStorage.user_id||(localStorage.user_id='user_'+Math.random().toString(36).slice(2,6));
+function setMode(m,el){mode=m;document.querySelectorAll('.modes button').forEach(b=>b.classList.remove('active'));el.classList.add('active')}
+function openSettings(){document.getElementById('settings').classList.add('open');loadSettings();}
+function closeSettings(){document.getElementById('settings').classList.remove('open')}
+async function send(){let i=document.getElementById('q');let t=i.value.trim();if(!t)return;i.value='';let c=document.getElementById('chat');c.innerHTML+=`<div class="msg user">${t}</div>`;c.scrollTop=c.scrollHeight;let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());c.innerHTML+=`<div class="msg assistant">${r.reponse}</div>`;c.scrollTop=c.scrollHeight;}
+async function loadFeed(){let f=document.getElementById('feed');f.style.display=f.style.display=='block'?'none':'block';if(f.style.display=='none')return;f.innerHTML='Chargement...';let r=await fetch('/api/community/feed').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)"><b>${x.uid}</b> <small>${x.time}</small><br>${x.q}<br><small style="color:#ff8c32">${x.r}</small></div>`).join('')||'Sois le premier!';}
+async function askCommunity(){let q=prompt('Question Dev Congo?');if(!q)return;let r=prompt('Ta réponse?');if(!r)return;await fetch('/api/community/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,q,r})});let f=document.getElementById('feed');f.style.display='block';loadFeed();}
+async function loadAstuces(){let f=document.getElementById('feed');f.style.display='block';let r=await fetch('/api/community/astuces').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;background:rgba(255,106,0,0.12);margin:4px;border-radius:8px"><b>${x.t}</b><br>${x.c}</div>`).join('');}
+async function loadTop(){let f=document.getElementById('feed');f.style.display='block';let r=await fetch('/api/community/top').then(r=>r.json());f.innerHTML=r.map((x,i)=>`<div style="padding:8px">#${i+1} ${x.uid} - ${x.count}</div>`).join('')||'Pas de Top';}
+async function loadSettings(){let s=await fetch(`/api/settings/${uid}`).then(r=>r.json());document.getElementById('s_style').value=s.style;document.getElementById('s_chaleur').value=s.chaleur;document.getElementById('s_enth').value=s.enthousiasme;document.getElementById('s_emoji').value=s.emojis;let u=await fetch(`/api/utilisation/${uid}`).then(r=>r.json());document.getElementById('u_limite').innerText=u.limite;}
+async function saveS(){await fetch('/api/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,style:document.getElementById('s_style').value,chaleur:document.getElementById('s_chaleur').value,enthousiasme:document.getElementById('s_enth').value,emojis:document.getElementById('s_emoji').value,couleur:'Orange',memoire:'Activé'})});}
+function toggleMem(){document.getElementById('t_mem').classList.toggle('on')}
+function setAccent(c){document.documentElement.style.setProperty('--accent',c);saveS()}
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js');}
-</script></body></html>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
+</script>
+</body></html>
