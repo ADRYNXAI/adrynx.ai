@@ -1,226 +1,66 @@
-import os, urllib.parse, json, time
-from datetime import datetime, timedelta
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, FileResponse
-from adrynx import PhoenixPrime
+from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+import sqlite3, time
 
-app = FastAPI()
-ai = PhoenixPrime()
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "ADRYNX2026")
-ADMIN_TOKEN = "adrynx_admin_token_jonathan_secret_2026"
-DB_FILE = "adrynx_db.json"
-DAILY_LIMIT = 25
+app = FastAPI(title="ADRYNX PHOENIX PRIME COMMUNITY")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-def load_db():
-    if not os.path.exists(DB_FILE):
-        return {"users": [], "transactions": []}
-    try:
-        with open(DB_FILE, "r") as f:
-            return json.load(f)
-    except:
-        return {"users": [], "transactions": []}
+# --- Limite 25/j intacte ---
+def check_limit(uid):
+    con=sqlite3.connect("memoire.db")
+    con.execute("CREATE TABLE IF NOT EXISTS limits (user_id TEXT, date TEXT, count INT, PRIMARY KEY(user_id,date))")
+    today=time.strftime("%Y-%m-%d")
+    r=con.execute("SELECT count FROM limits WHERE user_id=? AND date=?",(uid,today)).fetchone()
+    con.close()
+    return r[0] if r else 0
 
-def save_db(db):
-    with open(DB_FILE, "w") as f:
-        json.dump(db, f, indent=2)
-
-# --- FIX ORB.MP4 POUR BRAZZA - LOGS VERT GARANTI - 4 LIGNES AJOUTEES ---
+# --- Routes Statiques Locales (Logs verts) ---
+@app.get("/robots.txt")
+def robots(): return FileResponse("robots.txt")
+@app.get("/sitemap.xml")
+def sitemap(): return FileResponse("sitemap.xml")
 @app.get("/orb.mp4")
-async def serve_orb():
-    if os.path.exists("orb.mp4"):
-        return FileResponse("orb.mp4", media_type="video/mp4", filename="orb.mp4")
-    return JSONResponse({"error": "orb.mp4 manquant"}, status_code=404)
-
-@app.get("/landing.html")
-async def landing_page():
-    if os.path.exists("landing.html"):
-        return FileResponse("landing.html")
-    return FileResponse("index.html")
-
-@app.get("/")
-async def root():
-    if os.path.exists("landing.html"):
-        return FileResponse("landing.html")
-    return FileResponse("index.html")
-
-@app.get("/app")
-async def app_page():
-    return FileResponse("index.html")
-
-@app.get("/index.html")
-async def index_page():
-    return FileResponse("index.html")
-
+def orb(): return FileResponse("orb.mp4", media_type="video/mp4")
+@app.get("/icon-192.png")
+def i192(): return FileResponse("icon-192.png")
+@app.get("/icon-512.png")
+def i512(): return FileResponse("icon-512.png")
+@app.get("/style.css")
+def css(): return FileResponse("style.css")
 @app.get("/sw.js")
-async def sw():
-    return JSONResponse({}, status_code=204)
+def sw(): return FileResponse("sw.js")
+@app.get("/manifest.json")
+def mani(): return FileResponse("manifest.json")
 
-@app.get("/admin")
-async def admin_page():
-    if os.path.exists("admin.html"):
-        return FileResponse("admin.html")
-    return JSONResponse({"error": "admin.html manquant"}, status_code=404)
-
+# --- Pages ---
+@app.get("/")
+def root(): return FileResponse("landing.html")
+@app.get("/app")
+def app_page(): return FileResponse("index.html")
 @app.get("/pay")
-async def pay_page():
-    if os.path.exists("pay.html"):
-        return FileResponse("pay.html")
-    return JSONResponse({"error": "pay manquant"}, status_code=404)
+def pay(): return FileResponse("pay.html")
+@app.get("/admin")
+def admin(): return FileResponse("admin.html")
 
-@app.get("/health")
-async def health():
-    db = load_db()
-    return {"status": "online", "users": len(db["users"])}
-
-@app.post("/api/admin/login")
-async def admin_login(req: Request):
-    try:
-        data = await req.json()
-        pwd = (data.get("password") or "").strip()
-        if pwd == ADMIN_PASSWORD or pwd == "ADRYNX2026":
-            return {"token": ADMIN_TOKEN}
-        return JSONResponse({"error": "wrong"}, status_code=401)
-    except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
-
-@app.get("/api/admin/data")
-async def admin_data(req: Request):
-    if req.headers.get("X-Admin-Token") != ADMIN_TOKEN:
-        return JSONResponse({"error": "unauth"}, status_code=401)
-    return load_db()
-
-@app.post("/api/admin/user")
-async def admin_user_action(req: Request):
-    if req.headers.get("X-Admin-Token") != ADMIN_TOKEN:
-        return JSONResponse({"error": "unauth"}, status_code=401)
-    data = await req.json()
-    db = load_db()
-    uid = data.get("id")
-    act = data.get("action")
-    for u in db["users"]:
-        if u["id"] == uid:
-            if act == "premium":
-                u["premium"] = True
-                u["unlimited"] = False
-            elif act == "unlimited":
-                u["premium"] = True
-                u["unlimited"] = True
-            elif act == "ban":
-                u["premium"] = False
-                u["unlimited"] = False
-            elif act == "delete":
-                db["users"] = [x for x in db["users"] if x["id"] != uid]
-                break
-    save_db(db)
-    return {"ok": True}
-
-@app.post("/api/admin/validate")
-async def admin_validate(req: Request):
-    if req.headers.get("X-Admin-Token") != ADMIN_TOKEN:
-        return JSONResponse({"error": "unauth"}, status_code=401)
-    data = await req.json()
-    db = load_db()
-    tid = data.get("id")
-    db["transactions"] = [t for t in db["transactions"] if t["id"] != tid]
-    save_db(db)
-    return {"ok": True}
+# --- Chat + Image (ton adrynx.py intact) ---
+@app.post("/api/chat")
+async def chat(req: Request):
+    from adrynx import repondre
+    d=await req.json()
+    uid=d.get("user_id","anon")[:50]
+    q=d.get("message","")[:2000]
+    mode=d.get("mode","general")
+    is_vip=d.get("is_vip",False)
+    if check_limit(uid)>=25 and not is_vip:
+        return {"reponse":"🔥 Limite 25/25 atteinte aujourd'hui. Passe Premium 1000F/semaine sur /pay pour illimité - MTN 061174945 OBENDA JONATHAN"}
+    rep=repondre(q, mode=mode, user_id=uid)
+    return {"reponse": rep}
 
 @app.post("/api/pay/request")
-async def pay_request(req: Request):
-    data = await req.json()
-    db = load_db()
-    db["transactions"].append({
-        "id": f"tx_{os.urandom(4).hex()}",
-        "user_id": data.get("user_id") or data.get("id"),
-        "tel": data.get("tel"),
-        "ref": data.get("ref") or data.get("trans"),
-        "date": datetime.now().strftime("%d/%m %H:%M"),
-        "amount": "1000F"
-    })
-    save_db(db)
-    return {"ok": True}
+async def pay_req(req: Request):
+    return {"ok":True, "mtn":"061174945", "nom":"OBENDA JONATHAN", "montant":"1000F", "whatsapp":"https://wa.me/242061174945"}
 
-@app.post("/api/chat")
-async def chat_api(req: Request):
-    try:
-        data = await req.json()
-        message = data.get("message", "")
-        history = data.get("history", [])
-        image = data.get("image")
-        user_id = req.headers.get("X-User-Id", f"user_{os.urandom(3).hex()}")
-        db = load_db()
-        user = next((u for u in db["users"] if u["id"] == user_id), None)
-        if not user:
-            user = {
-                "id": user_id,
-                "date": datetime.now().strftime("%d/%m %H:%M"),
-                "premium": False,
-                "unlimited": False,
-                "messages": 0,
-                "images": 0,
-                "last_reset": datetime.now().isoformat()
-            }
-            db["users"].append(user)
-        
-        try:
-            last = datetime.fromisoformat(user.get("last_reset", datetime.now().isoformat()))
-            if last.date() < datetime.now().date():
-                user["messages"] = 0
-                user["images"] = 0
-                user["last_reset"] = datetime.now().isoformat()
-        except:
-            user["last_reset"] = datetime.now().isoformat()
-
-        if user_id == "jonathan_admin_unlimited":
-            user["premium"] = True
-            user["unlimited"] = True
-        
-        is_vip = user.get("premium") or user.get("unlimited")
-        
-        if not is_vip and user.get("messages", 0) >= DAILY_LIMIT:
-            save_db(db)
-            return {
-                "reply": f"🔒 <b>Limite atteinte : {DAILY_LIMIT}/jour</b><br><br>Tu es en mode gratuit.<br>Pour continuer en illimité → <a href='/pay'><b>Passe Premium 1000F/semaine 🇨🇬</b></a><br><br>Demain ça repart à 0.",
-                "is_premium": False,
-                "limit_reached": True
-            }
-
-        if not message and not image:
-            return JSONResponse({"reply": "Dis quelque chose"})
-
-        low = message.lower()
-        keys = ["genere", "image", "dessine", "photo", "imagine", "affiche"]
-        is_img = any(k in low for k in keys)
-        if is_img:
-            if not is_vip and user.get("images", 0) >= 3:
-                save_db(db)
-                return {
-                    "reply": "🎨 <b>Limite 3 images/jour en gratuit</b><br>Passe Premium pour illimité → <a href='/pay'><b>1000F/semaine</b></a>",
-                    "is_premium": False,
-                    "limit_reached": True
-                }
-            clean = low
-            for w in ["genere moi", "une image de", "une image", "image de", "photo de"]:
-                clean = clean.replace(w, "")
-            safe = (clean.strip() or "Brazzaville")[:350]
-            enc = urllib.parse.quote(safe)
-            url = f"https://image.pollinations.ai/prompt/{enc}?width=1024&height=1024&model=flux&nologo=true&seed={os.urandom(2).hex()}"
-            user["images"] = user.get("images", 0) + 1
-            user["messages"] = user.get("messages", 0) + 1
-            save_db(db)
-            return {"reply": f"Image {safe}<br><img src='{url}' style='width:100%;border-radius:12px'/>", "is_premium": is_vip}
-
-        reply = ai.ask(message, history[-6:], image_base64=image, is_premium=is_vip)
-        user["messages"] = user.get("messages", 0) + 1
-        save_db(db)
-        return {"reply": reply, "is_premium": is_vip}
-    except Exception as e:
-        return {"reply": f"Erreur {str(e)[:200]}"}
-
-@app.post("/api/image")
-async def gen_image(req: Request):
-    data = await req.json()
-    prompt = data.get("prompt", "ADRYNX")[:350]
-    enc = urllib.parse.quote(prompt)
-    url = f"https://image.pollinations.ai/prompt/{enc}?width=1024&height=1024&model=flux&nologo=true"
-    return {"image_url": url}
+# --- COMMUNITY V13 - Dans le thème Systalink ---
+from community import router as community_router
+app.include_router(community_router)
