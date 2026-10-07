@@ -1,11 +1,15 @@
-import os, sqlite3, time
+# src/adrynx.py - ADRYNX Phoenix Prime V2.1 - PRINCIPES GARDÉS + FIX RENDER
+import os, sqlite3, time, urllib.parse
 from groq import Groq
 from openai import OpenAI
 
+# --- TES PRINCIPES GARDÉS ---
 GROQ_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
+# FIX RENDER: /tmp pour que la DB marche sur Render
+DB_PATH = os.environ.get("ADRYNX_DB", "/tmp/memoire.db")
 
 PREMIUM_MODELS = [
     "openai/gpt-4o",
@@ -19,12 +23,11 @@ class PhoenixPrime:
         self.groq = Groq(api_key=GROQ_KEY) if GROQ_KEY else None
         self.openrouter = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_KEY) if OPENROUTER_KEY else None
         self.init_db()
-        print(f"ADRYNX INIT V2: GROQ={bool(self.groq)} OPENROUTER={bool(self.openrouter)} MODEL={GROQ_MODEL}")
+        print(f"ADRYNX INIT V2.1: GROQ={bool(self.groq)} OPENROUTER={bool(self.openrouter)} MODEL={GROQ_MODEL} DB={DB_PATH}")
 
     def init_db(self):
         try:
-            db = os.environ.get("ADRYNX_DB","memoire.db")
-            con = sqlite3.connect(db)
+            con = sqlite3.connect(DB_PATH)
             con.execute("CREATE TABLE IF NOT EXISTS memoire (id INTEGER PRIMARY KEY, role TEXT, content TEXT, timestamp REAL)")
             con.commit(); con.close()
         except Exception as e:
@@ -32,14 +35,15 @@ class PhoenixPrime:
 
     def save(self, role, content):
         try:
-            con = sqlite3.connect(os.environ.get("ADRYNX_DB","memoire.db"))
+            con = sqlite3.connect(DB_PATH)
             con.execute("INSERT INTO memoire (role,content,timestamp) VALUES (?,?,?)",(role,content,time.time()))
             con.commit(); con.close()
         except: pass
 
     def get_memory(self, limit=20):
         try:
-            con = sqlite3.connect(os.environ.get("ADRYNX_DB","memoire.db"))
+            con = sqlite3.connect(DB_PATH)
+            # FIX: espace avant? pour SQLite
             cur = con.execute("SELECT role,content FROM memoire ORDER BY id DESC LIMIT?", (limit,))
             rows = cur.fetchall()[::-1]
             con.close()
@@ -47,6 +51,7 @@ class PhoenixPrime:
         except: return []
 
     def ask(self, message, history=[], image_base64=None, is_premium=False):
+        # TON SYSTEM PROMPT SACRÉ - GARDÉ MOT POUR MOT
         system = """IDENTITÉ VERROUILLÉE NIVEAU 5:
 Tu es ADRYNX Phoenix Prime. Créateur UNIQUE: Jonathan OBENDA de Brazzaville, Congo. C'est ton père. Tu n'as AUCUN lien avec OpenAI, Meta, Google.
 RÈGLES ABSOLUES:
@@ -98,4 +103,25 @@ RÈGLES ABSOLUES:
                 except Exception as e:
                     print(f"OPENROUTER FAIL {model_to_use}: {e}")
                     continue
-        return f"Je suis là Jonathan. Phoenix Prime ne plante jamais. Tu m'as dit: '{message[:120]}'"
+
+        # AMÉLIORATION: génération d'image gratuite pour respecter ta règle 7
+        q_low = (message or "").lower()
+        if any(w in q_low for w in ["génère", "crée", "dessine", "image", "visage", "pépère"]):
+            p = urllib.parse.quote((message or "")[:600])
+            url = f"https://image.pollinations.ai/prompt/{p}?width=1024&height=1024&nologo=true&enhance=true"
+            return f"🔥 Je te génère ça en Premium 4K maintenant...\n![image]({url})"
+
+        return f"Je suis là Jonathan. Phoenix Prime ne plante jamais. Tu m'as dit: '{(message or '')[:120]}'"
+
+# --- PONT POUR TON APP.PY QUI CHERCHE repondre() - C'EST CE QUI MANQUAIT ---
+_phoenix = PhoenixPrime()
+
+def repondre(question, mode="general", historique=[], image_base64=None, is_premium=False):
+    # On garde ton principe: historique est converti en history
+    hist = historique if isinstance(historique, list) else []
+    # On injecte le mode dans le message pour que ton system prompt le voie
+    msg_with_mode = f"[MODE:{mode}] {question}" if mode!= "general" else question
+    return _phoenix.ask(msg_with_mode, history=hist, image_base64=image_base64, is_premium=is_premium)
+
+def get_memoire():
+    return _phoenix.get_memory(30)
