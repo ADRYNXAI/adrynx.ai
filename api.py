@@ -1,18 +1,16 @@
 from fastapi import FastAPI, Request, Header
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-import sqlite3, time, os, json
+import sqlite3, time, os
 
 app = FastAPI(title="ADRYNX PHOENIX PRIME V15")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# TON MOT DE PASSE ADMIN ICI
 ADMIN_PASSWORD = "ADRYNX2026"
 ADMIN_TOKEN = "adrynx_boss_2026"
 
 def get_con(db):
-    con=sqlite3.connect(db, check_same_thread=False, timeout=10)
-    return con
+    return sqlite3.connect(db, check_same_thread=False, timeout=10)
 
 def check_limit(uid):
     try:
@@ -20,19 +18,29 @@ def check_limit(uid):
         con.execute("CREATE TABLE IF NOT EXISTS limits (user_id TEXT, date TEXT, count INT, PRIMARY KEY(user_id,date))")
         today=time.strftime("%Y-%m-%d")
         r=con.execute("SELECT count FROM limits WHERE user_id=? AND date=?",(uid,today)).fetchone()
-        con.close(); return r[0] if r else 0
+        con.close()
+        return r[0] if r else 0
     except: return 0
 
-def init_settings():
+def init_db():
     con=get_con("settings.db")
     con.execute("CREATE TABLE IF NOT EXISTS settings (user_id TEXT PRIMARY KEY, style TEXT, chaleur TEXT, enthousiasme TEXT, emojis TEXT, couleur TEXT, memoire TEXT)")
     con.commit(); con.close()
     con=get_con("memoire.db")
     con.execute("CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, tel TEXT, date TEXT, premium INTEGER, unlimited INTEGER, messages INTEGER, images INTEGER)")
     con.execute("CREATE TABLE IF NOT EXISTS transactions (id TEXT PRIMARY KEY, user_id TEXT, tel TEXT, ref TEXT, amount TEXT, date TEXT)")
+    con.execute("CREATE TABLE IF NOT EXISTS limits (user_id TEXT, date TEXT, count INT, PRIMARY KEY(user_id,date))")
     con.commit(); con.close()
-init_settings()
+init_db()
 
+@app.get("/")
+def root(): return FileResponse("landing.html")
+@app.get("/app")
+def app_page(): return FileResponse("index.html")
+@app.get("/pay")
+def pay(): return FileResponse("pay.html")
+@app.get("/admin")
+def admin(): return FileResponse("admin.html")
 @app.get("/robots.txt")
 def robots(): return FileResponse("robots.txt") if os.path.exists("robots.txt") else JSONResponse({})
 @app.get("/sitemap.xml")
@@ -49,39 +57,26 @@ def css(): return FileResponse("style.css") if os.path.exists("style.css") else 
 def sw(): return FileResponse("sw.js")
 @app.get("/manifest.json")
 def mani(): return FileResponse("manifest.json")
-@app.get("/")
-def root(): return FileResponse("landing.html")
-@app.get("/app")
-def app_page(): return FileResponse("index.html")
-@app.get("/pay")
-def pay(): return FileResponse("pay.html")
-@app.get("/admin")
-def admin(): return FileResponse("admin.html")
 
-# --- ADMIN ---
 @app.post("/api/admin/login")
 async def admin_login(req: Request):
     d=await req.json()
     if d.get("password") == ADMIN_PASSWORD:
         return {"token": ADMIN_TOKEN}
-    return JSONResponse({"error":"Mauvais"}, status_code=401)
+    return JSONResponse({"error":"Mauvais mot de passe"}, status_code=401)
 
 @app.get("/api/admin/data")
 def admin_data(x_admin_token: str = Header(None)):
     if x_admin_token!= ADMIN_TOKEN:
-        return JSONResponse(status_code=401, content={"error":"Non autorisé"})
+        return JSONResponse({"error":"Non autorisé"}, status_code=401)
     con=get_con("memoire.db")
-    try:
-        users = con.execute("SELECT * FROM users").fetchall()
-        txs = con.execute("SELECT * FROM transactions").fetchall()
-        con.close()
-        return {
-            "users": [{"id":r[0],"tel":r[1],"date":r[2],"premium":bool(r[3]),"unlimited":bool(r[4]),"messages":r[5],"images":r[6]} for r in users],
-            "transactions": [{"id":r[0],"user_id":r[1],"tel":r[2],"ref":r[3],"amount":r[4],"date":r[5]} for r in txs]
-        }
-    except:
-        con.close()
-        return {"users":[],"transactions":[]}
+    users = con.execute("SELECT * FROM users").fetchall()
+    txs = con.execute("SELECT * FROM transactions").fetchall()
+    con.close()
+    return {
+        "users": [{"id":r[0],"tel":r[1],"date":r[2],"premium":bool(r[3]),"unlimited":bool(r[4]),"messages":r[5],"images":r[6]} for r in users],
+        "transactions": [{"id":r[0],"user_id":r[1],"tel":r[2],"ref":r[3],"amount":r[4],"date":r[5]} for r in txs]
+    }
 
 @app.post("/api/admin/user")
 async def admin_user(req: Request, x_admin_token: str = Header(None)):
@@ -132,7 +127,8 @@ def get_settings(user_id: str):
 
 @app.post("/api/settings/save")
 async def save_settings(req: Request):
-    d=await req.json(); uid=d.get("user_id","anon")
+    d=await req.json()
+    uid=d.get("user_id","anon")
     con=get_con("settings.db")
     con.execute("INSERT OR REPLACE INTO settings VALUES (?,?,?,?,?,?,?)",(uid,d.get("style","Par défaut"),d.get("chaleur","Par défaut"),d.get("enthousiasme","Par défaut"),d.get("emojis","Par défaut"),d.get("couleur","Orange"),d.get("memoire","Activé")))
     con.commit(); con.close()
