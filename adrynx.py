@@ -1,11 +1,19 @@
-# src/adrynx.py - V2.2 FIX user_id - NE CASSE RIEN
+# src/adrynx.py - V2.6 FIX GROQ 2026 - NE CASSE RIEN
 import os, sqlite3, time, urllib.parse
 from groq import Groq
 from openai import OpenAI
 
 GROQ_KEY = os.environ.get("GROQ_API_KEY")
-GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
-VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+# MODÈLES VALABLES CHEZ GROQ EN OCT 2026
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
+VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
+FALLBACK_MODELS = [
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
+    "llama-3.3-70b-versatile",
+    "qwen/qwen3-32b",
+    "meta-llama/llama-4-maverick-17b-128e-instruct"
+]
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
 DB_PATH = os.environ.get("ADRYNX_DB", "/tmp/memoire.db")
 
@@ -16,7 +24,7 @@ class PhoenixPrime:
         self.groq = Groq(api_key=GROQ_KEY) if GROQ_KEY else None
         self.openrouter = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_KEY) if OPENROUTER_KEY else None
         self.init_db()
-        print(f"ADRYNX INIT V2.2: GROQ={bool(self.groq)} OPENROUTER={bool(self.openrouter)} DB={DB_PATH}")
+        print(f"ADRYNX INIT V2.6: GROQ={bool(self.groq)} MODEL={GROQ_MODEL} DB={DB_PATH}")
 
     def init_db(self):
         try:
@@ -56,14 +64,21 @@ Tu ne donnes JAMAIS un prompt Midjourney. Si image demandée: "🔥 Je te génè
         else:
             messages.append({"role":"user","content":message})
 
-        # Si demande image
         q_low = (message or "").lower()
         if any(w in q_low for w in ["génère","crée une image","dessine","visage pépère","fond pépère"]):
             p = urllib.parse.quote((message or "visage pépère fond pépère")[:600])
             url = f"https://image.pollinations.ai/prompt/{p}?width=1024&height=1024&nologo=true&enhance=true"
             return f"🔥 Je te génère ça en Premium 4K maintenant...\n![image]({url})"
 
-        models_to_try = [VISION_MODEL, "openai/gpt-oss-120b", "llama-3.1-8b-instant"] if image_base64 else [GROQ_MODEL, "openai/gpt-oss-120b", "llama-3.1-8b-instant"]
+        # ORDRE INTELLIGENT 2026
+        if image_base64:
+            models_to_try = [VISION_MODEL, GROQ_MODEL] + FALLBACK_MODELS
+        else:
+            models_to_try = [GROQ_MODEL] + FALLBACK_MODELS
+
+        # Dédupliquer en gardant l'ordre
+        seen = set()
+        models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
 
         if self.groq:
             for m in models_to_try:
@@ -74,6 +89,7 @@ Tu ne donnes JAMAIS un prompt Midjourney. Si image demandée: "🔥 Je te génè
                     if "OpenAI" in rep or "as an AI" in rep.lower():
                         rep = "Je suis ADRYNX Phoenix Prime, créé par Jonathan Obenda."
                     self.save("user", message); self.save("assistant", rep)
+                    print(f"GROQ OK {m}")
                     return rep
                 except Exception as e:
                     print(f"GROQ FAIL {m}: {e}"); continue
@@ -91,7 +107,6 @@ Tu ne donnes JAMAIS un prompt Midjourney. Si image demandée: "🔥 Je te génè
 
 _phoenix = PhoenixPrime()
 
-# FIX CRUCIAL: on accepte user_id et tout autre argument que api.py envoie
 def repondre(question, mode="general", historique=None, image_base64=None, is_premium=False, user_id=None, **kwargs):
     hist = historique if isinstance(historique, list) else []
     msg = f"[MODE:{mode}] {question}" if mode!="general" else question
