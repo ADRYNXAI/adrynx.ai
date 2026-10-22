@@ -100,7 +100,7 @@ Tu ne donnes JAMAIS un prompt Midjourney. Si image demandée: "🔥 Je te génè
                     c = self.openrouter.chat.completions.create(model=m, messages=[{"role":"system","content":system},{"role":"user","content":message}], temperature=0.7, max_tokens=2500)
                     rep = c.choices[0].message.content
                     self.save("user", message); self.save("assistant", rep)
-                    return f"{rep}\n\n[✨ via {m.split('/')[-1]}]"
+                    return rep 
                 except Exception as e: print(f"OR FAIL {m}: {e}"); continue
 
         return f"Je suis là Jonathan. Tu m'as dit: '{(message or '')[:120]}'"
