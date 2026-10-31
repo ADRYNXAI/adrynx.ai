@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+PyMuPDF
 groq
 openai
 python-multipart
