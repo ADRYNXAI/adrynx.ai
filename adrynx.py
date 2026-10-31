@@ -1,5 +1,7 @@
 # src/adrynx.py - V2.6 FIX GROQ 2026 - NE CASSE RIEN
-import os, sqlite3, time, urllib.parse
+import os, sqlite3, time, urllib.parse, base64
+# nouveau
+import fitz  # PyMuPDF - pour lire les PDF
 from groq import Groq
 from openai import OpenAI
 
@@ -8,11 +10,14 @@ GROQ_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
 FALLBACK_MODELS = [
-    "openai/gpt-oss-20b",
-    "openai/gpt-oss-120b",
-    "llama-3.3-70b-versatile",
-    "qwen/qwen3-32b",
-    "meta-llama/llama-4-maverick-17b-128e-instruct"
+    "llama-3.3-70b-versatile",        # Le plus stable gratuit
+    "llama-3.1-8b-instant",           # Le plus rapide
+    "qwen/qwen3-32b",                 # Très bon en code
+    "gemma2-9b-it",                   # Bon en français
+    "mixtral-8x7b-32768",             # Ancien mais 32k de contexte
+    "meta-llama/llama-4-maverick-17b-128e-instruct", # Vision + texte
+    "openai/gpt-oss-20b",             # Celui que tu as déjà
+    "openai/gpt-oss-120b"             # Plus intelligent mais plus lent
 ]
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
 DB_PATH = os.environ.get("ADRYNX_DB", "/tmp/memoire.db")
