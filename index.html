@@ -80,7 +80,20 @@ let mode='general'; const uid=localStorage.user_id||(localStorage.user_id='user_
 function setMode(m,el){mode=m;document.querySelectorAll('.modes button').forEach(b=>b.classList.remove('active'));el.classList.add('active')}
 function openSettings(){document.getElementById('settings').classList.add('open');loadSettings();}
 function closeSettings(){document.getElementById('settings').classList.remove('open')}
-async function send(){let i=document.getElementById('q');let t=i.value.trim();if(!t)return;i.value='';let c=document.getElementById('chat');c.innerHTML+=`<div class="msg user">${t}</div>`;c.scrollTop=c.scrollHeight;let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());c.innerHTML+=`<div class="msg assistant">${r.reponse}</div>`;c.scrollTop=c.scrollHeight;}
+async function send()// AJOUT V2.7 - EVOLUTION PDF - Nouvelle fonction, send() reste intacte
+async function sendPdfFile(file){
+  let c=document.getElementById('chat');
+  c.innerHTML+=`<div class="msg user">📄 PDF envoyé : ${file.name} - Je lis...</div>`;
+  c.scrollTop=c.scrollHeight;
+  let form = new FormData();
+  form.append("file", file);
+  let r = await fetch('/api/upload-pdf',{method:'POST', body: form}).then(r=>r.json());
+  c.innerHTML+=`<div class="msg assistant">${r.reponse}</div>`;
+  c.scrollTop=c.scrollHeight;
+}
+document.getElementById('pdfInput').addEventListener('change', (e)=>{
+  if(e.target.files[0]) sendPdfFile(e.target.files[0]);
+});{let i=document.getElementById('q');let t=i.value.trim();if(!t)return;i.value='';let c=document.getElementById('chat');c.innerHTML+=`<div class="msg user">${t}</div>`;c.scrollTop=c.scrollHeight;let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());c.innerHTML+=`<div class="msg assistant">${r.reponse}</div>`;c.scrollTop=c.scrollHeight;}
 async function loadFeed(){let f=document.getElementById('feed');f.style.display=f.style.display=='block'?'none':'block';if(f.style.display=='none')return;f.innerHTML='Chargement...';let r=await fetch('/api/community/feed').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)"><b>${x.uid}</b> <small>${x.time}</small><br>${x.q}<br><small style="color:#ff8c32">${x.r}</small></div>`).join('')||'Sois le premier!';}
 async function askCommunity(){let q=prompt('Question Dev Congo?');if(!q)return;let r=prompt('Ta réponse?');if(!r)return;await fetch('/api/community/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,q,r})});let f=document.getElementById('feed');f.style.display='block';loadFeed();}
 async function loadAstuces(){let f=document.getElementById('feed');f.style.display='block';let r=await fetch('/api/community/astuces').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;background:rgba(255,106,0,0.12);margin:4px;border-radius:8px"><b>${x.t}</b><br>${x.c}</div>`).join('');}
