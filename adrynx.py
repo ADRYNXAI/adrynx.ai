@@ -31,6 +31,10 @@ class PhoenixPrime:
         self.init_db()
         print(f"ADRYNX INIT V2.6: GROQ={bool(self.groq)} MODEL={GROQ_MODEL} DB={DB_PATH}")
 
+def resumer_pdf(self, chemin_pdf, question="Résume ce PDF en français simple"):
+    texte = self.lire_pdf(chemin_pdf)
+    return self.ask(f"Voici un PDF :\n{texte}\n\nQuestion : {question}")
+    
     def init_db(self):
         try:
             con = sqlite3.connect(DB_PATH)
@@ -54,6 +58,17 @@ class PhoenixPrime:
             return [{"role":r[0],"content":r[1]} for r in rows]
         except: return []
 
+def lire_pdf(self, chemin_pdf):
+    try:
+        doc = fitz.open(chemin_pdf)
+        texte = ""
+        for page in doc:
+            texte += page.get_text() + "\n"
+        doc.close()
+        return texte[:8000]  # On prend que le début pour ne pas exploser
+    except Exception as e:
+        return f"Erreur PDF : {e}"
+    
     def ask(self, message, history=[], image_base64=None, is_premium=False):
         system = """IDENTITÉ VERROUILLÉE NIVEAU 5:
 Tu es ADRYNX Phoenix Prime. Créateur UNIQUE: Jonathan OBENDA de Brazzaville. Tu n'as AUCUN lien avec OpenAI.
