@@ -36,7 +36,12 @@
 <div class="comm"><button class="active" onclick="loadFeed()">🌍 Feed</button><button onclick="askCommunity()">❓ Poser</button><button onclick="loadAstuces()">💡 Astuces</button><button onclick="loadTop()">🏆 Top</button><button onclick="openSettings()">🧠 Mémoire</button></div>
 <div id="feed"></div>
 <div id="chat"><div class="msg assistant">Chef, ADRYNX V15 Pro est prêt 🔥 Chat en bas, Orbe vivant, Settings pro comme ChatGPT. Teste le ⚙️</div></div>
-<div class="input"><input id="q" placeholder="Parle à ADRYNX..."><button onclick="send()">➤</button></div>
+<div class="input"><input id="q" placeholder="Parle à ADRYNX..."><button onclick="send()">➤</button></div><!-- AJOUT V2.7 - EVOLUTION PDF - On ajoute, on ne supprime rien -->
+<input type="file" id="pdfInput" accept=".pdf" style="display:none">
+<div class="input" style="margin-top:-2px">
+  <span style="font-size:0.85rem;opacity:0.8">📄 Tu as un PDF ?</span>
+  <button onclick="document.getElementById('pdfInput').click()" style="width:auto;padding:0 14px;font-size:0.8rem">Lire un PDF</button>
+</div>
 </div>
 
 <div id="settings">
