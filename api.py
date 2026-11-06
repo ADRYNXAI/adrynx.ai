@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Header
+from fastapi import FastAPI, Request, Header, UploadFile, File
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3, time, os
@@ -112,6 +112,23 @@ async def chat(req: Request):
         return {"reponse": rep}
     except Exception as e:
         return {"reponse": f"ADRYNX respire... réessaie: {str(e)[:80]}"}
+
+@app.post("/api/upload-pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    try:
+        # 1. On sauve le PDF dans un dossier temporaire
+        contenu = await file.read()
+        chemin = f"/tmp/{file.filename}"
+        with open(chemin, "wb") as f:
+            f.write(contenu)
+
+        # 2. On demande à ton cerveau de le lire
+        from adrynx import _phoenix
+        reponse = _phoenix.resumer_pdf(chemin, question="Résume ce PDF en français simple, pour Jonathan")
+
+        return {"reponse": reponse}
+    except Exception as e:
+        return {"reponse": f"Erreur PDF : {str(e)[:100]}"}
 
 @app.post("/api/pay/request")
 async def pay_req(req: Request):
