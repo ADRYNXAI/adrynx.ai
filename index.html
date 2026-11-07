@@ -31,7 +31,18 @@
 <video id="bg" autoplay muted loop playsinline><source src="/orb.mp4"></video>
 <div class="core">
 <div class="top"><h1>ADRYNX</h1><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
-<div id="orb-wrap"><video id="orb" autoplay muted loop playsinline><source src="/orb.mp4"></video></div>
+<div id="orb-wrap"><video id="orb" autoplay muted loop playsinline><source src="/orb.mp4"></video></div><!-- AJOUT V3.0 - ORBE PHOENIX EXACTE - On ajoute, on ne supprime pas l'ancienne -->
+<div id="orb-phoenix-wrap" style="text-align:center;margin:6px auto">
+  <div id="orb-phoenix" class="orb-caramel">🌀</div>
+  <div style="margin-top:8px"><b>Breathing Session</b><br><small id="orb-status">Je t'écoute...</small></div>
+  <button id="btn-breath" onclick="startBreathing()" style="background:#ff6a00;color:#fff;border:none;padding:10px 18px;border-radius:20px;margin:8px 0">Start Breathing</button>
+  <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+    <button onclick="setOrb('caramel',this)" class="orb-btn active">🔥 Caramel Chaud</button>
+    <button onclick="setOrb('calm',this)" class="orb-btn">Calm</button>
+    <button onclick="setOrb('clarity',this)" class="orb-btn">Clarity</button>
+    <button onclick="setOrb('energy',this)" class="orb-btn">⚡ Energy</button>
+  </div>
+</div>
 <div class="modes"><button class="active" onclick="setMode('general',this)">General</button><button onclick="setMode('etudiant',this)">Etudiant</button><button onclick="setMode('vendeur',this)">Vendeur</button><button onclick="setMode('codeur',this)">Codeur</button><button onclick="setMode('image',this)">Image</button></div>
 <div class="comm"><button class="active" onclick="loadFeed()">🌍 Feed</button><button onclick="askCommunity()">❓ Poser</button><button onclick="loadAstuces()">💡 Astuces</button><button onclick="loadTop()">🏆 Top</button><button onclick="openSettings()">🧠 Mémoire</button></div>
 <div id="feed"></div>
