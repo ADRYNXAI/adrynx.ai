@@ -80,7 +80,11 @@ let mode='general'; const uid=localStorage.user_id||(localStorage.user_id='user_
 function setMode(m,el){mode=m;document.querySelectorAll('.modes button').forEach(b=>b.classList.remove('active'));el.classList.add('active')}
 function openSettings(){document.getElementById('settings').classList.add('open');loadSettings();}
 function closeSettings(){document.getElementById('settings').classList.remove('open')}
-async function send()// AJOUT V2.7 - EVOLUTION PDF - Nouvelle fonction, send() reste intacte
+
+  // FONCTION D'ORIGINE V15 - INTACTE, ON NE LA TOUCHE PAS
+async function send(){let i=document.getElementById('q');let t=i.value.trim();if(!t)return;i.value='';let c=document.getElementById('chat');c.innerHTML+=`<div class="msg user">${t}</div>`;c.scrollTop=c.scrollHeight;let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());c.innerHTML+=`<div class="msg assistant">${r.reponse}</div>`;c.scrollTop=c.scrollHeight;}
+
+// AJOUT V2.7 - EVOLUTION PDF - Nouvelle fonction à côté, après send()
 async function sendPdfFile(file){
   let c=document.getElementById('chat');
   c.innerHTML+=`<div class="msg user">📄 PDF envoyé : ${file.name} - Je lis...</div>`;
@@ -91,6 +95,10 @@ async function sendPdfFile(file){
   c.innerHTML+=`<div class="msg assistant">${r.reponse}</div>`;
   c.scrollTop=c.scrollHeight;
 }
+document.getElementById('pdfInput').addEventListener('change', (e)=>{
+  if(e.target.files[0]) sendPdfFile(e.target.files[0]);
+});
+
 document.getElementById('pdfInput').addEventListener('change', (e)=>{
   if(e.target.files[0]) sendPdfFile(e.target.files[0]);
 });{let i=document.getElementById('q');let t=i.value.trim();if(!t)return;i.value='';let c=document.getElementById('chat');c.innerHTML+=`<div class="msg user">${t}</div>`;c.scrollTop=c.scrollHeight;let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());c.innerHTML+=`<div class="msg assistant">${r.reponse}</div>`;c.scrollTop=c.scrollHeight;}
