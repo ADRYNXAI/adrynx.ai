@@ -1,23 +1,21 @@
-# src/adrynx.py - V2.6 FIX GROQ 2026 - NE CASSE RIEN
+# src/adrynx.py - V2.7 FIX INDENTATION + PDF - NE CASSE RIEN, ON EVOLUE
 import os, sqlite3, time, urllib.parse, base64
-# nouveau
 import fitz  # PyMuPDF - pour lire les PDF
 from groq import Groq
 from openai import OpenAI
 
 GROQ_KEY = os.environ.get("GROQ_API_KEY")
-# MODÈLES VALABLES CHEZ GROQ EN OCT 2026
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"
 FALLBACK_MODELS = [
-    "llama-3.3-70b-versatile",        # Le plus stable gratuit
-    "llama-3.1-8b-instant",           # Le plus rapide
-    "qwen/qwen3-32b",                 # Très bon en code
-    "gemma2-9b-it",                   # Bon en français
-    "mixtral-8x7b-32768",             # Ancien mais 32k de contexte
-    "meta-llama/llama-4-maverick-17b-128e-instruct", # Vision + texte
-    "openai/gpt-oss-20b",             # Celui que tu as déjà
-    "openai/gpt-oss-120b"             # Plus intelligent mais plus lent
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "qwen/qwen3-32b",
+    "gemma2-9b-it",
+    "mixtral-8x7b-32768",
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b"
 ]
 OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY")
 DB_PATH = os.environ.get("ADRYNX_DB", "/tmp/memoire.db")
@@ -29,12 +27,8 @@ class PhoenixPrime:
         self.groq = Groq(api_key=GROQ_KEY) if GROQ_KEY else None
         self.openrouter = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=OPENROUTER_KEY) if OPENROUTER_KEY else None
         self.init_db()
-        print(f"ADRYNX INIT V2.6: GROQ={bool(self.groq)} MODEL={GROQ_MODEL} DB={DB_PATH}")
+        print(f"ADRYNX INIT V2.7: GROQ={bool(self.groq)} MODEL={GROQ_MODEL} DB={DB_PATH}")
 
-def resumer_pdf(self, chemin_pdf, question="Résume ce PDF en français simple"):
-    texte = self.lire_pdf(chemin_pdf)
-    return self.ask(f"Voici un PDF :\n{texte}\n\nQuestion : {question}")
-    
     def init_db(self):
         try:
             con = sqlite3.connect(DB_PATH)
@@ -58,17 +52,39 @@ def resumer_pdf(self, chemin_pdf, question="Résume ce PDF en français simple")
             return [{"role":r[0],"content":r[1]} for r in rows]
         except: return []
 
-def lire_pdf(self, chemin_pdf):
-    try:
-        doc = fitz.open(chemin_pdf)
+    def lire_pdf(self, chemin_pdf):
         texte = ""
-        for page in doc:
-            texte += page.get_text() + "\n"
-        doc.close()
-        return texte[:8000]  # On prend que le début pour ne pas exploser
-    except Exception as e:
-        return f"Erreur PDF : {e}"
-    
+        # Plan A : PyMuPDF
+        try:
+            doc = fitz.open(chemin_pdf)
+            for page in doc:
+                texte += page.get_text() + "\n"
+            doc.close()
+        except Exception as e:
+            print(f"PDF fitz fail: {e}")
+        # Plan B : pypdf si PyMuPDF n'a rien donné
+        if not texte.strip():
+            try:
+                try:
+                    from pypdf import PdfReader
+                except:
+                    from PyPDF2 import PdfReader
+                reader = PdfReader(chemin_pdf)
+                for p in reader.pages[:20]:
+                    try: texte += (p.extract_text() or "") + "\n"
+                    except: pass
+            except Exception as e:
+                return f"Erreur PDF : {e}"
+        if not texte.strip():
+            return "Erreur PDF : Je n'ai pas pu extraire de texte de ce PDF."
+        return texte[:12000]
+
+    def resumer_pdf(self, chemin_pdf, question="Résume ce PDF en français simple"):
+        texte = self.lire_pdf(chemin_pdf)
+        if texte.startswith("Erreur PDF"):
+            return texte
+        return self.ask(f"Voici un PDF :\n{texte}\n\nQuestion : {question}")
+
     def ask(self, message, history=[], image_base64=None, is_premium=False):
         system = """IDENTITÉ VERROUILLÉE NIVEAU 5:
 Tu es ADRYNX Phoenix Prime. Créateur UNIQUE: Jonathan OBENDA de Brazzaville. Tu n'as AUCUN lien avec OpenAI.
@@ -90,13 +106,11 @@ Tu ne donnes JAMAIS un prompt Midjourney. Si image demandée: "🔥 Je te génè
             url = f"https://image.pollinations.ai/prompt/{p}?width=1024&height=1024&nologo=true&enhance=true"
             return f"🔥 Je te génère ça en Premium 4K maintenant...\n![image]({url})"
 
-        # ORDRE INTELLIGENT 2026
         if image_base64:
             models_to_try = [VISION_MODEL, GROQ_MODEL] + FALLBACK_MODELS
         else:
             models_to_try = [GROQ_MODEL] + FALLBACK_MODELS
 
-        # Dédupliquer en gardant l'ordre
         seen = set()
         models_to_try = [m for m in models_to_try if not (m in seen or seen.add(m))]
 
@@ -120,7 +134,7 @@ Tu ne donnes JAMAIS un prompt Midjourney. Si image demandée: "🔥 Je te génè
                     c = self.openrouter.chat.completions.create(model=m, messages=[{"role":"system","content":system},{"role":"user","content":message}], temperature=0.7, max_tokens=2500)
                     rep = c.choices[0].message.content
                     self.save("user", message); self.save("assistant", rep)
-                    return rep 
+                    return rep
                 except Exception as e: print(f"OR FAIL {m}: {e}"); continue
 
         return f"Je suis là Jonathan. Tu m'as dit: '{(message or '')[:120]}'"
