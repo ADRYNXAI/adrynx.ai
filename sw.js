@@ -1,28 +1,42 @@
-self.addEventListener('install',e=>{
+// ADRYNX V16 - FIX ENVOI - NE PLUS CACHER LE HTML
+self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(
-    caches.open('adrynx-v12-4').then(c=>c.addAll([
-      '/',
-      '/index.html',
-      '/landing.html',
+    caches.open('adrynx-v16-fix-envoi-1').then(c => c.addAll([
       '/orb.mp4'
-    ]))
+    ]).catch(()=>{}))
   );
 });
 
-self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!=='adrynx-v12-4').map(k=>caches.delete(k)))));
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== 'adrynx-v16-fix-envoi-1').map(k => caches.delete(k))
+    )).then(()=> self.clients.claim())
+  );
 });
 
-self.addEventListener('fetch',e=>{
-  // Orbe = cache d'abord pour souffle vivant même offline
-  if(e.request.url.includes('orb.mp4')){
-    e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{
-      caches.open('adrynx-v12-4').then(c=>c.put(e.request,res.clone()));
-      return res;
-    })));
+self.addEventListener('fetch', e => {
+  let url = e.request.url;
+
+  // 1. HTML + API = TOUJOURS RESEAU, JAMAIS CACHE
+  // C'est ça qui bloquait ton bouton ENVOYER
+  if (url.includes('/app') || url.includes('/index.html') || url.includes('/landing.html') || url.includes('/api/') || url.endsWith('/')) {
+    e.respondWith(fetch(e.request));
     return;
   }
-  // Reste = ton code actuel intact
-  e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
+
+  // 2. Orbe = cache d'abord, pour le souffle vivant même offline
+  if (url.includes('orb.mp4')) {
+    e.respondWith(
+      caches.match(e.request).then(r => r || fetch(e.request).then(res => {
+        caches.open('adrynx-v16-fix-envoi-1').then(c => c.put(e.request, res.clone()));
+        return res;
+      }))
+    );
+    return;
+  }
+
+  // 3. Reste = réseau d'abord, cache en secours
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
