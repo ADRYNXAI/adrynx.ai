@@ -2,12 +2,9 @@
 self.addEventListener('install', e => {
   self.skipWaiting();
   e.waitUntil(
-    caches.open('adrynx-v16-fix-envoi-1').then(c => c.addAll([
-      '/orb.mp4'
-    ]).catch(()=>{}))
+    caches.open('adrynx-v16-fix-envoi-1').then(c => c.addAll(['/orb.mp4']).catch(()=>{}))
   );
 });
-
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(
@@ -15,18 +12,12 @@ self.addEventListener('activate', e => {
     )).then(()=> self.clients.claim())
   );
 });
-
 self.addEventListener('fetch', e => {
   let url = e.request.url;
-
-  // 1. HTML + API = TOUJOURS RESEAU, JAMAIS CACHE
-  // C'est ça qui bloquait ton bouton ENVOYER
   if (url.includes('/app') || url.includes('/index.html') || url.includes('/landing.html') || url.includes('/api/') || url.endsWith('/')) {
     e.respondWith(fetch(e.request));
     return;
   }
-
-  // 2. Orbe = cache d'abord, pour le souffle vivant même offline
   if (url.includes('orb.mp4')) {
     e.respondWith(
       caches.match(e.request).then(r => r || fetch(e.request).then(res => {
@@ -36,7 +27,5 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-
-  // 3. Reste = réseau d'abord, cache en secours
   e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });
