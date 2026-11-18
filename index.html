@@ -17,6 +17,7 @@
 #feed{max-height:26vh;overflow-y:auto;background:rgba(0,0,0,0.7);border-radius:12px;display:none;border:1px solid rgba(255,106,0,0.2);margin:4px 0}
 #chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:8px}
 .msg{padding:10px 14px;border-radius:18px;max-width:88%;font-size:0.92rem;white-space:pre-wrap;word-break:break-word}.user{align-self:flex-end;background:linear-gradient(135deg,#ff6a00,#ff8c32)}.assistant{align-self:flex-start;background:rgba(255,255,255,0.09);border:1px solid rgba(255,106,0,0.25)}
+.msg img{width:100%;border-radius:12px;margin-top:8px;display:block}
 .input{flex-shrink:0;display:flex;gap:8px;background:rgba(18,18,18,0.92);border:1px solid rgba(255,106,0,0.35);border-radius:28px;padding:10px 12px;margin:8px 0 env(safe-area-inset-bottom)}
 .input input{flex:1;background:transparent;border:none;color:#fff;outline:none}.input button{width:38px;height:38px;border-radius:50%;background:#ff6a00;border:none;color:#fff}
 #settings{position:fixed;top:0;right:-100%;width:100%;max-width:420px;height:100%;background:#f6f6f6;color:#111;z-index:20;transition:0.3s;overflow-y:auto;padding:0 0 20px 0}
@@ -58,7 +59,6 @@
   <button id="btnPdf" style="width:auto;padding:0 14px;font-size:0.8rem">Lire un PDF</button>
 </div>
 </div>
-
 <div id="settings">
 <header><button id="btnCloseSettings" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:#fff">←</button><b>Personnalisation ADRYNX</b></header>
 <div class="card"><h3>🎨 Thème Phoenix</h3><p>Couleur d'accentuation</p>
@@ -83,13 +83,19 @@
 <div class="card"><h3>🔌 Plugins</h3><p>Extension Systalink</p><div class="row"><span>Community Feed</span><div class="toggle on"></div></div><div class="row"><span>Parcourir les plugins</span><span>›</span></div></div>
 <div class="card"><h3>👤 Compte</h3><div class="row"><span>Adresse e-mail</span><span>adrynx@gmail.com</span></div><div class="row"><span>Contact de confiance</span><span>›</span></div><div class="row"><span>Se déconnecter</span><span style="color:red">↪</span></div></div>
 </div>
-
 <script>
 let mode='general';
 const uid=localStorage.user_id||(localStorage.user_id='user_'+Math.random().toString(36).slice(2,6));
 const $=id=>document.getElementById(id);
-function addMsg(t,qui){let d=document.createElement('div');d.className='msg '+qui;d.textContent=t;$('chat').appendChild(d);$('chat').scrollTop=99999;return d;}
-document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');}));
+function renderMsg(el, text){
+  // EVOLUTION : image Markdown ![image](url) -> vraie image
+  let m = String(text||'').match(/!\[image\]\((https?:\/\/[^)]+)\)/);
+  if(m){ el.textContent = String(text).replace(m[0],'').trim(); let img=document.createElement('img'); img.src=m[1]; img.alt='Image ADRYNX'; el.appendChild(img); }
+  else { el.textContent = text; }
+}
+function addMsg(t,qui){let d=document.createElement('div');d.className='msg '+qui;renderMsg(d,t);$('chat').appendChild(d);$('chat').scrollTop=99999;return d;}
+function setMode(m){ mode=m; document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active', x.dataset.mode===m)); }
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
 document.querySelectorAll('[data-orb]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-orb]').forEach(x=>x.classList.remove('active'));b.classList.add('active');let o=$('orb-phoenix');if(b.dataset.orb==='calm'){o.textContent='💙';o.style.filter='drop-shadow(0 0 20px #00bfff)';}else if(b.dataset.orb==='clarity'){o.textContent='💜';o.style.filter='drop-shadow(0 0 20px #a855f7)';}else if(b.dataset.orb==='energy'){o.textContent='⚡';o.style.filter='drop-shadow(0 0 20px #facc15)';}else{o.textContent='🌀';o.style.filter='drop-shadow(0 0 20px #ff6a00)';}$('orb-status').textContent='Mode '+b.dataset.orb+' activé';}));
 document.querySelectorAll('.accent-btn').forEach(b=>b.addEventListener('click',()=>{saveS();}));
 $('btnSettingsTop').addEventListener('click',()=>{$('settings').classList.add('open');loadSettings();});
@@ -98,14 +104,15 @@ $('btnMemoire').addEventListener('click',()=>{$('settings').classList.add('open'
 $('t_mem').addEventListener('click',()=>$('t_mem').classList.toggle('on'));
 let breathingOn=false;
 $('btn-breath').addEventListener('click',()=>{breathingOn=!breathingOn;$('btn-breath').textContent=breathingOn?'Stop Breathing':'Start Breathing';$('orb-status').textContent=breathingOn?'Inspire... 4s... Expire... 4s... On y va chef.':'Je t\'écoute...';});
-async function send(){let i=$('q');let t=i.value.trim();if(!t)return null;i.value='';addMsg(t,'user');let load=addMsg('ADRYNX réfléchit...','assistant');try{let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})});let j=await r.json();let rep=j.reponse||"Je n'ai pas compris chef, réessaie.";load.textContent=rep;return rep;}catch(e){load.textContent='Chef, je n\'arrive pas à joindre le serveur. Vérifie ta connexion et réessaie.';return null;}}
+async function send(){let i=$('q');let t=i.value.trim();if(!t)return null;i.value='';addMsg(t,'user');let load=addMsg('ADRYNX réfléchit...','assistant');try{let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})});let j=await r.json();let rep=j.reponse||"Je n'ai pas compris chef, réessaie.";renderMsg(load,rep);return rep;}catch(e){load.textContent='Chef, je n\'arrive pas à joindre le serveur. Vérifie ta connexion et réessaie.';return null;}}
 $('sendBtn').addEventListener('click',send);
 $('q').addEventListener('keydown',e=>{if(e.key==='Enter')send();});
-function speak(text){try{window.speechSynthesis.cancel();let clean=String(text||'').replace(/[*#_`🔥✅📄]/g,'').slice(0,600);if(!clean)return;let u=new SpeechSynthesisUtterance(clean);u.lang='fr-FR';window.speechSynthesis.speak(u);}catch(e){}}
+function speak(text){try{window.speechSynthesis.cancel();let clean=String(text||'').replace(/[*#_`🔥✅📄]/g,'').replace(/!\[image\]\(.*?\)/g,'Voici ton image chef.').slice(0,600);if(!clean)return;let u=new SpeechSynthesisUtterance(clean);u.lang='fr-FR';window.speechSynthesis.speak(u);}catch(e){}}
 let recognition=null,isListening=false;
-$('micBtn').addEventListener('click',()=>{let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('Ton navigateur ne supporte pas le vocal. Utilise Chrome sur Android, en HTTPS.');return;}if(isListening){if(recognition)recognition.stop();return;}if(!recognition){recognition=new SR();recognition.lang='fr-FR';recognition.interimResults=false;recognition.continuous=false;recognition.onresult=async(e)=>{let texte=e.results[0][0].transcript;$('q').value=texte;let rep=await send();if(rep)speak(rep);};recognition.onerror=(e)=>{isListening=false;$('micBtn').classList.remove('mic-btn-listening');$('micBtn').textContent='🎤';if(e.error==='not-allowed')alert('Chef, autorise le micro dans Chrome : cadenas en haut > Autoriser le micro.');};recognition.onend=()=>{isListening=false;$('micBtn').classList.remove('mic-btn-listening');$('micBtn').textContent='🎤';$('q').placeholder='Parle à ADRYNX...';};}try{recognition.start();isListening=true;$('micBtn').classList.add('mic-btn-listening');$('micBtn').textContent='🔴';$('q').placeholder='Je t\'écoute... parle chef...';$('orb-status').textContent='Je t\'écoute...';}catch(e){isListening=false;}});
+function startMic(){let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('Ton navigateur ne supporte pas le vocal. Utilise Chrome sur Android, en HTTPS.');return;}if(isListening){if(recognition)recognition.stop();return;}if(!recognition){recognition=new SR();recognition.lang='fr-FR';recognition.interimResults=false;recognition.continuous=false;recognition.onresult=async(e)=>{let texte=e.results[0][0].transcript;$('q').value=texte;let rep=await send();if(rep)speak(rep);};recognition.onerror=(e)=>{isListening=false;$('micBtn').classList.remove('mic-btn-listening');$('micBtn').textContent='🎤';if(e.error==='not-allowed')alert('Chef, autorise le micro dans Chrome : cadenas en haut > Autoriser le micro.');};recognition.onend=()=>{isListening=false;$('micBtn').classList.remove('mic-btn-listening');$('micBtn').textContent='🎤';$('q').placeholder='Parle à ADRYNX...';};}try{recognition.start();isListening=true;$('micBtn').classList.add('mic-btn-listening');$('micBtn').textContent='🔴';$('q').placeholder='Je t\'écoute... parle chef...';$('orb-status').textContent='Je t\'écoute...';}catch(e){isListening=false;}}
+$('micBtn').addEventListener('click',startMic);
 $('btnPdf').addEventListener('click',()=>$('pdfInput').click());
-$('pdfInput').addEventListener('change',async(e)=>{let file=e.target.files[0];if(!file)return;addMsg('📄 PDF envoyé : '+file.name+' - Je lis...','user');let load=addMsg('Je lis ton PDF...','assistant');try{let fd=new FormData();fd.append('file',file);let r=await fetch('/api/upload-pdf',{method:'POST',body:fd});let j=await r.json();load.textContent=j.reponse||'PDF reçu, mais pas de réponse du serveur.';speak(load.textContent);}catch(err){load.textContent='Chef, l\'envoi du PDF a échoué.';}e.target.value='';});
+$('pdfInput').addEventListener('change',async(e)=>{let file=e.target.files[0];if(!file)return;addMsg('📄 PDF envoyé : '+file.name+' - Je lis...','user');let load=addMsg('Je lis ton PDF...','assistant');try{let fd=new FormData();fd.append('file',file);let r=await fetch('/api/upload-pdf',{method:'POST',body:fd});let j=await r.json();renderMsg(load, j.reponse||'PDF reçu, mais pas de réponse du serveur.');speak(load.textContent);}catch(err){load.textContent='Chef, l\'envoi du PDF a échoué.';}e.target.value='';});
 async function loadFeed(){let f=$('feed');f.style.display=f.style.display=='block'?'none':'block';if(f.style.display=='none')return;f.innerHTML='Chargement...';try{let r=await fetch('/api/community/feed').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)"><b>${x.uid}</b> <small>${x.time}</small><br>${x.q}<br><small style="color:#ff8c32">${x.r}</small></div>`).join('')||'Sois le premier!';}catch(e){f.innerHTML='Feed indisponible pour le moment.';}}
 $('btnFeed').addEventListener('click',loadFeed);
 $('btnPoser').addEventListener('click',async()=>{let q=prompt('Question Dev Congo?');if(!q)return;let r=prompt('Ta réponse?');if(!r)return;await fetch('/api/community/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,q,r})});$('feed').style.display='block';loadFeed();});
@@ -114,6 +121,13 @@ $('btnTop').addEventListener('click',async()=>{let f=$('feed');f.style.display='
 async function loadSettings(){try{let s=await fetch(`/api/settings/${uid}`).then(r=>r.json());if(s.style)$('s_style').value=s.style;if(s.chaleur)$('s_chaleur').value=s.chaleur;if(s.enthousiasme)$('s_enth').value=s.enthousiasme;if(s.emojis)$('s_emoji').value=s.emojis;let u=await fetch(`/api/utilisation/${uid}`).then(r=>r.json());$('u_limite').textContent=u.limite||'--';}catch(e){}}
 async function saveS(){try{await fetch('/api/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,style:$('s_style').value,chaleur:$('s_chaleur').value,enthousiasme:$('s_enth').value,emojis:$('s_emoji').value,couleur:'Orange',memoire:'Activé'})});}catch(e){}}
 ['s_style','s_chaleur','s_enth','s_emoji'].forEach(id=>{$(id).addEventListener('change',saveS);});
+// EVOLUTION LANDING : lit ce que landing.html a enregistré
+try{
+  let m0 = localStorage.getItem('adrynx_start_mode');
+  if(m0){ setMode(m0); localStorage.removeItem('adrynx_start_mode'); }
+  if(localStorage.getItem('adrynx_start_pdf')){ localStorage.removeItem('adrynx_start_pdf'); setTimeout(()=>{ $('pdfInput').click(); }, 800); }
+  if(localStorage.getItem('adrynx_start_vocal')){ localStorage.removeItem('adrynx_start_vocal'); setTimeout(()=>{ startMic(); }, 800); }
+}catch(e){}
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
 </script>
 </body></html>
