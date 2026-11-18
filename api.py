@@ -1,3 +1,7 @@
+import sys, os
+# ÉVOLUTION : branche le cerveau qui est dans src/ - ne jamais enlever
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 from fastapi import FastAPI, Request, Header, UploadFile, File
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +12,16 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 ADMIN_PASSWORD = "ADRYNX2026"
 ADMIN_TOKEN = "adrynx_boss_2026"
+
+# ÉVOLUTION : on charge l'intelligence infinie UNE FOIS au démarrage, on ne la recoupe plus à chaque message
+try:
+    from adrynx import repondre as _repondre_global
+    from adrynx import _phoenix as _phoenix_global
+    print("ADRYNX INIT V2.7: Intelligence infinie branchée")
+except Exception as e:
+    _repondre_global = None
+    _phoenix_global = None
+    print(f"ADRYNX INIT ECHEC: {e}")
 
 def get_con(db):
     return sqlite3.connect(db, check_same_thread=False, timeout=10)
@@ -43,7 +57,6 @@ def init_db():
 init_db()
 
 def safe_file(name):
-    # Ne plante plus si le fichier n'existe pas
     if name and os.path.exists(name):
         return FileResponse(name)
     return JSONResponse({"error":"Fichier non trouve: "+str(name)}, status_code=404)
@@ -76,6 +89,8 @@ def css(): return safe_file("style.css")
 def sw(): return safe_file("sw.js")
 @app.get("/manifest.json")
 def mani(): return safe_file("manifest.json")
+@app.get("/api/health")
+def health(): return {"ok": True, "intelligence": "branchée" if _repondre_global else "coupée"}
 
 @app.post("/api/admin/login")
 async def admin_login(req: Request):
@@ -122,11 +137,14 @@ async def admin_val(req: Request, x_admin_token: str = Header(None)):
 @app.post("/api/chat")
 async def chat(req: Request):
     try:
-        from adrynx import repondre
         d=await req.json()
         uid=str(d.get("user_id","anon"))[:50]
         if check_limit(uid)>=25 and not d.get("is_vip",False):
             return {"reponse":"🔥 Limite 25/25. Premium 1000F/semaine /pay - MTN 061174945"}
+        # ÉVOLUTION : on utilise le cerveau déjà chargé, on ne le recharge plus à chaque fois
+        repondre = _repondre_global
+        if repondre is None:
+            from adrynx import repondre as repondre
         rep=repondre(d.get("message","")[:2000], mode=d.get("mode","general"), user_id=uid)
         bump_limit(uid)
         return {"reponse": rep}
@@ -134,10 +152,8 @@ async def chat(req: Request):
         return {"reponse": f"ADRYNX respire... réessaie: {str(e)[:80]}"}
 
 def _extract_pdf_text(chemin):
-    # Plan B : extrait le texte sans dépendre de _phoenix
     texte=""
     try:
-        # Essaie pypdf / PyPDF2
         try:
             from pypdf import PdfReader
         except:
@@ -149,7 +165,6 @@ def _extract_pdf_text(chemin):
     except Exception:
         pass
     if not texte.strip():
-        # Essaie fitz / PyMuPDF
         try:
             import fitz
             doc=fitz.open(chemin)
@@ -172,20 +187,22 @@ async def upload_pdf(file: UploadFile = File(...)):
         chemin = f"/tmp/{uuid.uuid4().hex}.pdf"
         with open(chemin, "wb") as f:
             f.write(contenu)
-        # 1. On essaie d'abord ta fonction d'origine
         try:
-            from adrynx import _phoenix
+            _phoenix = _phoenix_global
+            if _phoenix is None:
+                from adrynx import _phoenix as _phoenix
             if hasattr(_phoenix, "resumer_pdf"):
                 reponse = _phoenix.resumer_pdf(chemin, question="Résume ce PDF en français simple, pour Jonathan")
                 if reponse and len(str(reponse).strip())>10:
                     return {"reponse": str(reponse)}
         except Exception:
             pass
-        # 2. Plan B : extraction + repondre()
         texte=_extract_pdf_text(chemin)
         if not texte:
             return {"reponse":"Chef, je n'ai pas pu lire ce PDF. Il est peut-être scanné en image, ou protégé. Essaie un autre PDF avec du vrai texte."}
-        from adrynx import repondre
+        repondre = _repondre_global
+        if repondre is None:
+            from adrynx import repondre as repondre
         prompt=f"Voici le texte d'un PDF que Jonathan vient d'envoyer. Résume-le en français simple, clair, avec les points importants en liste. Texte :\n\n{texte}"
         rep=repondre(prompt, mode="general", user_id="pdf_user")
         return {"reponse": rep}
