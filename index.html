@@ -19,19 +19,23 @@
 .msg{padding:10px 14px;border-radius:18px;max-width:88%;font-size:0.92rem}.user{align-self:flex-end;background:linear-gradient(135deg,#ff6a00,#ff8c32)}.assistant{align-self:flex-start;background:rgba(255,255,255,0.09);border:1px solid rgba(255,106,0,0.25)}
 .input{flex-shrink:0;display:flex;gap:8px;background:rgba(18,18,18,0.92);border:1px solid rgba(255,106,0,0.35);border-radius:28px;padding:10px 12px;margin:8px 0 env(safe-area-inset-bottom)}
 .input input{flex:1;background:transparent;border:none;color:#fff;outline:none}.input button{width:38px;height:38px;border-radius:50%;background:#ff6a00;border:none;color:#fff}
-/* SETTINGS DRAWER - inspiré de ta vidéo ChatGPT */
 #settings{position:fixed;top:0;right:-100%;width:100%;max-width:420px;height:100%;background:#f6f6f6;color:#111;z-index:20;transition:0.3s;overflow-y:auto;padding:0 0 20px 0}
 #settings.open{right:0}#settings header{display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid #e5e5e5;position:sticky;top:0;background:#f6f6f6}
 .card{background:#fff;border-radius:14px;margin:12px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
 .card h3{font-size:0.95rem;margin-bottom:2px}.card p{font-size:0.78rem;color:#666}
 .row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f0f0f0}.row:last-child{border:none}
 .toggle{width:44px;height:26px;background:#ccc;border-radius:20px;position:relative}.toggle.on{background:#111}.toggle::after{content:'';position:absolute;top:2px;left:2px;width:22px;height:22px;background:#fff;border-radius:50%;transition:0.2s}.toggle.on::after{left:20px}
+.orb-caramel{font-size:64px;filter:drop-shadow(0 0 20px #ff6a00)}
+.orb-btn{padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);color:#fff}
+.orb-btn.active{background:rgba(255,106,0,0.35);border-color:#ff6a00}
+.mic-btn-listening{background:#e60000 !important;animation:micPulse 1s infinite}
+@keyframes micPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
 </style></head>
 <body>
 <video id="bg" autoplay muted loop playsinline><source src="/orb.mp4"></video>
 <div class="core">
 <div class="top"><h1>ADRYNX</h1><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
-<div id="orb-wrap"><video id="orb" autoplay muted loop playsinline><source src="/orb.mp4"></video></div><!-- AJOUT V3.0 - ORBE PHOENIX EXACTE - On ajoute, on ne supprime pas l'ancienne -->
+<div id="orb-wrap"><video id="orb" autoplay muted loop playsinline><source src="/orb.mp4"></video></div>
 <div id="orb-phoenix-wrap" style="text-align:center;margin:6px auto">
   <div id="orb-phoenix" class="orb-caramel">🌀</div>
   <div style="margin-top:8px"><b>Breathing Session</b><br><small id="orb-status">Je t'écoute...</small></div>
@@ -46,8 +50,8 @@
 <div class="modes"><button class="active" onclick="setMode('general',this)">General</button><button onclick="setMode('etudiant',this)">Etudiant</button><button onclick="setMode('vendeur',this)">Vendeur</button><button onclick="setMode('codeur',this)">Codeur</button><button onclick="setMode('image',this)">Image</button></div>
 <div class="comm"><button class="active" onclick="loadFeed()">🌍 Feed</button><button onclick="askCommunity()">❓ Poser</button><button onclick="loadAstuces()">💡 Astuces</button><button onclick="loadTop()">🏆 Top</button><button onclick="openSettings()">🧠 Mémoire</button></div>
 <div id="feed"></div>
-<div id="chat"><div class="msg assistant">Chef, ADRYNX V15 Pro est prêt 🔥 Chat en bas, Orbe vivant, Settings pro comme ChatGPT. Teste le ⚙️</div></div>
-<div class="input"><input id="q" placeholder="Parle à ADRYNX..."><button onclick="send()">➤</button></div><!-- AJOUT V2.7 - EVOLUTION PDF - On ajoute, on ne supprime rien -->
+<div id="chat"><div class="msg assistant">Chef, ADRYNX V16 Pro est prêt 🔥 Chat en bas, Vocal 🎤, Orbe vivant, Settings pro. Teste le micro 🎤</div></div>
+<div class="input"><input id="q" placeholder="Parle à ADRYNX..."><button id="micBtn" onclick="startVocal()">🎤</button><button onclick="send()">➤</button></div>
 <input type="file" id="pdfInput" accept=".pdf" style="display:none">
 <div class="input" style="margin-top:-2px">
   <span style="font-size:0.85rem;opacity:0.8">📄 Tu as un PDF ?</span>
@@ -57,32 +61,26 @@
 
 <div id="settings">
 <header><button onclick="closeSettings()" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:#fff">←</button><b>Personnalisation ADRYNX</b></header>
-
 <div class="card"><h3>🎨 Thème Phoenix</h3><p>Couleur d'accentuation</p>
 <div class="row"><span>Orange Caramel (défaut Systalink)</span><span style="color:#ff6a00">●</span></div>
 <div class="row" style="flex-wrap:wrap;gap:6px"><button onclick="setAccent('Orange')" style="background:#ff6a00;color:#fff;border:none;padding:6px 10px;border-radius:20px">Orange</button><button onclick="setAccent('Bleu')" style="padding:6px 10px;border-radius:20px;border:1px solid #ddd">Bleu</button><button onclick="setAccent('Violet')" style="padding:6px 10px;border-radius:20px;border:1px solid #ddd">Violet</button></div>
 </div>
-
 <div class="card"><h3>🧬 Style et ton de base</h3>
 <div class="row"><span>Style</span><select id="s_style" onchange="saveS()"><option>Par défaut</option><option>Professionnel</option><option>Simple</option><option>Entrepreneur Congo</option></select></div>
 <div class="row"><span>Chaleur</span><select id="s_chaleur" onchange="saveS()"><option>Par défaut</option><option>Chaleureux</option><option>Direct</option></select></div>
 <div class="row"><span>Enthousiasme</span><select id="s_enth" onchange="saveS()"><option>Par défaut</option><option>Calme</option><option>Enthousiaste</option></select></div>
 <div class="row"><span>Emojis</span><select id="s_emoji" onchange="saveS()"><option>Par défaut</option><option>Sans</option><option>Beaucoup</option></select></div>
 </div>
-
 <div class="card"><h3>🧠 Mémoire</h3><p>ADRYNX se souvient de toi</p>
 <div class="row"><span>Activer mémoire</span><div id="t_mem" class="toggle on" onclick="toggleMem()"></div></div>
 <div class="row"><span>Synthèse de la mémoire</span><span>›</span></div>
 </div>
-
 <div class="card"><h3>📊 Utilisation et limites</h3>
 <div class="row"><span>Limite journalière</span><span id="u_limite">Chargement...</span></div>
 <div class="row"><span>Réinitialisation</span><span>00:00 Brazzaville</span></div>
 <div class="row"><span>Recharge Premium</span><span style="color:#ff6a00">1000F → /pay ›</span></div>
 </div>
-
 <div class="card"><h3>🔌 Plugins</h3><p>Extension Systalink</p><div class="row"><span>Community Feed</span><div class="toggle on"></div></div><div class="row"><span>Parcourir les plugins</span><span>›</span></div></div>
-
 <div class="card"><h3>👤 Compte</h3><div class="row"><span>Adresse e-mail</span><span>adrynx@gmail.com</span></div><div class="row"><span>Contact de confiance</span><span>›</span></div><div class="row"><span>Se déconnecter</span><span style="color:red">↪</span></div></div>
 </div>
 
@@ -92,33 +90,99 @@ function setMode(m,el){mode=m;document.querySelectorAll('.modes button').forEach
 function openSettings(){document.getElementById('settings').classList.add('open');loadSettings();}
 function closeSettings(){document.getElementById('settings').classList.remove('open')}
 
-  // FONCTION D'ORIGINE V15 - INTACTE, ON NE LA TOUCHE PAS
-async function send(){let i=document.getElementById('q');let t=i.value.trim();if(!t)return;i.value='';let c=document.getElementById('chat');c.innerHTML+=`<div class="msg user">${t}</div>`;c.scrollTop=c.scrollHeight;let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());c.innerHTML+=`<div class="msg assistant">${r.reponse}</div>`;c.scrollTop=c.scrollHeight;}
+// FONCTION D'ORIGINE V15 - INTACTE, JUSTE PROTEGEE POUR NE PLUS RESTER BLOQUEE
+async function send(){
+  let i=document.getElementById('q');let t=i.value.trim();if(!t)return null;
+  i.value='';let c=document.getElementById('chat');
+  c.innerHTML+=`<div class="msg user">${t}</div>`;c.scrollTop=c.scrollHeight;
+  try{
+    let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());
+    let rep=r.reponse||"Je n'ai pas compris chef, réessaie.";
+    c.innerHTML+=`<div class="msg assistant">${rep}</div>`;c.scrollTop=c.scrollHeight;
+    return rep;
+  }catch(e){
+    c.innerHTML+=`<div class="msg assistant">Chef, je n'arrive pas à joindre le serveur. Vérifie ta connexion et réessaie.</div>`;c.scrollTop=c.scrollHeight;
+    return null;
+  }
+}
 
-// AJOUT V2.7 - EVOLUTION PDF - Nouvelle fonction à côté, après send()
+// AJOUT V2.7 - EVOLUTION PDF
 async function sendPdfFile(file){
   let c=document.getElementById('chat');
-  c.innerHTML+=`<div class="msg user">📄 PDF envoyé : ${file.name} - Je lis...</div>`;
-  c.scrollTop=c.scrollHeight;
-  let form = new FormData();
-  form.append("file", file);
-  let r = await fetch('/api/upload-pdf',{method:'POST', body: form}).then(r=>r.json());
-  c.innerHTML+=`<div class="msg assistant">${r.reponse}</div>`;
+  c.innerHTML+=`<div class="msg user">📄 PDF envoyé : ${file.name} - Je lis...</div>`;c.scrollTop=c.scrollHeight;
+  try{
+    let form=new FormData();form.append("file",file);
+    let r=await fetch('/api/upload-pdf',{method:'POST',body:form}).then(r=>r.json());
+    c.innerHTML+=`<div class="msg assistant">${r.reponse||"PDF reçu, mais pas de réponse du serveur."}</div>`;
+  }catch(e){c.innerHTML+=`<div class="msg assistant">Chef, l'envoi du PDF a échoué. Vérifie que /api/upload-pdf existe sur le serveur.</div>`;}
   c.scrollTop=c.scrollHeight;
 }
-document.getElementById('pdfInput').addEventListener('change', (e)=>{
-  if(e.target.files[0]) sendPdfFile(e.target.files[0]);
-});
+document.getElementById('pdfInput').addEventListener('change',(e)=>{if(e.target.files[0]){sendPdfFile(e.target.files[0]);e.target.value='';}});
 
-document.getElementById('pdfInput').addEventListener('change', (e)=>{
-  if(e.target.files[0]) sendPdfFile(e.target.files[0]);
-});
-async function loadFeed(){let f=document.getElementById('feed');f.style.display=f.style.display=='block'?'none':'block';if(f.style.display=='none')return;f.innerHTML='Chargement...';let r=await fetch('/api/community/feed').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)"><b>${x.uid}</b> <small>${x.time}</small><br>${x.q}<br><small style="color:#ff8c32">${x.r}</small></div>`).join('')||'Sois le premier!';}
+// AJOUT V3.0 - ORBE PHOENIX - fonctions qui manquaient
+function setOrb(type,el){
+  document.querySelectorAll('.orb-btn').forEach(b=>b.classList.remove('active'));if(el)el.classList.add('active');
+  let o=document.getElementById('orb-phoenix');if(!o)return;
+  if(type==='calm'){o.innerText='💙';o.style.filter='drop-shadow(0 0 20px #00bfff)';}
+  else if(type==='clarity'){o.innerText='💜';o.style.filter='drop-shadow(0 0 20px #a855f7)';}
+  else if(type==='energy'){o.innerText='⚡';o.style.filter='drop-shadow(0 0 20px #facc15)';}
+  else{o.innerText='🌀';o.style.filter='drop-shadow(0 0 20px #ff6a00)';}
+  let s=document.getElementById('orb-status');if(s)s.innerText='Mode '+type+' activé';
+}
+let breathingOn=false;
+function startBreathing(){
+  let s=document.getElementById('orb-status');let b=document.getElementById('btn-breath');
+  if(!breathingOn){breathingOn=true;b.innerText='Stop Breathing';if(s)s.innerText='Inspire... 4s... Expire... 4s... On y va chef.';}
+  else{breathingOn=false;b.innerText='Start Breathing';if(s)s.innerText='Je t\'écoute...';}
+}
+
+// AJOUT V16 - EVOLUTION VOCAL PROFESSIONNELLE
+let recognition=null;let isListening=false;
+function speak(text){
+  if(!('speechSynthesis' in window))return;
+  try{
+    window.speechSynthesis.cancel();
+    let clean=String(text||'').replace(/[*#_`🔥✅📄]/g,'').slice(0,600);
+    if(!clean)return;
+    let u=new SpeechSynthesisUtterance(clean);u.lang='fr-FR';u.rate=1.0;u.pitch=1.0;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function stopMicUI(){
+  isListening=false;
+  let btn=document.getElementById('micBtn');if(btn){btn.classList.remove('mic-btn-listening');btn.innerText='🎤';}
+  let inp=document.getElementById('q');if(inp)inp.placeholder='Parle à ADRYNX...';
+}
+async function startVocal(){
+  let SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRec){alert('Ton navigateur ne supporte pas le vocal. Utilise Chrome sur Android, en HTTPS.');return;}
+  if(isListening){if(recognition)recognition.stop();stopMicUI();return;}
+  if(!recognition){
+    recognition=new SpeechRec();
+    recognition.lang='fr-FR';recognition.interimResults=false;recognition.continuous=false;
+    recognition.onresult=async(e)=>{
+      let texte=e.results[0][0].transcript;
+      document.getElementById('q').value=texte;
+      let rep=await send();
+      if(rep)speak(rep);
+    };
+    recognition.onerror=(e)=>{stopMicUI();if(e.error==='not-allowed')alert('Chef, autorise le micro dans Chrome : cadenas en haut > Autoriser le micro.');};
+    recognition.onend=()=>{stopMicUI();};
+  }
+  try{
+    recognition.start();isListening=true;
+    let btn=document.getElementById('micBtn');if(btn){btn.classList.add('mic-btn-listening');btn.innerText='🔴';}
+    document.getElementById('q').placeholder='Je t\'écoute... parle chef...';
+    let st=document.getElementById('orb-status');if(st)st.innerText='Je t\'écoute...';
+  }catch(e){stopMicUI();}
+}
+
+async function loadFeed(){let f=document.getElementById('feed');f.style.display=f.style.display=='block'?'none':'block';if(f.style.display=='none')return;f.innerHTML='Chargement...';try{let r=await fetch('/api/community/feed').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)"><b>${x.uid}</b> <small>${x.time}</small><br>${x.q}<br><small style="color:#ff8c32">${x.r}</small></div>`).join('')||'Sois le premier!';}catch(e){f.innerHTML='Feed indisponible pour le moment.';}}
 async function askCommunity(){let q=prompt('Question Dev Congo?');if(!q)return;let r=prompt('Ta réponse?');if(!r)return;await fetch('/api/community/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,q,r})});let f=document.getElementById('feed');f.style.display='block';loadFeed();}
-async function loadAstuces(){let f=document.getElementById('feed');f.style.display='block';let r=await fetch('/api/community/astuces').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;background:rgba(255,106,0,0.12);margin:4px;border-radius:8px"><b>${x.t}</b><br>${x.c}</div>`).join('');}
-async function loadTop(){let f=document.getElementById('feed');f.style.display='block';let r=await fetch('/api/community/top').then(r=>r.json());f.innerHTML=r.map((x,i)=>`<div style="padding:8px">#${i+1} ${x.uid} - ${x.count}</div>`).join('')||'Pas de Top';}
-async function loadSettings(){let s=await fetch(`/api/settings/${uid}`).then(r=>r.json());document.getElementById('s_style').value=s.style;document.getElementById('s_chaleur').value=s.chaleur;document.getElementById('s_enth').value=s.enthousiasme;document.getElementById('s_emoji').value=s.emojis;let u=await fetch(`/api/utilisation/${uid}`).then(r=>r.json());document.getElementById('u_limite').innerText=u.limite;}
-async function saveS(){await fetch('/api/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,style:document.getElementById('s_style').value,chaleur:document.getElementById('s_chaleur').value,enthousiasme:document.getElementById('s_enth').value,emojis:document.getElementById('s_emoji').value,couleur:'Orange',memoire:'Activé'})});}
+async function loadAstuces(){let f=document.getElementById('feed');f.style.display='block';try{let r=await fetch('/api/community/astuces').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;background:rgba(255,106,0,0.12);margin:4px;border-radius:8px"><b>${x.t}</b><br>${x.c}</div>`).join('');}catch(e){f.innerHTML='Astuces indisponibles.';}}
+async function loadTop(){let f=document.getElementById('feed');f.style.display='block';try{let r=await fetch('/api/community/top').then(r=>r.json());f.innerHTML=r.map((x,i)=>`<div style="padding:8px">#${i+1} ${x.uid} - ${x.count}</div>`).join('')||'Pas de Top';}catch(e){f.innerHTML='Top indisponible.';}}
+async function loadSettings(){try{let s=await fetch(`/api/settings/${uid}`).then(r=>r.json());if(document.getElementById('s_style'))document.getElementById('s_style').value=s.style||'Par défaut';if(document.getElementById('s_chaleur'))document.getElementById('s_chaleur').value=s.chaleur||'Par défaut';if(document.getElementById('s_enth'))document.getElementById('s_enth').value=s.enthousiasme||'Par défaut';if(document.getElementById('s_emoji'))document.getElementById('s_emoji').value=s.emojis||'Par défaut';let u=await fetch(`/api/utilisation/${uid}`).then(r=>r.json());if(document.getElementById('u_limite'))document.getElementById('u_limite').innerText=u.limite||'--';}catch(e){}}
+async function saveS(){try{await fetch('/api/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,style:document.getElementById('s_style').value,chaleur:document.getElementById('s_chaleur').value,enthousiasme:document.getElementById('s_enth').value,emojis:document.getElementById('s_emoji').value,couleur:'Orange',memoire:'Activé'})});}catch(e){}}
 function toggleMem(){document.getElementById('t_mem').classList.toggle('on')}
 function setAccent(c){document.documentElement.style.setProperty('--accent',c);saveS()}
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
