@@ -4,3 +4,4 @@ PyMuPDF
 groq
 openai
 python-multipart
+pypdf
