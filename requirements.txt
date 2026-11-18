@@ -1,7 +1,8 @@
-fastapi
-uvicorn
-PyMuPDF
-groq
-openai
-python-multipart
-pypdf
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+PyMuPDF==1.24.14
+groq==0.13.2
+openai==1.58.1
+python-multipart==0.0.19
+pypdf==5.1.0
+httpx==0.28.1
