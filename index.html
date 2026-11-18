@@ -8,15 +8,15 @@
 .top h1{letter-spacing:12px;font-size:1.9rem;text-shadow:0 0 20px #ff6a00}
 .icon-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff}
 #orb-wrap{width:150px;height:150px;margin:6px auto;flex-shrink:0}
-#orb{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #ff6a00;box-shadow:0 0 35px #ff6a00;animation:breatheVivant 3.8s ease-in-out infinite,spinContinu 30s linear infinite}
-@keyframes breatheVivant{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}@keyframes spinContinu{from{transform:rotate(0deg) scale(1)}to{transform:rotate(360deg) scale(1)}}
+#orb{width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #ff6a00;box-shadow:0 0 35px #ff6a00;animation:breatheVivant 3.8s ease-in-out infinite}
+@keyframes breatheVivant{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
 .modes,.comm{display:flex;gap:6px;overflow-x:auto;flex-shrink:0;padding:6px 0;scrollbar-width:none}
 .modes::-webkit-scrollbar,.comm::-webkit-scrollbar{display:none}
 .modes button,.comm button{padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.08);color:#fff;font-size:0.8rem;white-space:nowrap}
 .modes button.active,.comm button.active{background:rgba(255,106,0,0.28);border-color:#ff6a00}
 #feed{max-height:26vh;overflow-y:auto;background:rgba(0,0,0,0.7);border-radius:12px;display:none;border:1px solid rgba(255,106,0,0.2);margin:4px 0}
 #chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:8px}
-.msg{padding:10px 14px;border-radius:18px;max-width:88%;font-size:0.92rem}.user{align-self:flex-end;background:linear-gradient(135deg,#ff6a00,#ff8c32)}.assistant{align-self:flex-start;background:rgba(255,255,255,0.09);border:1px solid rgba(255,106,0,0.25)}
+.msg{padding:10px 14px;border-radius:18px;max-width:88%;font-size:0.92rem;white-space:pre-wrap;word-break:break-word}.user{align-self:flex-end;background:linear-gradient(135deg,#ff6a00,#ff8c32)}.assistant{align-self:flex-start;background:rgba(255,255,255,0.09);border:1px solid rgba(255,106,0,0.25)}
 .input{flex-shrink:0;display:flex;gap:8px;background:rgba(18,18,18,0.92);border:1px solid rgba(255,106,0,0.35);border-radius:28px;padding:10px 12px;margin:8px 0 env(safe-area-inset-bottom)}
 .input input{flex:1;background:transparent;border:none;color:#fff;outline:none}.input button{width:38px;height:38px;border-radius:50%;background:#ff6a00;border:none;color:#fff}
 #settings{position:fixed;top:0;right:-100%;width:100%;max-width:420px;height:100%;background:#f6f6f6;color:#111;z-index:20;transition:0.3s;overflow-y:auto;padding:0 0 20px 0}
@@ -34,45 +34,45 @@
 <body>
 <video id="bg" autoplay muted loop playsinline><source src="/orb.mp4"></video>
 <div class="core">
-<div class="top"><h1>ADRYNX</h1><button class="icon-btn" onclick="openSettings()">⚙️</button></div>
+<div class="top"><h1>ADRYNX</h1><button class="icon-btn" id="btnSettingsTop">⚙️</button></div>
 <div id="orb-wrap"><video id="orb" autoplay muted loop playsinline><source src="/orb.mp4"></video></div>
 <div id="orb-phoenix-wrap" style="text-align:center;margin:6px auto">
   <div id="orb-phoenix" class="orb-caramel">🌀</div>
   <div style="margin-top:8px"><b>Breathing Session</b><br><small id="orb-status">Je t'écoute...</small></div>
-  <button id="btn-breath" onclick="startBreathing()" style="background:#ff6a00;color:#fff;border:none;padding:10px 18px;border-radius:20px;margin:8px 0">Start Breathing</button>
+  <button id="btn-breath" style="background:#ff6a00;color:#fff;border:none;padding:10px 18px;border-radius:20px;margin:8px 0">Start Breathing</button>
   <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
-    <button onclick="setOrb('caramel',this)" class="orb-btn active">🔥 Caramel Chaud</button>
-    <button onclick="setOrb('calm',this)" class="orb-btn">Calm</button>
-    <button onclick="setOrb('clarity',this)" class="orb-btn">Clarity</button>
-    <button onclick="setOrb('energy',this)" class="orb-btn">⚡ Energy</button>
+    <button class="orb-btn active" data-orb="caramel">🔥 Caramel Chaud</button>
+    <button class="orb-btn" data-orb="calm">Calm</button>
+    <button class="orb-btn" data-orb="clarity">Clarity</button>
+    <button class="orb-btn" data-orb="energy">⚡ Energy</button>
   </div>
 </div>
-<div class="modes"><button class="active" onclick="setMode('general',this)">General</button><button onclick="setMode('etudiant',this)">Etudiant</button><button onclick="setMode('vendeur',this)">Vendeur</button><button onclick="setMode('codeur',this)">Codeur</button><button onclick="setMode('image',this)">Image</button></div>
-<div class="comm"><button class="active" onclick="loadFeed()">🌍 Feed</button><button onclick="askCommunity()">❓ Poser</button><button onclick="loadAstuces()">💡 Astuces</button><button onclick="loadTop()">🏆 Top</button><button onclick="openSettings()">🧠 Mémoire</button></div>
+<div class="modes"><button class="active" data-mode="general">General</button><button data-mode="etudiant">Etudiant</button><button data-mode="vendeur">Vendeur</button><button data-mode="codeur">Codeur</button><button data-mode="image">Image</button></div>
+<div class="comm"><button class="active" id="btnFeed">🌍 Feed</button><button id="btnPoser">❓ Poser</button><button id="btnAstuces">💡 Astuces</button><button id="btnTop">🏆 Top</button><button id="btnMemoire">🧠 Mémoire</button></div>
 <div id="feed"></div>
 <div id="chat"><div class="msg assistant">Chef, ADRYNX V16 Pro est prêt 🔥 Chat en bas, Vocal 🎤, Orbe vivant, Settings pro. Teste le micro 🎤</div></div>
-<div class="input"><input id="q" placeholder="Parle à ADRYNX..."><button id="micBtn" onclick="startVocal()">🎤</button><button onclick="send()">➤</button></div>
+<div class="input"><input id="q" placeholder="Parle à ADRYNX..."><button id="micBtn">🎤</button><button id="sendBtn">➤</button></div>
 <input type="file" id="pdfInput" accept=".pdf" style="display:none">
 <div class="input" style="margin-top:-2px">
   <span style="font-size:0.85rem;opacity:0.8">📄 Tu as un PDF ?</span>
-  <button onclick="document.getElementById('pdfInput').click()" style="width:auto;padding:0 14px;font-size:0.8rem">Lire un PDF</button>
+  <button id="btnPdf" style="width:auto;padding:0 14px;font-size:0.8rem">Lire un PDF</button>
 </div>
 </div>
 
 <div id="settings">
-<header><button onclick="closeSettings()" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:#fff">←</button><b>Personnalisation ADRYNX</b></header>
+<header><button id="btnCloseSettings" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:#fff">←</button><b>Personnalisation ADRYNX</b></header>
 <div class="card"><h3>🎨 Thème Phoenix</h3><p>Couleur d'accentuation</p>
 <div class="row"><span>Orange Caramel (défaut Systalink)</span><span style="color:#ff6a00">●</span></div>
-<div class="row" style="flex-wrap:wrap;gap:6px"><button onclick="setAccent('Orange')" style="background:#ff6a00;color:#fff;border:none;padding:6px 10px;border-radius:20px">Orange</button><button onclick="setAccent('Bleu')" style="padding:6px 10px;border-radius:20px;border:1px solid #ddd">Bleu</button><button onclick="setAccent('Violet')" style="padding:6px 10px;border-radius:20px;border:1px solid #ddd">Violet</button></div>
+<div class="row" style="flex-wrap:wrap;gap:6px"><button class="accent-btn" data-accent="Orange" style="background:#ff6a00;color:#fff;border:none;padding:6px 10px;border-radius:20px">Orange</button><button class="accent-btn" data-accent="Bleu" style="padding:6px 10px;border-radius:20px;border:1px solid #ddd">Bleu</button><button class="accent-btn" data-accent="Violet" style="padding:6px 10px;border-radius:20px;border:1px solid #ddd">Violet</button></div>
 </div>
 <div class="card"><h3>🧬 Style et ton de base</h3>
-<div class="row"><span>Style</span><select id="s_style" onchange="saveS()"><option>Par défaut</option><option>Professionnel</option><option>Simple</option><option>Entrepreneur Congo</option></select></div>
-<div class="row"><span>Chaleur</span><select id="s_chaleur" onchange="saveS()"><option>Par défaut</option><option>Chaleureux</option><option>Direct</option></select></div>
-<div class="row"><span>Enthousiasme</span><select id="s_enth" onchange="saveS()"><option>Par défaut</option><option>Calme</option><option>Enthousiaste</option></select></div>
-<div class="row"><span>Emojis</span><select id="s_emoji" onchange="saveS()"><option>Par défaut</option><option>Sans</option><option>Beaucoup</option></select></div>
+<div class="row"><span>Style</span><select id="s_style"><option>Par défaut</option><option>Professionnel</option><option>Simple</option><option>Entrepreneur Congo</option></select></div>
+<div class="row"><span>Chaleur</span><select id="s_chaleur"><option>Par défaut</option><option>Chaleureux</option><option>Direct</option></select></div>
+<div class="row"><span>Enthousiasme</span><select id="s_enth"><option>Par défaut</option><option>Calme</option><option>Enthousiaste</option></select></div>
+<div class="row"><span>Emojis</span><select id="s_emoji"><option>Par défaut</option><option>Sans</option><option>Beaucoup</option></select></div>
 </div>
 <div class="card"><h3>🧠 Mémoire</h3><p>ADRYNX se souvient de toi</p>
-<div class="row"><span>Activer mémoire</span><div id="t_mem" class="toggle on" onclick="toggleMem()"></div></div>
+<div class="row"><span>Activer mémoire</span><div id="t_mem" class="toggle on"></div></div>
 <div class="row"><span>Synthèse de la mémoire</span><span>›</span></div>
 </div>
 <div class="card"><h3>📊 Utilisation et limites</h3>
@@ -85,107 +85,35 @@
 </div>
 
 <script>
-let mode='general'; const uid=localStorage.user_id||(localStorage.user_id='user_'+Math.random().toString(36).slice(2,6));
-function setMode(m,el){mode=m;document.querySelectorAll('.modes button').forEach(b=>b.classList.remove('active'));el.classList.add('active')}
-function openSettings(){document.getElementById('settings').classList.add('open');loadSettings();}
-function closeSettings(){document.getElementById('settings').classList.remove('open')}
-
-// FONCTION D'ORIGINE V15 - INTACTE, JUSTE PROTEGEE POUR NE PLUS RESTER BLOQUEE
-async function send(){
-  let i=document.getElementById('q');let t=i.value.trim();if(!t)return null;
-  i.value='';let c=document.getElementById('chat');
-  c.innerHTML+=`<div class="msg user">${t}</div>`;c.scrollTop=c.scrollHeight;
-  try{
-    let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})}).then(r=>r.json());
-    let rep=r.reponse||"Je n'ai pas compris chef, réessaie.";
-    c.innerHTML+=`<div class="msg assistant">${rep}</div>`;c.scrollTop=c.scrollHeight;
-    return rep;
-  }catch(e){
-    c.innerHTML+=`<div class="msg assistant">Chef, je n'arrive pas à joindre le serveur. Vérifie ta connexion et réessaie.</div>`;c.scrollTop=c.scrollHeight;
-    return null;
-  }
-}
-
-// AJOUT V2.7 - EVOLUTION PDF
-async function sendPdfFile(file){
-  let c=document.getElementById('chat');
-  c.innerHTML+=`<div class="msg user">📄 PDF envoyé : ${file.name} - Je lis...</div>`;c.scrollTop=c.scrollHeight;
-  try{
-    let form=new FormData();form.append("file",file);
-    let r=await fetch('/api/upload-pdf',{method:'POST',body:form}).then(r=>r.json());
-    c.innerHTML+=`<div class="msg assistant">${r.reponse||"PDF reçu, mais pas de réponse du serveur."}</div>`;
-  }catch(e){c.innerHTML+=`<div class="msg assistant">Chef, l'envoi du PDF a échoué. Vérifie que /api/upload-pdf existe sur le serveur.</div>`;}
-  c.scrollTop=c.scrollHeight;
-}
-document.getElementById('pdfInput').addEventListener('change',(e)=>{if(e.target.files[0]){sendPdfFile(e.target.files[0]);e.target.value='';}});
-
-// AJOUT V3.0 - ORBE PHOENIX - fonctions qui manquaient
-function setOrb(type,el){
-  document.querySelectorAll('.orb-btn').forEach(b=>b.classList.remove('active'));if(el)el.classList.add('active');
-  let o=document.getElementById('orb-phoenix');if(!o)return;
-  if(type==='calm'){o.innerText='💙';o.style.filter='drop-shadow(0 0 20px #00bfff)';}
-  else if(type==='clarity'){o.innerText='💜';o.style.filter='drop-shadow(0 0 20px #a855f7)';}
-  else if(type==='energy'){o.innerText='⚡';o.style.filter='drop-shadow(0 0 20px #facc15)';}
-  else{o.innerText='🌀';o.style.filter='drop-shadow(0 0 20px #ff6a00)';}
-  let s=document.getElementById('orb-status');if(s)s.innerText='Mode '+type+' activé';
-}
+let mode='general';
+const uid=localStorage.user_id||(localStorage.user_id='user_'+Math.random().toString(36).slice(2,6));
+const $=id=>document.getElementById(id);
+function addMsg(t,qui){let d=document.createElement('div');d.className='msg '+qui;d.textContent=t;$('chat').appendChild(d);$('chat').scrollTop=99999;return d;}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');}));
+document.querySelectorAll('[data-orb]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-orb]').forEach(x=>x.classList.remove('active'));b.classList.add('active');let o=$('orb-phoenix');if(b.dataset.orb==='calm'){o.textContent='💙';o.style.filter='drop-shadow(0 0 20px #00bfff)';}else if(b.dataset.orb==='clarity'){o.textContent='💜';o.style.filter='drop-shadow(0 0 20px #a855f7)';}else if(b.dataset.orb==='energy'){o.textContent='⚡';o.style.filter='drop-shadow(0 0 20px #facc15)';}else{o.textContent='🌀';o.style.filter='drop-shadow(0 0 20px #ff6a00)';}$('orb-status').textContent='Mode '+b.dataset.orb+' activé';}));
+document.querySelectorAll('.accent-btn').forEach(b=>b.addEventListener('click',()=>{saveS();}));
+$('btnSettingsTop').addEventListener('click',()=>{$('settings').classList.add('open');loadSettings();});
+$('btnCloseSettings').addEventListener('click',()=>$('settings').classList.remove('open'));
+$('btnMemoire').addEventListener('click',()=>{$('settings').classList.add('open');loadSettings();});
+$('t_mem').addEventListener('click',()=>$('t_mem').classList.toggle('on'));
 let breathingOn=false;
-function startBreathing(){
-  let s=document.getElementById('orb-status');let b=document.getElementById('btn-breath');
-  if(!breathingOn){breathingOn=true;b.innerText='Stop Breathing';if(s)s.innerText='Inspire... 4s... Expire... 4s... On y va chef.';}
-  else{breathingOn=false;b.innerText='Start Breathing';if(s)s.innerText='Je t\'écoute...';}
-}
-
-// AJOUT V16 - EVOLUTION VOCAL PROFESSIONNELLE
-let recognition=null;let isListening=false;
-function speak(text){
-  if(!('speechSynthesis' in window))return;
-  try{
-    window.speechSynthesis.cancel();
-    let clean=String(text||'').replace(/[*#_`🔥✅📄]/g,'').slice(0,600);
-    if(!clean)return;
-    let u=new SpeechSynthesisUtterance(clean);u.lang='fr-FR';u.rate=1.0;u.pitch=1.0;
-    window.speechSynthesis.speak(u);
-  }catch(e){}
-}
-function stopMicUI(){
-  isListening=false;
-  let btn=document.getElementById('micBtn');if(btn){btn.classList.remove('mic-btn-listening');btn.innerText='🎤';}
-  let inp=document.getElementById('q');if(inp)inp.placeholder='Parle à ADRYNX...';
-}
-async function startVocal(){
-  let SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SpeechRec){alert('Ton navigateur ne supporte pas le vocal. Utilise Chrome sur Android, en HTTPS.');return;}
-  if(isListening){if(recognition)recognition.stop();stopMicUI();return;}
-  if(!recognition){
-    recognition=new SpeechRec();
-    recognition.lang='fr-FR';recognition.interimResults=false;recognition.continuous=false;
-    recognition.onresult=async(e)=>{
-      let texte=e.results[0][0].transcript;
-      document.getElementById('q').value=texte;
-      let rep=await send();
-      if(rep)speak(rep);
-    };
-    recognition.onerror=(e)=>{stopMicUI();if(e.error==='not-allowed')alert('Chef, autorise le micro dans Chrome : cadenas en haut > Autoriser le micro.');};
-    recognition.onend=()=>{stopMicUI();};
-  }
-  try{
-    recognition.start();isListening=true;
-    let btn=document.getElementById('micBtn');if(btn){btn.classList.add('mic-btn-listening');btn.innerText='🔴';}
-    document.getElementById('q').placeholder='Je t\'écoute... parle chef...';
-    let st=document.getElementById('orb-status');if(st)st.innerText='Je t\'écoute...';
-  }catch(e){stopMicUI();}
-}
-
-async function loadFeed(){let f=document.getElementById('feed');f.style.display=f.style.display=='block'?'none':'block';if(f.style.display=='none')return;f.innerHTML='Chargement...';try{let r=await fetch('/api/community/feed').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)"><b>${x.uid}</b> <small>${x.time}</small><br>${x.q}<br><small style="color:#ff8c32">${x.r}</small></div>`).join('')||'Sois le premier!';}catch(e){f.innerHTML='Feed indisponible pour le moment.';}}
-async function askCommunity(){let q=prompt('Question Dev Congo?');if(!q)return;let r=prompt('Ta réponse?');if(!r)return;await fetch('/api/community/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,q,r})});let f=document.getElementById('feed');f.style.display='block';loadFeed();}
-async function loadAstuces(){let f=document.getElementById('feed');f.style.display='block';try{let r=await fetch('/api/community/astuces').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;background:rgba(255,106,0,0.12);margin:4px;border-radius:8px"><b>${x.t}</b><br>${x.c}</div>`).join('');}catch(e){f.innerHTML='Astuces indisponibles.';}}
-async function loadTop(){let f=document.getElementById('feed');f.style.display='block';try{let r=await fetch('/api/community/top').then(r=>r.json());f.innerHTML=r.map((x,i)=>`<div style="padding:8px">#${i+1} ${x.uid} - ${x.count}</div>`).join('')||'Pas de Top';}catch(e){f.innerHTML='Top indisponible.';}}
-async function loadSettings(){try{let s=await fetch(`/api/settings/${uid}`).then(r=>r.json());if(document.getElementById('s_style'))document.getElementById('s_style').value=s.style||'Par défaut';if(document.getElementById('s_chaleur'))document.getElementById('s_chaleur').value=s.chaleur||'Par défaut';if(document.getElementById('s_enth'))document.getElementById('s_enth').value=s.enthousiasme||'Par défaut';if(document.getElementById('s_emoji'))document.getElementById('s_emoji').value=s.emojis||'Par défaut';let u=await fetch(`/api/utilisation/${uid}`).then(r=>r.json());if(document.getElementById('u_limite'))document.getElementById('u_limite').innerText=u.limite||'--';}catch(e){}}
-async function saveS(){try{await fetch('/api/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,style:document.getElementById('s_style').value,chaleur:document.getElementById('s_chaleur').value,enthousiasme:document.getElementById('s_enth').value,emojis:document.getElementById('s_emoji').value,couleur:'Orange',memoire:'Activé'})});}catch(e){}}
-function toggleMem(){document.getElementById('t_mem').classList.toggle('on')}
-function setAccent(c){document.documentElement.style.setProperty('--accent',c);saveS()}
-document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+$('btn-breath').addEventListener('click',()=>{breathingOn=!breathingOn;$('btn-breath').textContent=breathingOn?'Stop Breathing':'Start Breathing';$('orb-status').textContent=breathingOn?'Inspire... 4s... Expire... 4s... On y va chef.':'Je t\'écoute...';});
+async function send(){let i=$('q');let t=i.value.trim();if(!t)return null;i.value='';addMsg(t,'user');let load=addMsg('ADRYNX réfléchit...','assistant');try{let r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t,user_id:uid,mode})});let j=await r.json();let rep=j.reponse||"Je n'ai pas compris chef, réessaie.";load.textContent=rep;return rep;}catch(e){load.textContent='Chef, je n\'arrive pas à joindre le serveur. Vérifie ta connexion et réessaie.';return null;}}
+$('sendBtn').addEventListener('click',send);
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+function speak(text){try{window.speechSynthesis.cancel();let clean=String(text||'').replace(/[*#_`🔥✅📄]/g,'').slice(0,600);if(!clean)return;let u=new SpeechSynthesisUtterance(clean);u.lang='fr-FR';window.speechSynthesis.speak(u);}catch(e){}}
+let recognition=null,isListening=false;
+$('micBtn').addEventListener('click',()=>{let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){alert('Ton navigateur ne supporte pas le vocal. Utilise Chrome sur Android, en HTTPS.');return;}if(isListening){if(recognition)recognition.stop();return;}if(!recognition){recognition=new SR();recognition.lang='fr-FR';recognition.interimResults=false;recognition.continuous=false;recognition.onresult=async(e)=>{let texte=e.results[0][0].transcript;$('q').value=texte;let rep=await send();if(rep)speak(rep);};recognition.onerror=(e)=>{isListening=false;$('micBtn').classList.remove('mic-btn-listening');$('micBtn').textContent='🎤';if(e.error==='not-allowed')alert('Chef, autorise le micro dans Chrome : cadenas en haut > Autoriser le micro.');};recognition.onend=()=>{isListening=false;$('micBtn').classList.remove('mic-btn-listening');$('micBtn').textContent='🎤';$('q').placeholder='Parle à ADRYNX...';};}try{recognition.start();isListening=true;$('micBtn').classList.add('mic-btn-listening');$('micBtn').textContent='🔴';$('q').placeholder='Je t\'écoute... parle chef...';$('orb-status').textContent='Je t\'écoute...';}catch(e){isListening=false;}});
+$('btnPdf').addEventListener('click',()=>$('pdfInput').click());
+$('pdfInput').addEventListener('change',async(e)=>{let file=e.target.files[0];if(!file)return;addMsg('📄 PDF envoyé : '+file.name+' - Je lis...','user');let load=addMsg('Je lis ton PDF...','assistant');try{let fd=new FormData();fd.append('file',file);let r=await fetch('/api/upload-pdf',{method:'POST',body:fd});let j=await r.json();load.textContent=j.reponse||'PDF reçu, mais pas de réponse du serveur.';speak(load.textContent);}catch(err){load.textContent='Chef, l\'envoi du PDF a échoué.';}e.target.value='';});
+async function loadFeed(){let f=$('feed');f.style.display=f.style.display=='block'?'none':'block';if(f.style.display=='none')return;f.innerHTML='Chargement...';try{let r=await fetch('/api/community/feed').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;border-bottom:1px solid rgba(255,255,255,0.08)"><b>${x.uid}</b> <small>${x.time}</small><br>${x.q}<br><small style="color:#ff8c32">${x.r}</small></div>`).join('')||'Sois le premier!';}catch(e){f.innerHTML='Feed indisponible pour le moment.';}}
+$('btnFeed').addEventListener('click',loadFeed);
+$('btnPoser').addEventListener('click',async()=>{let q=prompt('Question Dev Congo?');if(!q)return;let r=prompt('Ta réponse?');if(!r)return;await fetch('/api/community/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,q,r})});$('feed').style.display='block';loadFeed();});
+$('btnAstuces').addEventListener('click',async()=>{let f=$('feed');f.style.display='block';try{let r=await fetch('/api/community/astuces').then(r=>r.json());f.innerHTML=r.map(x=>`<div style="padding:10px;background:rgba(255,106,0,0.12);margin:4px;border-radius:8px"><b>${x.t}</b><br>${x.c}</div>`).join('');}catch(e){f.innerHTML='Astuces indisponibles.';}});
+$('btnTop').addEventListener('click',async()=>{let f=$('feed');f.style.display='block';try{let r=await fetch('/api/community/top').then(r=>r.json());f.innerHTML=r.map((x,i)=>`<div style="padding:8px">#${i+1} ${x.uid} - ${x.count}</div>`).join('')||'Pas de Top';}catch(e){f.innerHTML='Top indisponible.';}});
+async function loadSettings(){try{let s=await fetch(`/api/settings/${uid}`).then(r=>r.json());if(s.style)$('s_style').value=s.style;if(s.chaleur)$('s_chaleur').value=s.chaleur;if(s.enthousiasme)$('s_enth').value=s.enthousiasme;if(s.emojis)$('s_emoji').value=s.emojis;let u=await fetch(`/api/utilisation/${uid}`).then(r=>r.json());$('u_limite').textContent=u.limite||'--';}catch(e){}}
+async function saveS(){try{await fetch('/api/settings/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user_id:uid,style:$('s_style').value,chaleur:$('s_chaleur').value,enthousiasme:$('s_enth').value,emojis:$('s_emoji').value,couleur:'Orange',memoire:'Activé'})});}catch(e){}}
+['s_style','s_chaleur','s_enth','s_emoji'].forEach(id=>{$(id).addEventListener('change',saveS);});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
 </script>
 </body></html>
